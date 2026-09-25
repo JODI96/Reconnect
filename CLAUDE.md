@@ -8,18 +8,16 @@ Zielplattformen: iOS, Android, später Desktop.
 Der Entwickler ist erfahren in .NET/C#, aber neu in Unity. Unity-spezifische Schritte daher
 ausführlicher erklären.
 
-## Repositories / Ordner
+## Repository
 
-| Ordner                          | Inhalt                                   | Versionskontrolle |
-|---------------------------------|------------------------------------------|-------------------|
-| `C:\Users\Joys9\Reconnect.Backend` | Dieses Repo: Backend (.NET)            | Git               |
-| `C:\Users\Joys9\Reconnect`      | Unity-Client (ab Phase 2)                | Unity Version Control (Plastic) |
+Monorepo in `C:\Users\Joys9\Reconnect` (Git + Git LFS für Binär-Assets):
+Backend (`src/`, `tests/`) und Unity-Client (`client/`). Das frühere Plastic-Projekt ist
+als Backup unter `C:\Users\Joys9\Reconnect-Unity-Backup-2026-09-25.zip` gesichert.
 
 ## Gesamtstack
 
-- **Client:** Unity 6 **LTS** (aktuellste LTS-Linie, derzeit 6.3 LTS), URP, neues Input System.
-  Das bestehende Unity-Projekt läuft noch auf 6000.1.12f1 (kein LTS) und wird vor Phase 2
-  über den Unity Hub auf die LTS-Version gehoben.
+- **Client:** Unity 6.3 **LTS** (6000.3.x), URP, UI Toolkit, Newtonsoft.Json, neues Input System.
+  Nur LTS-Versionen verwenden.
 - **Echtzeit in Räumen:** Photon Fusion 2 (ab Phase 3)
 - **Backend:** ASP.NET Core Minimal APIs auf .NET 10
 - **Datenbank:** PostgreSQL + PostGIS, EF Core mit Npgsql + NetTopologySuite
@@ -46,10 +44,40 @@ src/
   Reconnect.Contracts        DTOs für API + Unity. netstandard2.1, C# 9, KEINE Pakete
 tests/
   Reconnect.Api.Tests        Integrationstests (WebApplicationFactory + Testcontainers)
+client/                      Unity-Projekt
+  Assets/Plugins/Reconnect.Contracts/   Contracts-DLL (wird von dotnet build hierher kopiert)
+  Assets/_Project/           Alles Eigene (Template-/Store-Assets bleiben ausserhalb)
+    Scripts/                 Assembly Reconnect.Client
+      Core/                  AppBootstrap (Composition Root), ApiSettings
+      Networking/            ApiClient, IHttpTransport, Json, ApiResult
+      Auth/ Rooms/ …         Ein Ordner pro Feature: Services, die die API aufrufen
+      UI/                    ScreenNavigator, ScreenBase, UiCatalog
+      UI/Screens/            Ein Screen = Klasse + UXML-Template
+    UI/                      UXML-Layouts + Theme.uss
+    Settings/                ScriptableObjects (ApiSettings, UiCatalog, PanelSettings)
+    Scenes/Main.unity        Einzige Szene (vorerst)
+    Editor/ProjectSetup.cs   Menü "Reconnect → Setup Project": Szene/Assets/PlayerSettings anlegen
+    Tests/EditMode/          Unity-Tests (NUnit)
 ```
 
 Abhängigkeiten: `Api → Infrastructure → Domain`, `Api → Contracts`, `AppHost → Api`.
 Domain und Contracts kennen sich nicht; das Mapping passiert in der Api (`*Mappings.cs`).
+Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
+
+### Unity-Client: Konventionen
+
+- **Composition Root statt Singletons:** Services werden in `AppBootstrap` erzeugt und per
+  Konstruktor an Screens übergeben. Keine `static Instance`-Singletons, kein `FindObjectOfType`.
+- **Services sind plain C#** (keine MonoBehaviours) und dadurch in EditMode-Tests testbar;
+  HTTP läuft über `IHttpTransport` (`FakeTransport` in Tests).
+- **Neuer Screen:** UXML in `_Project/UI/`, Feld in `UiCatalog` + Zuweisung in `ProjectSetup`,
+  Klasse `XyzScreen : ScreenBase` in `UI/Screens/`, Navigation in `AppBootstrap`.
+- **Async:** UI-Aktionen über `ScreenBase.RunAsync(...)`; API-Aufrufe erhalten `Lifetime`
+  (wird beim Verlassen des Screens abgebrochen).
+- Szene/Assets möglichst per `ProjectSetup` erzeugen statt von Hand – reproduzierbar im Git-Diff.
+- `.meta`-Dateien immer mit committen.
+- Backend-URL: `Settings/ApiSettings.asset` (Editor: localhost, Android-Emulator: 10.0.2.2,
+  echtes Gerät: LAN-IP des PCs).
 
 ### Neues Feature hinzufügen
 
@@ -94,6 +122,13 @@ dotnet ef migrations add <Name> --project src/Reconnect.Infrastructure --output-
 ```
 
 Migrationen werden in der Entwicklung beim Start der API automatisch angewendet.
+
+```powershell
+# Unity (Editor geschlossen) – Pfad zur installierten LTS-Version anpassen
+$unity = "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"
+& $unity -batchmode -quit -projectPath client -executeMethod Reconnect.Client.Editor.ProjectSetup.Run -logFile -
+& $unity -batchmode -projectPath client -runTests -testPlatform EditMode -testResults client/Logs/editmode.xml -logFile -
+```
 
 ## Roadmap
 

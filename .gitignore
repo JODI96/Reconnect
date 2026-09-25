@@ -484,3 +484,7 @@ $RECYCLE.BIN/
 # Rider / VS Code
 .idea/
 .vscode/
+
+# Unity client: .meta files and Packages/ must be versioned (overrides .NET rules above)
+!/client/**/*.meta
+!/client/Packages/*

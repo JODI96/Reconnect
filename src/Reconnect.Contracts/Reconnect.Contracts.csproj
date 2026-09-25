@@ -1,12 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Wird später vom Unity-Client als DLL referenziert:
+  <!-- Wird vom Unity-Client als DLL referenziert:
        netstandard2.1 + C# 9 (Unity-Compiler), keine Paketabhängigkeiten. -->
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>Reconnect.Contracts</RootNamespace>
+    <Deterministic>true</Deterministic>
+    <UnityPluginDir>$(MSBuildThisFileDirectory)..\..\client\Assets\Plugins\Reconnect.Contracts\</UnityPluginDir>
   </PropertyGroup>
+
+  <!-- Nach jedem Build die DLL in das Unity-Projekt kopieren (wird mit eingecheckt,
+       damit Unity auch ohne dotnet build sofort funktioniert). -->
+  <Target Name="CopyContractsToUnity" AfterTargets="Build" Condition="Exists('$(MSBuildThisFileDirectory)..\..\client\Assets')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(UnityPluginDir)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
