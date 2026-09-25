@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Reconnect.Api/Reconnect.Api.csproj" />
+    <Project Path="src/Reconnect.AppHost/Reconnect.AppHost.csproj" />
+    <Project Path="src/Reconnect.Contracts/Reconnect.Contracts.csproj" />
+    <Project Path="src/Reconnect.Domain/Reconnect.Domain.csproj" />
+    <Project Path="src/Reconnect.Infrastructure/Reconnect.Infrastructure.csproj" />
+    <Project Path="src/Reconnect.ServiceDefaults/Reconnect.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Reconnect.Api.Tests/Reconnect.Api.Tests.csproj" />
+  </Folder>
+</Solution>

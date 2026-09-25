@@ -1,0 +1,12 @@
+<Project>
+  <!-- Gemeinsame Einstellungen für alle Projekte. Projekte können einzelne Werte überschreiben
+       (z.B. Reconnect.Contracts für Unity-Kompatibilität). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+</Project>

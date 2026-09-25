@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Wird später vom Unity-Client als DLL referenziert:
+       netstandard2.1 + C# 9 (Unity-Compiler), keine Paketabhängigkeiten. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Reconnect.Contracts</RootNamespace>
+  </PropertyGroup>
+
+</Project>
