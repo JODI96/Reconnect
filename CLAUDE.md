@@ -51,9 +51,8 @@ client/                      Unity-Projekt
       Core/                  AppBootstrap (Composition Root), ApiSettings
       Networking/            ApiClient, IHttpTransport, Json, ApiResult
       Auth/ Rooms/ …         Ein Ordner pro Feature: Services, die die API aufrufen
-      City/                  Stadtansicht: GeoProjection (WGS84 → Unity-Meter), TiledGround (LOD-Kachel-
-                             Streaming bis 10 cm/px, Quadtree in TileLodSelector),
-                             CityView (3D in der Szene), CityCameraController (Pan/Zoom/Tap)
+      City/                  3D-Stadt: CityView (Cesium-Tilesets, Marker, Koordinaten ToUnity/ToGeo),
+                             CityCameraController (Orbit: Pan/Zoom/Drehen/Neigen/Tap), CityMarker
       UI/                    ScreenNavigator, ScreenBase, UiCatalog
       UI/Screens/            Ein Screen = Klasse + UXML-Template
     UI/                      UXML-Layouts + Theme.uss
@@ -82,10 +81,14 @@ Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
 - `.meta`-Dateien immer mit committen.
 - Backend-URL: `Settings/ApiSettings.asset` (Editor: localhost, Android-Emulator: 10.0.2.2,
   echtes Gerät: LAN-IP des PCs).
-- **Welt-Koordinaten:** Unity-Ursprung = Zürich HB (`CitySettings`), X = Ost, Z = Nord, 1 Einheit = 1 m.
-  Nur über `GeoProjection` umrechnen. Die aktuelle Stadtansicht (Luftbild-Kacheln + Platzhalter-Blöcke)
-  ist ein Vorgeschmack und wird in Phase 6 durch echte swisstopo-3D-Daten ersetzt.
-- **swisstopo-Daten** (WMTS, OGD): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
+- **3D-Stadt = Cesium for Unity** (Apache 2.0) mit swisstopo-Daten, direkt von geo.admin.ch gestreamt:
+  Gelände (`3d.geo.admin.ch/ch.swisstopo.terrain.3d`), swissBUILDINGS3D (`…swissbuildings3d.3d`),
+  SWISSIMAGE/Landeskarte als Raster-Overlay (WMTS 3857, `{reverseY}`!). Szene wird von `ProjectSetup` gebaut.
+- **Welt-Koordinaten:** Unity-Ursprung = Zürich HB auf Bodenhöhe (`CitySettings`, Höhe 408 m – swisstopo-3D
+  nutzt Höhen über Meer). X = Ost, Y = oben, Z = Nord, 1 Einheit = 1 m. Nur über `CityView.ToUnity/ToGeo`
+  umrechnen. Höhen von Dächern/Gelände: `Cesium3DTileset.SampleHeightMostDetailed` oder `CityView.SurfaceHeightAt`.
+- **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
+  Vor dem Launch Daten selbst hosten (Fair-Use der geo.admin.ch-Dienste) und Nutzungsbedingungen prüfen.
 - **Screens über der 3D-Welt** sind transparent (`screen--transparent`); Container, die Touches
   zur Karte durchlassen sollen, bekommen die Klasse `pass-through`.
 
@@ -152,6 +155,6 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"
 3. **Multiplayer-Raum mit Photon Fusion 2**
 4. **Raum-Editor** (Layout speichern über `PUT /rooms/{id}/layout`)
 5. **Likes/Matches/Chat im Client** (SignalR)
-6. **Stadtquartier aus swisstopo-Daten**
+6. **Stadtquartier aus swisstopo-Daten** – Grundlage steht (Cesium + swissBUILDINGS3D); offen: Gebäude-Eingänge, Self-Hosting, Performance auf Geräten
 7. **Face-Tracking**
 8. **Videocall (LiveKit)**

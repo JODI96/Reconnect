@@ -9,31 +9,36 @@ namespace Reconnect.Client.City
         [Header("World origin (= Unity 0/0/0), default: Zürich HB")]
         public double originLatitude = 47.37785;
         public double originLongitude = 8.54018;
+        [Tooltip("Ground height at the origin. swisstopo's 3D tiles use heights above sea level (HB ≈ 408 m), so the ground there is at y ≈ 0.")]
+        public double originHeight = 408;
 
-        [Header("Buildings")]
-        [Tooltip("Buildings within this radius around the origin are loaded.")]
+        [Header("Buildings (our room entrances)")]
+        [Tooltip("Buildings within this radius around the origin are loaded from the backend.")]
         [Min(100)] public float loadRadiusMeters = 3000f;
-        [Tooltip("Placeholder height until real 3D data arrives in phase 6.")]
-        [Min(1)] public float buildingHeight = 35f;
-        [Min(1)] public float buildingSize = 45f;
+        [Tooltip("Height of the marker beacon above the roof.")]
+        [Min(1)] public float markerHeight = 40f;
 
-        [Header("Map tiles (swisstopo WMTS, level of detail)")]
-        [Tooltip("Coarse tiles that always cover the whole area (no holes while sharper tiles load).")]
-        [Range(10, 16)] public int baseZoom = 14;
-        [Tooltip("Sharpest zoom used. Aerial goes up to 20 (10 cm/px), the map up to 19.")]
-        [Range(14, 20)] public int maxZoom = 20;
-        [Tooltip("1 = one texture pixel per screen pixel. Lower = fewer downloads, blurrier.")]
-        [Range(0.25f, 2f)] public float tileDetail = 1f;
-        [Tooltip("Tiles kept in memory; least recently used ones are evicted beyond this.")]
-        [Min(50)] public int maxLoadedTiles = 350;
-        [Tooltip("The covered area extends this far beyond the outermost buildings.")]
-        [Min(0)] public float tileMarginMeters = 900f;
+        [Header("3D detail (Cesium, lower screen-space error = sharper, more downloads)")]
+        [Range(1, 64)] public float buildingsScreenSpaceError = 8f;
+        [Range(1, 64)] public float terrainScreenSpaceError = 8f;
+        [Tooltip("Imagery texture detail on the terrain.")]
+        [Range(1, 16)] public float imageryScreenSpaceError = 1f;
         public MapLayer defaultLayer = MapLayer.Aerial;
 
-        [Header("Camera")]
-        [Min(5)] public float minCameraHeight = 25f;
-        [Min(10)] public float maxCameraHeight = 3500f;
-        [Min(10)] public float startCameraHeight = 2400f;
-        [Range(20, 90)] public float cameraPitch = 60f;
+        [Header("Camera (orbit around a point on the ground)")]
+        [Min(5)] public float minDistance = 20f;
+        [Min(100)] public float maxDistance = 8000f;
+        [Min(10)] public float startDistance = 2600f;
+        [Range(10, 89)] public float startPitch = 60f;
+        [Range(5, 89)] public float minPitch = 12f;
+        [Range(10, 90)] public float maxPitch = 89f;
+        [Tooltip("The camera target can't leave this radius around the origin.")]
+        [Min(500)] public float panRadius = 6000f;
+    }
+
+    public enum MapLayer
+    {
+        Aerial,
+        Map,
     }
 }

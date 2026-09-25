@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using CesiumForUnity;
 using Reconnect.Client.City;
 using Reconnect.Client.Core;
 using Reconnect.Client.UI;
@@ -30,9 +31,16 @@ namespace Reconnect.Client.Editor
         private const string CitySettingsPath = SettingsDir + "/CitySettings.asset";
         private const string UiCatalogPath = SettingsDir + "/UiCatalog.asset";
         private const string PanelSettingsPath = SettingsDir + "/PanelSettings.asset";
-        private const string TileMaterialPath = MaterialsDir + "/MapTile.mat";
-        private const string BuildingMaterialPath = MaterialsDir + "/Building.mat";
-        private const string SelectedBuildingMaterialPath = MaterialsDir + "/BuildingSelected.mat";
+        private const string MarkerMaterialPath = MaterialsDir + "/Marker.mat";
+        private const string SelectedMarkerMaterialPath = MaterialsDir + "/MarkerSelected.mat";
+        private const string SkyMaterialPath = MaterialsDir + "/Sky.mat";
+
+        // swisstopo (OGD, commercial use allowed with attribution "© swisstopo").
+        private const string TerrainUrl = "https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1/layer.json";
+        private const string BuildingsUrl = "https://3d.geo.admin.ch/ch.swisstopo.swissbuildings3d.3d/v1/tileset.json";
+        // Cesium counts {y} from the south; swisstopo's XYZ tiles count from the north → {reverseY}.
+        private const string AerialUrl = "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/{z}/{x}/{reverseY}.jpeg";
+        private const string MapUrl = "https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/current/3857/{z}/{x}/{reverseY}.jpeg";
         public const string BundleId = "ch.reconnect.app";
 
         [MenuItem("Reconnect/Setup Project")]
@@ -87,21 +95,22 @@ namespace Reconnect.Client.Editor
         private static void CreateCityMaterials()
         {
             Directory.CreateDirectory(MaterialsDir);
-            var unlit = Shader.Find("Universal Render Pipeline/Unlit");
             var lit = Shader.Find("Universal Render Pipeline/Lit");
 
-            var tile = LoadOrCreateMaterial(TileMaterialPath, unlit);
-            tile.SetFloat("_ZWrite", 0f);   // tiles are layered by render queue (zoom), not by depth
+            var marker = LoadOrCreateMaterial(MarkerMaterialPath, lit);
+            marker.SetColor("_BaseColor", new Color32(255, 92, 138, 255));
+            SetEmission(marker, new Color(0.9f, 0.15f, 0.4f));
 
-            var building = LoadOrCreateMaterial(BuildingMaterialPath, lit);
-            building.SetColor("_BaseColor", new Color32(255, 92, 138, 255));
-            SetEmission(building, new Color(0.45f, 0.08f, 0.2f));
-
-            var selected = LoadOrCreateMaterial(SelectedBuildingMaterialPath, lit);
+            var selected = LoadOrCreateMaterial(SelectedMarkerMaterialPath, lit);
             selected.SetColor("_BaseColor", new Color32(255, 214, 102, 255));
-            SetEmission(selected, new Color(0.9f, 0.6f, 0.1f));
+            SetEmission(selected, new Color(1f, 0.7f, 0.15f));
 
-            foreach (var material in new[] { tile, building, selected })
+            var sky = LoadOrCreateMaterial(SkyMaterialPath, Shader.Find("Skybox/Procedural"));
+            sky.SetFloat("_SunSize", 0.03f);
+            sky.SetFloat("_AtmosphereThickness", 0.9f);
+            sky.SetFloat("_Exposure", 1.2f);
+
+            foreach (var material in new[] { marker, selected, sky })
             {
                 EditorUtility.SetDirty(material);
             }
@@ -120,34 +129,50 @@ namespace Reconnect.Client.Editor
 
             var cameraGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var camera = cameraGo.AddComponent<Camera>();
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color32(20, 18, 32, 255);
+            camera.clearFlags = CameraClearFlags.Skybox;
             var cameraController = cameraGo.AddComponent<CityCameraController>();
 
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.2f;
+            sun.intensity = 1.3f;
             sun.shadows = LightShadows.Soft;
-            sun.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            sun.transform.rotation = Quaternion.Euler(45f, -35f, 0f);
 
-            // Distant map edge fades into the background colour instead of ending abruptly.
+            RenderSettings.skybox = Load<Material>(SkyMaterialPath);
+            RenderSettings.sun = sun;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Skybox;
+            // Light haze towards the horizon, like looking over a real city.
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = camera.backgroundColor;
-            RenderSettings.fogStartDistance = 3500f;
-            RenderSettings.fogEndDistance = 7500f;
+            RenderSettings.fogColor = new Color(0.75f, 0.82f, 0.9f);
+            RenderSettings.fogStartDistance = 2500f;
+            RenderSettings.fogEndDistance = 30000f;
 
             // UI Toolkit + new Input System: an EventSystem with the Input System module routes pointer input.
-            var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
-            eventSystem.transform.SetAsLastSibling();
+            new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+
+            // Cesium: georeference (origin set at runtime from CitySettings) with swisstopo tilesets below it.
+            var georeference = new GameObject("CesiumGeoreference").AddComponent<CesiumGeoreference>();
+
+            var terrain = CreateTileset(georeference.transform, "Terrain (swissALTI3D)", TerrainUrl);
+            var aerial = terrain.gameObject.AddComponent<CesiumUrlTemplateRasterOverlay>();
+            ConfigureOverlay(aerial, AerialUrl, maximumLevel: 20);
+            var map = terrain.gameObject.AddComponent<CesiumUrlTemplateRasterOverlay>();
+            ConfigureOverlay(map, MapUrl, maximumLevel: 19);
+
+            var buildings = CreateTileset(georeference.transform, "Buildings (swissBUILDINGS3D)", BuildingsUrl);
 
             var cityGo = new GameObject("City");
             var cityView = cityGo.AddComponent<CityView>();
             Assign(cityView,
+                ("georeference", georeference),
+                ("terrain", terrain),
+                ("buildings", buildings),
+                ("aerialOverlay", aerial),
+                ("mapOverlay", map),
                 ("cameraController", cameraController),
-                ("tileMaterial", Load<Material>(TileMaterialPath)),
-                ("buildingMaterial", Load<Material>(BuildingMaterialPath)),
-                ("selectedBuildingMaterial", Load<Material>(SelectedBuildingMaterialPath)));
+                ("markerMaterial", Load<Material>(MarkerMaterialPath)),
+                ("selectedMarkerMaterial", Load<Material>(SelectedMarkerMaterialPath)));
 
             var app = new GameObject("App");
             var document = app.AddComponent<UIDocument>();
@@ -161,6 +186,28 @@ namespace Reconnect.Client.Editor
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
+        private static Cesium3DTileset CreateTileset(Transform parent, string name, string url)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var tileset = go.AddComponent<Cesium3DTileset>();
+            tileset.tilesetSource = CesiumDataSource.FromUrl;
+            tileset.url = url;
+            tileset.createPhysicsMeshes = true;   // camera collision, panning on roofs/hills, height sampling
+            tileset.showCreditsOnScreen = false;  // our UI shows "© swisstopo"
+            return tileset;
+        }
+
+        private static void ConfigureOverlay(CesiumUrlTemplateRasterOverlay overlay, string url, int maximumLevel)
+        {
+            overlay.templateUrl = url;
+            overlay.projection = CesiumUrlTemplateRasterOverlayProjection.WebMercator;
+            overlay.minimumLevel = 0;
+            overlay.maximumLevel = maximumLevel;
+            overlay.tileWidth = 256;
+            overlay.tileHeight = 256;
         }
 
         private static void ConfigurePlayer()

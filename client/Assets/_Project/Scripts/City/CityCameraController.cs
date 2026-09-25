@@ -3,12 +3,18 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
 namespace Reconnect.Client.City
 {
     /// <summary>
-    /// Map-style camera: drag to pan (mouse or one finger), scroll / pinch to zoom, tap to select.
-    /// Panning projects the pointer onto the ground plane, so the ground "sticks" to the finger.
+    /// Map-style orbit camera around a point on the ground (like Google Maps 3D):
+    /// <list type="bullet">
+    /// <item>Pan: left mouse / one finger – the grabbed ground point stays under the pointer.</item>
+    /// <item>Zoom: mouse wheel / pinch – towards the pointer.</item>
+    /// <item>Rotate + tilt: right mouse drag / two-finger twist and vertical two-finger drag.</item>
+    /// <item>Tap (short press without moving) raises <see cref="Tapped"/>.</item>
+    /// </list>
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public sealed class CityCameraController : MonoBehaviour
@@ -16,42 +22,59 @@ namespace Reconnect.Client.City
         private const float TapMaxMovePixels = 12f;
         private const float TapMaxSeconds = 0.35f;
         private const float ScrollZoomFactor = 0.0015f;
-
-        private static readonly Plane Ground = new(Vector3.up, Vector3.zero);
+        private const float RotateDegreesPerPixel = 0.25f;
+        private const float TiltDegreesPerPixel = 0.2f;
+        private const float MinClearance = 3f;   // metres between camera and roofs/ground
 
         private Camera _camera;
         private CitySettings _settings;
-        private Bounds _panBounds;
+        private CityView _city;
 
-        private Vector2 _pressPosition;
-        private float _pressTime;
+        private Vector3 _target;
+        private float _distance;
+        private float _pitch;
+        private float _yaw;
+
+        // Single pointer (mouse left / one finger)
         private bool _pressed;
         private bool _dragging;
-        private Vector3 _lastGroundPoint;
-        private float _lastPinchDistance;
+        private Vector2 _pressPosition;
+        private float _pressTime;
+        private Vector3 _grabbedPoint;
+        private bool _hasGrab;
 
-        /// <summary>Screen position of a tap (not a drag). Raised only when <see cref="IsPointerOverUi"/> is false.</summary>
+        // Two fingers
+        private float _lastPinchDistance;
+        private float _lastTwistAngle;
+        private float _lastTwoFingerY;
+
+        /// <summary>Screen position of a tap (not a drag).</summary>
         public event Action<Vector2> Tapped;
 
         /// <summary>Set by the UI so that touches on buttons/panels don't move the map.</summary>
         public Func<Vector2, bool> IsPointerOverUi { get; set; } = _ => false;
 
-        public void Configure(CitySettings settings, Bounds panBounds)
+        public Vector3 Target => _target;
+        public float Distance => _distance;
+        public float Pitch => _pitch;
+
+        public void Configure(CitySettings settings, CityView city)
         {
             _settings = settings;
-            _panBounds = panBounds;
+            _city = city;
             _camera = GetComponent<Camera>();
-            _camera.nearClipPlane = 1f;
-            _camera.farClipPlane = settings.maxCameraHeight * 6f;
+            _camera.nearClipPlane = 0.5f;
+            _camera.farClipPlane = 80000f;
         }
 
-        /// <summary>Places the camera so that it looks at <paramref name="groundTarget"/> from the given height.</summary>
-        public void LookAt(Vector3 groundTarget, float height)
+        /// <summary>Looks at <paramref name="target"/> from the given distance, pitch (down from horizontal) and yaw (0 = north).</summary>
+        public void Orbit(Vector3 target, float distance, float pitch, float yaw)
         {
-            var pitch = _settings.cameraPitch;
-            transform.rotation = Quaternion.Euler(pitch, 0f, 0f);
-            var distanceBack = height / Mathf.Tan(pitch * Mathf.Deg2Rad);
-            transform.position = new Vector3(groundTarget.x, height, groundTarget.z - distanceBack);
+            _target = target;
+            _distance = distance;
+            _pitch = pitch;
+            _yaw = yaw;
+            Apply();
         }
 
         private void OnEnable() => EnhancedTouchSupport.Enable();
@@ -69,31 +92,43 @@ namespace Reconnect.Client.City
                 return;
             }
 
-            if (Touch.activeTouches.Count >= 2)
+            var touches = Touch.activeTouches;
+            if (touches.Count >= 2)
             {
-                HandlePinch(Touch.activeTouches[0].screenPosition, Touch.activeTouches[1].screenPosition);
-                _pressed = false;   // a pinch is never a tap
+                HandleTwoFingers(touches[0], touches[1]);
+                _pressed = false;   // a two-finger gesture is never a tap
                 return;
             }
             _lastPinchDistance = 0f;
 
-            if (Touch.activeTouches.Count == 1)
+            if (touches.Count == 1)
             {
-                var touch = Touch.activeTouches[0];
-                HandlePointer(touch.screenPosition, touch.phase is UnityEngine.InputSystem.TouchPhase.Began,
-                    touch.phase is UnityEngine.InputSystem.TouchPhase.Ended or UnityEngine.InputSystem.TouchPhase.Canceled, true);
+                var touch = touches[0];
+                HandlePointer(touch.screenPosition, touch.phase == TouchPhase.Began,
+                    touch.phase is TouchPhase.Ended or TouchPhase.Canceled, held: true);
+                return;
             }
-            else if (Mouse.current != null)
-            {
-                var mouse = Mouse.current;
-                HandlePointer(mouse.position.ReadValue(), mouse.leftButton.wasPressedThisFrame,
-                    mouse.leftButton.wasReleasedThisFrame, mouse.leftButton.isPressed);
 
-                var scroll = mouse.scroll.ReadValue().y;
-                if (Mathf.Abs(scroll) > 0.01f && !IsPointerOverUi(mouse.position.ReadValue()))
-                {
-                    Zoom(1f - scroll * ScrollZoomFactor, mouse.position.ReadValue());
-                }
+            var mouse = Mouse.current;
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var position = mouse.position.ReadValue();
+            HandlePointer(position, mouse.leftButton.wasPressedThisFrame, mouse.leftButton.wasReleasedThisFrame,
+                mouse.leftButton.isPressed);
+
+            if (mouse.rightButton.isPressed && !mouse.rightButton.wasPressedThisFrame && !IsPointerOverUi(position))
+            {
+                var delta = mouse.delta.ReadValue();
+                Rotate(delta.x * RotateDegreesPerPixel, -delta.y * TiltDegreesPerPixel);
+            }
+
+            var scroll = mouse.scroll.ReadValue().y;
+            if (Mathf.Abs(scroll) > 0.01f && !IsPointerOverUi(position))
+            {
+                Zoom(1f - scroll * ScrollZoomFactor, position);
             }
         }
 
@@ -109,7 +144,7 @@ namespace Reconnect.Client.City
                 _dragging = false;
                 _pressPosition = position;
                 _pressTime = Time.unscaledTime;
-                TryGroundPoint(position, out _lastGroundPoint);
+                _hasGrab = TryGroundPoint(position, out _grabbedPoint);
                 return;
             }
 
@@ -132,58 +167,109 @@ namespace Reconnect.Client.City
             {
                 _dragging = true;
             }
-            if (_dragging && TryGroundPoint(position, out var groundPoint))
+
+            if (_dragging && _hasGrab && TryGroundPointOnPlane(position, _grabbedPoint.y, out var current))
             {
-                // Move the camera so that the ground point under the finger stays under the finger.
-                Translate(_lastGroundPoint - groundPoint);
-                TryGroundPoint(position, out _lastGroundPoint);
+                // Shift the camera so that the grabbed point is under the pointer again.
+                var delta = _grabbedPoint - current;
+                _target += new Vector3(delta.x, 0f, delta.z);
+                Apply(updateTargetHeight: false);
             }
         }
 
-        private void HandlePinch(Vector2 a, Vector2 b)
+        private void HandleTwoFingers(Touch a, Touch b)
         {
-            var distance = Vector2.Distance(a, b);
+            var pa = a.screenPosition;
+            var pb = b.screenPosition;
+            var distance = Vector2.Distance(pa, pb);
+            var angle = Mathf.Atan2(pb.y - pa.y, pb.x - pa.x) * Mathf.Rad2Deg;
+            var averageY = (pa.y + pb.y) / 2f;
+
             if (_lastPinchDistance > 0f && distance > 0f)
             {
-                Zoom(_lastPinchDistance / distance, (a + b) * 0.5f);
+                Zoom(_lastPinchDistance / distance, (pa + pb) / 2f);
+                Rotate(Mathf.DeltaAngle(_lastTwistAngle, angle), -(averageY - _lastTwoFingerY) * TiltDegreesPerPixel);
             }
+
             _lastPinchDistance = distance;
+            _lastTwistAngle = angle;
+            _lastTwoFingerY = averageY;
         }
 
-        /// <summary>factor &lt; 1 zooms in. Zooms towards the pointer position like map apps do.</summary>
-        private void Zoom(float factor, Vector2 towardsScreenPoint)
+        private void Rotate(float yawDelta, float pitchDelta)
         {
-            var height = transform.position.y;
-            var newHeight = Mathf.Clamp(height * factor, _settings.minCameraHeight, _settings.maxCameraHeight);
-            if (Mathf.Approximately(newHeight, height) || !TryGroundPoint(towardsScreenPoint, out var focus))
+            _yaw = Mathf.Repeat(_yaw + yawDelta, 360f);
+            _pitch = Mathf.Clamp(_pitch + pitchDelta, _settings.minPitch, _settings.maxPitch);
+            Apply();
+        }
+
+        /// <summary>factor &lt; 1 zooms in, towards the ground point under <paramref name="screenPoint"/>.</summary>
+        private void Zoom(float factor, Vector2 screenPoint)
+        {
+            var newDistance = Mathf.Clamp(_distance * factor, _settings.minDistance, _settings.maxDistance);
+            if (Mathf.Approximately(newDistance, _distance))
             {
                 return;
             }
 
-            // Move along the ray from the camera to the focus point, keeping the focus fixed on screen.
-            var t = 1f - newHeight / height;
-            Translate((focus - transform.position) * t, clampHeightOnly: true);
+            if (TryGroundPoint(screenPoint, out var focus))
+            {
+                var t = 1f - newDistance / _distance;
+                _target += new Vector3(focus.x - _target.x, 0f, focus.z - _target.z) * t;
+            }
+            _distance = newDistance;
+            Apply();
         }
 
-        private void Translate(Vector3 delta, bool clampHeightOnly = false)
+        private void Apply(bool updateTargetHeight = true)
         {
-            var position = transform.position + delta;
-            if (!clampHeightOnly)
+            // Stay within the city area.
+            var flat = new Vector2(_target.x, _target.z);
+            if (flat.magnitude > _settings.panRadius)
             {
-                position.y = transform.position.y;
+                flat = flat.normalized * _settings.panRadius;
+                _target = new Vector3(flat.x, _target.y, flat.y);
             }
 
-            // Keep the ground point in the centre of the screen inside the map area.
-            var distanceBack = position.y / Mathf.Tan(_settings.cameraPitch * Mathf.Deg2Rad);
-            var center = new Vector3(position.x, 0f, position.z + distanceBack);
-            var clamped = _panBounds.ClosestPoint(center);
-            transform.position = new Vector3(clamped.x, position.y, clamped.z - distanceBack);
+            // Keep the orbit point on the terrain/roofs (Zürich is not flat: HB 408 m, Zürichberg 680 m).
+            if (updateTargetHeight && _city != null && _city.SurfaceHeightAt(_target) is { } surface)
+            {
+                _target.y = surface;
+            }
+
+            var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+            var position = _target - rotation * Vector3.forward * _distance;
+            transform.SetPositionAndRotation(position, rotation);
+
+            // Never dive into a roof or hill: lift the camera and keep looking at the target.
+            if (_city != null && _city.SurfaceHeightAt(position) is { } below && position.y < below + MinClearance)
+            {
+                transform.position = new Vector3(position.x, below + MinClearance, position.z);
+                transform.LookAt(_target);
+            }
         }
 
         private bool TryGroundPoint(Vector2 screenPosition, out Vector3 point)
         {
             var ray = _camera.ScreenPointToRay(screenPosition);
-            if (Ground.Raycast(ray, out var enter))
+            var hits = Physics.RaycastAll(ray, _camera.farClipPlane, ~0, QueryTriggerInteraction.Ignore);
+            Array.Sort(hits, (x, y) => x.distance.CompareTo(y.distance));   // RaycastAll is unordered
+            foreach (var hit in hits)
+            {
+                if (hit.collider.GetComponentInParent<CityMarker>() == null)
+                {
+                    point = hit.point;
+                    return true;
+                }
+            }
+            // Tiles not loaded yet: fall back to a plane at the target's height.
+            return TryGroundPointOnPlane(screenPosition, _target.y, out point);
+        }
+
+        private bool TryGroundPointOnPlane(Vector2 screenPosition, float height, out Vector3 point)
+        {
+            var ray = _camera.ScreenPointToRay(screenPosition);
+            if (new Plane(Vector3.up, new Vector3(0f, height, 0f)).Raycast(ray, out var enter))
             {
                 point = ray.GetPoint(enter);
                 return true;

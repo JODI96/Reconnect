@@ -3,6 +3,7 @@
     "rootNamespace": "Reconnect.Client.PlayModeTests",
     "references": [
         "Reconnect.Client",
+        "CesiumForUnity",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -1,138 +1,184 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CesiumForUnity;
 using Reconnect.Contracts.Buildings;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Reconnect.Client.City
 {
     /// <summary>
-    /// The 3D city in Main.unity: streamed map tiles on the ground (<see cref="TiledGround"/>) plus one
-    /// placeholder block per building. Pure presentation – data comes from the CityScreen, which also
-    /// owns the UI (labels, panel).
+    /// The 3D city in Main.unity, streamed by Cesium for Unity from swisstopo (OGD, © swisstopo):
+    /// terrain (swissALTI3D) with SWISSIMAGE aerial / national map draped on it, and every building
+    /// from swissBUILDINGS3D. Our buildings with rooms get a tappable <see cref="CityMarker"/>.
+    /// Pure presentation – data comes from the CityScreen, which also owns the UI (labels, panel).
     /// </summary>
     public sealed class CityView : MonoBehaviour
     {
+        [SerializeField] private CesiumGeoreference georeference;
+        [SerializeField] private Cesium3DTileset terrain;
+        [SerializeField] private Cesium3DTileset buildings;
+        [SerializeField] private CesiumRasterOverlay aerialOverlay;
+        [SerializeField] private CesiumRasterOverlay mapOverlay;
         [SerializeField] private CityCameraController cameraController;
-        [SerializeField] private Material tileMaterial;
-        [SerializeField] private Material buildingMaterial;
-        [SerializeField] private Material selectedBuildingMaterial;
+        [SerializeField] private Material markerMaterial;
+        [SerializeField] private Material selectedMarkerMaterial;
 
-        private readonly List<BuildingMarker> _markers = new();
+        private readonly List<CityMarker> _markers = new();
         private CitySettings _settings;
-        private GeoProjection _projection;
-        private TiledGround _ground;
-        private Transform _tileRoot;
-        private Transform _buildingRoot;
-        private BuildingMarker _selected;
-        private bool _visible;
+        private Transform _markerRoot;
+        private CityMarker _selected;
         private bool _cameraPlaced;
+        private int _markerGeneration;
 
         public event Action<BuildingDto> BuildingTapped;
 
         public Camera Camera => cameraController.GetComponent<Camera>();
         public CityCameraController CameraController => cameraController;
-        public GeoProjection Projection => _projection;
-        public IReadOnlyList<BuildingMarker> Markers => _markers;
-        public TiledGround Ground => _ground;
-        public MapLayer Layer => _ground.Layer;
+        public IReadOnlyList<CityMarker> Markers => _markers;
+        public MapLayer Layer { get; private set; }
 
-        /// <summary>Number of wanted tiles still loading – used by tests and the loading indicator.</summary>
-        public int PendingTiles => _ground.PendingTiles;
+        /// <summary>0–100: how much of what the camera needs is loaded (terrain + buildings).</summary>
+        public float LoadProgress => Mathf.Min(terrain.ComputeLoadProgress(), buildings.ComputeLoadProgress());
 
-        public void Initialize(CitySettings settings, MapTileLoader tileLoader)
+        public void Initialize(CitySettings settings)
         {
             _settings = settings;
-            _projection = new GeoProjection(settings.originLatitude, settings.originLongitude);
+            georeference.SetOriginLongitudeLatitudeHeight(settings.originLongitude, settings.originLatitude, settings.originHeight);
+            terrain.maximumScreenSpaceError = settings.terrainScreenSpaceError;
+            buildings.maximumScreenSpaceError = settings.buildingsScreenSpaceError;
+            aerialOverlay.maximumScreenSpaceError = settings.imageryScreenSpaceError;
+            mapOverlay.maximumScreenSpaceError = settings.imageryScreenSpaceError;
 
-            _tileRoot = new GameObject("Tiles").transform;
-            _tileRoot.SetParent(transform, false);
-            _buildingRoot = new GameObject("Buildings").transform;
-            _buildingRoot.SetParent(transform, false);
-            _ground = new TiledGround(_tileRoot, tileMaterial, tileLoader, _projection, settings);
+            _markerRoot = new GameObject("Markers").transform;
+            _markerRoot.SetParent(transform, false);
 
+            cameraController.Configure(settings, this);
             cameraController.Tapped += OnTapped;
+            SetLayer(settings.defaultLayer);
             SetVisible(false);
         }
 
         public void SetVisible(bool visible)
         {
-            _visible = visible;
-            _tileRoot.gameObject.SetActive(visible);
-            _buildingRoot.gameObject.SetActive(visible);
+            georeference.gameObject.SetActive(visible);   // also pauses tile streaming
+            _markerRoot.gameObject.SetActive(visible);
             cameraController.enabled = visible;
-        }
-
-        /// <summary>Rebuilds the buildings and the covered map area. Keeps the camera if already placed.</summary>
-        public void ShowBuildings(IReadOnlyList<BuildingDto> buildings)
-        {
-            ClearBuildings();
-            foreach (var building in buildings)
-            {
-                _markers.Add(CreateMarker(building));
-            }
-
-            var area = ComputeMapBounds(buildings);
-            _ground.SetArea(area, _projection);
-            cameraController.Configure(_settings, area);
-            if (!_cameraPlaced)
+            if (visible && !_cameraPlaced)
             {
                 // Start above the world origin (Zürich HB by default).
-                cameraController.LookAt(Vector3.zero, _settings.startCameraHeight);
+                cameraController.Orbit(Vector3.zero, _settings.startDistance, _settings.startPitch, yaw: 0f);
                 _cameraPlaced = true;
             }
         }
 
-        public void SetLayer(MapLayer layer) => _ground.SetLayer(layer);
-
-        public void Select(BuildingDto building)
+        public void SetLayer(MapLayer layer)
         {
-            if (_selected != null)
+            Layer = layer;
+            aerialOverlay.enabled = layer == MapLayer.Aerial;
+            mapOverlay.enabled = layer == MapLayer.Map;
+        }
+
+        /// <summary>WGS84 → Unity world position (metres, X east, Y up, Z north at the origin).</summary>
+        public Vector3 ToUnity(double latitude, double longitude, double ellipsoidHeight)
+        {
+            var ecef = georeference.ellipsoid.LongitudeLatitudeHeightToCenteredFixed(new double3(longitude, latitude, ellipsoidHeight));
+            var unity = georeference.TransformEarthCenteredEarthFixedPositionToUnity(ecef);
+            return new Vector3((float)unity.x, (float)unity.y, (float)unity.z);
+        }
+
+        /// <summary>Unity world position → (latitude, longitude, ellipsoid height).</summary>
+        public (double Latitude, double Longitude, double Height) ToGeo(Vector3 position)
+        {
+            var ecef = georeference.TransformUnityPositionToEarthCenteredEarthFixed(new double3(position.x, position.y, position.z));
+            var llh = georeference.ellipsoid.CenteredFixedToLongitudeLatitudeHeight(ecef);
+            return (llh.y, llh.x, llh.z);
+        }
+
+        /// <summary>Places a marker per building, first at origin height, then on the real roof once sampled.</summary>
+        public async void ShowBuildings(IReadOnlyList<BuildingDto> list)
+        {
+            ClearMarkers();
+            var generation = ++_markerGeneration;
+            foreach (var building in list)
             {
-                _selected.Renderer.sharedMaterial = buildingMaterial;
+                var marker = CityMarker.Create(_markerRoot, building, markerMaterial, _settings.markerHeight);
+                marker.transform.position = ToUnity(building.Latitude, building.Longitude, _settings.originHeight);
+                _markers.Add(marker);
             }
-            _selected = building == null ? null : _markers.FirstOrDefault(m => m.Building.Id == building.Id);
-            if (_selected != null)
+
+            try
             {
-                _selected.Renderer.sharedMaterial = selectedBuildingMaterial;
+                await PlaceOnRoofsAsync(generation);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[Reconnect] Could not sample building heights: {ex.Message}");
             }
         }
 
-        // LateUpdate: the camera has already moved this frame.
-        private void LateUpdate()
+        public void Select(BuildingDto building)
         {
-            if (_visible)
+            _selected?.SetMaterial(markerMaterial);
+            _selected = building == null ? null : _markers.FirstOrDefault(m => m.Building.Id == building.Id);
+            _selected?.SetMaterial(selectedMarkerMaterial);
+        }
+
+        /// <summary>Ground/roof height under a Unity position, from the loaded physics meshes (null if not loaded).</summary>
+        public float? SurfaceHeightAt(Vector3 position)
+        {
+            var from = new Vector3(position.x, position.y + 3000f, position.z);
+            return Physics.Raycast(from, Vector3.down, out var hit, 6000f, ~0, QueryTriggerInteraction.Ignore)
+                   && hit.collider.GetComponentInParent<CityMarker>() == null
+                ? hit.point.y
+                : null;
+        }
+
+        private async System.Threading.Tasks.Task PlaceOnRoofsAsync(int generation)
+        {
+            if (_markers.Count == 0)
             {
-                _ground?.Update(Camera);
+                return;
+            }
+
+            var positions = _markers
+                .Select(m => new double3(m.Building.Longitude, m.Building.Latitude, _settings.originHeight))
+                .ToArray();
+
+            // Roof height from swissBUILDINGS3D; where there is no building, fall back to the terrain.
+            var roofs = await buildings.SampleHeightMostDetailed(positions);
+            var ground = await terrain.SampleHeightMostDetailed(positions);
+            if (generation != _markerGeneration || this == null)
+            {
+                return;   // markers were replaced meanwhile
+            }
+
+            for (var i = 0; i < _markers.Count; i++)
+            {
+                var height = roofs.sampleSuccess[i] ? roofs.longitudeLatitudeHeightPositions[i].z
+                    : ground.sampleSuccess[i] ? ground.longitudeLatitudeHeightPositions[i].z
+                    : _settings.originHeight;
+                var building = _markers[i].Building;
+                _markers[i].transform.position = ToUnity(building.Latitude, building.Longitude, height);
             }
         }
 
         private void OnTapped(Vector2 screenPosition)
         {
             var ray = Camera.ScreenPointToRay(screenPosition);
-            if (Physics.Raycast(ray, out var hit, Camera.farClipPlane) && hit.collider.TryGetComponent<BuildingMarker>(out var marker))
+            // Markers stand out above the roofs, so check them first, ignoring the city geometry.
+            var hit = Physics.RaycastAll(ray, Camera.farClipPlane)
+                .OrderBy(h => h.distance)
+                .Select(h => h.collider.GetComponentInParent<CityMarker>())
+                .FirstOrDefault(m => m != null);
+            if (hit != null)
             {
-                BuildingTapped?.Invoke(marker.Building);
+                BuildingTapped?.Invoke(hit.Building);
             }
         }
 
-        private BuildingMarker CreateMarker(BuildingDto building)
-        {
-            var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            block.name = building.Name;
-            block.transform.SetParent(_buildingRoot, false);
-
-            var ground = _projection.ToWorld(building.Latitude, building.Longitude);
-            block.transform.localPosition = ground + Vector3.up * (_settings.buildingHeight / 2f);
-            block.transform.localScale = new Vector3(_settings.buildingSize, _settings.buildingHeight, _settings.buildingSize);
-
-            var marker = block.AddComponent<BuildingMarker>();
-            marker.Initialize(building, block.GetComponent<MeshRenderer>(), _settings.buildingHeight);
-            marker.Renderer.sharedMaterial = buildingMaterial;
-            return marker;
-        }
-
-        private void ClearBuildings()
+        private void ClearMarkers()
         {
             foreach (var marker in _markers)
             {
@@ -142,24 +188,8 @@ namespace Reconnect.Client.City
             _selected = null;
         }
 
-        private Bounds ComputeMapBounds(IReadOnlyList<BuildingDto> buildings)
-        {
-            var bounds = new Bounds(Vector3.zero, Vector3.zero);
-            foreach (var building in buildings)
-            {
-                bounds.Encapsulate(_projection.ToWorld(building.Latitude, building.Longitude));
-            }
-            var margin = _settings.tileMarginMeters * 2f;
-            bounds.Expand(new Vector3(margin, 0f, margin));
-
-            // The camera looks north, so the far (northern) edge is visible much earlier – extend it.
-            bounds.max += new Vector3(0f, 0f, _settings.tileMarginMeters * 2f);
-            return bounds;
-        }
-
         private void OnDestroy()
         {
-            _ground?.Dispose();
             if (cameraController != null)
             {
                 cameraController.Tapped -= OnTapped;

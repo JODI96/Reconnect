@@ -14,16 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.City.CitySettings
   originLatitude: 47.37785
   originLongitude: 8.54018
+  originHeight: 408
   loadRadiusMeters: 3000
-  buildingHeight: 35
-  buildingSize: 45
-  baseZoom: 14
-  maxZoom: 20
-  tileDetail: 1
-  maxLoadedTiles: 350
-  tileMarginMeters: 900
+  markerHeight: 40
+  buildingsScreenSpaceError: 8
+  terrainScreenSpaceError: 8
+  imageryScreenSpaceError: 1
   defaultLayer: 0
-  minCameraHeight: 25
-  maxCameraHeight: 3500
-  startCameraHeight: 2400
-  cameraPitch: 60
+  minDistance: 20
+  maxDistance: 8000
+  startDistance: 2600
+  startPitch: 60
+  minPitch: 12
+  maxPitch: 89
+  panRadius: 6000

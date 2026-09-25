@@ -2,7 +2,9 @@
     "name": "Reconnect.Client",
     "rootNamespace": "Reconnect.Client",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "CesiumForUnity",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

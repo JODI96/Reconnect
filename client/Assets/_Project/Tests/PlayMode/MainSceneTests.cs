@@ -32,11 +32,12 @@ namespace Reconnect.Client.PlayModeTests
         }
 
         /// <summary>
-        /// Loads the real swisstopo tiles around Zürich HB, places the building blocks and renders
-        /// the camera into client/Logs/city-preview.png. Needs internet; skipped otherwise.
+        /// Streams the real swisstopo 3D city (terrain + aerial + swissBUILDINGS3D) via Cesium and
+        /// renders three views into client/Logs: city-preview.png (overview), city-street.png
+        /// (Paradeplatz, oblique) and city-closeup.png (Grossmünster). Needs internet.
         /// </summary>
         [UnityTest, Category("Integration")]
-        public IEnumerator City_renders_aerial_tiles_and_buildings()
+        public IEnumerator City_streams_swisstopo_3d_and_renders_views()
         {
             var city = UnityEngine.Object.FindFirstObjectByType<CityView>();
             Assert.IsNotNull(city, "CityView in scene");
@@ -55,36 +56,46 @@ namespace Reconnect.Client.PlayModeTests
             });
             city.SetVisible(true);
 
-            yield return WaitForTiles(city);
-            if (city.Ground.VisibleTiles == 0)
-            {
-                Assert.Ignore("No map tiles loaded – offline?");
-            }
-
+            yield return WaitForCity(city);
             Assert.AreEqual(4, city.Markers.Count);
-            Assert.Greater(city.Ground.VisibleTiles, 10, "ground covered with tiles");
-            var overview = SaveCameraImage(city.Camera, "city-preview.png");
-            Debug.Log($"[Reconnect] City preview: {overview} ({city.Ground.VisibleTiles} tiles, max zoom {city.Ground.MaxVisibleZoom})");
+            Save(city, "city-preview.png");
 
-            // Street level above Paradeplatz: the LOD system must stream the 10 cm/px tiles.
-            var paradeplatz = city.Projection.ToWorld(47.36970, 8.53920);
-            city.CameraController.LookAt(paradeplatz, 45f);
-            yield return WaitForTiles(city);
+            // Oblique view over Paradeplatz towards the lake.
+            var paradeplatz = city.ToUnity(47.36970, 8.53920, 409);
+            city.CameraController.Orbit(paradeplatz, distance: 450f, pitch: 32f, yaw: 160f);
+            yield return WaitForCity(city);
+            Save(city, "city-street.png");
 
-            Assert.AreEqual(20, city.Ground.MaxVisibleZoom, "sharpest swisstopo tiles at street level");
-            var street = SaveCameraImage(city.Camera, "city-street.png");
-            Debug.Log($"[Reconnect] Street preview: {street} ({city.Ground.VisibleTiles} tiles, loaded {city.Ground.LoadedTiles})");
+            // Close-up: Grossmünster from the Limmat.
+            var grossmuenster = city.ToUnity(47.37011, 8.54411, 407);
+            city.CameraController.Orbit(grossmuenster, distance: 160f, pitch: 18f, yaw: 250f);
+            yield return WaitForCity(city);
+            Save(city, "city-closeup.png");
+
+            foreach (var marker in city.Markers)
+            {
+                Debug.Log($"[Reconnect] Marker {marker.Building.Name} at y = {marker.transform.position.y:0.0} m");
+            }
 
             city.Camera.targetTexture = null;
             target.Release();
         }
 
-        private static IEnumerator WaitForTiles(CityView city)
+        private static IEnumerator WaitForCity(CityView city)
         {
-            yield return null;   // let the LOD selection run for the new camera position
+            yield return null;   // let Cesium select tiles for the new camera position
             yield return null;
-            yield return WaitFor(() => city.PendingTiles == 0, 120f);
-            yield return null;
+            yield return WaitFor(() => city.LoadProgress >= 99.9f, 240f);
+            for (var i = 0; i < 10; i++)
+            {
+                yield return null;   // a few frames for raster overlays to be applied
+            }
+        }
+
+        private static void Save(CityView city, string fileName)
+        {
+            var path = SaveCameraImage(city.Camera, fileName);
+            Debug.Log($"[Reconnect] City view: {path} (camera y = {city.Camera.transform.position.y:0} m)");
         }
 
         private static VisualElement Root() =>

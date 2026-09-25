@@ -35,7 +35,7 @@ namespace Reconnect.Client.Core
             api.Tokens = _auth;
             _rooms = new RoomService(api);
             _buildings = new BuildingService(api);
-            city.Initialize(citySettings, new MapTileLoader());
+            city.Initialize(citySettings);
 
             _navigator = new ScreenNavigator(GetComponent<UIDocument>().rootVisualElement, ui.theme);
             _auth.SessionChanged += ShowStartScreen;

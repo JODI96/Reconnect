@@ -153,7 +153,8 @@ namespace Reconnect.Client.UI.Screens
                 label.EnableInClassList("building-label--selected", _selected?.Id == marker.Building.Id);
             }
 
-            _tileStatus.text = _city.PendingTiles > 0 ? $"Lade Karte … {_city.PendingTiles}" : "";
+            var progress = _city.LoadProgress;
+            _tileStatus.text = progress < 99.5f ? $"Lade 3D-Stadt … {progress:0}%" : "";
         }
 
         private void Select(BuildingDto building)
