@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Reconnect.Client.Networking.Realtime;
+using Reconnect.Client.City;
 using Reconnect.Client.Rooms;
 using Reconnect.Client.UI.Games;
 using Reconnect.Contracts.Rooms;
@@ -20,6 +21,7 @@ namespace Reconnect.Client.UI.Screens
 
         private readonly VisualTreeAsset _template;
         private readonly RoomView _room;
+        private readonly CityView _city;
         private readonly IRoomSession _session;
         private readonly Guid _roomId;
         private readonly Guid _localUserId;
@@ -33,10 +35,12 @@ namespace Reconnect.Client.UI.Screens
         private TicTacToePanel _ticTacToe;
         private QuizPanel _quiz;
 
-        public RoomScreen(VisualTreeAsset template, RoomView room, IRoomSession session, Guid roomId, Guid localUserId, Action leave)
+        public RoomScreen(VisualTreeAsset template, RoomView room, CityView city, IRoomSession session, Guid roomId,
+            Guid localUserId, Action leave)
         {
             _template = template;
             _room = room;
+            _city = city;
             _session = session;
             _roomId = roomId;
             _localUserId = localUserId;
@@ -103,6 +107,7 @@ namespace Reconnect.Client.UI.Screens
             _room.StationTapped -= OnStationTapped;
             _room.IsPointerOverUi = _ => false;
             _room.Hide();
+            _city.SetVisible(false);
             _ = _session.LeaveAsync();
         }
 
@@ -114,7 +119,18 @@ namespace Reconnect.Client.UI.Screens
                 var snapshot = await _session.JoinAsync(_roomId, Lifetime);
                 Q<Label>("room-name").text = snapshot.Room.Name;
                 Q<Label>("room-owner").text = "von " + snapshot.Room.OwnerDisplayName;
-                _room.Show(snapshot, _localUserId);
+                // Roof terraces sit on the real building, with the 3D city around them.
+                Vector3? anchor = null;
+                if (RoomTheme.For(snapshot.Room.Theme).Outdoor)
+                {
+                    _city.ShowAsBackdrop();
+                    anchor = await _city.RoofAnchorAsync(snapshot.Room.BuildingId, snapshot.Width + 1f, snapshot.Depth + 1f);
+                    if (anchor == null)
+                    {
+                        _city.SetVisible(false);   // building unknown: terrace in the sky
+                    }
+                }
+                _room.Show(snapshot, _localUserId, anchor);
                 _ticTacToe.Render(snapshot.TicTacToe);
                 _quiz.Render(snapshot.Quiz);
                 foreach (var player in snapshot.Players)

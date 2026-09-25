@@ -8,38 +8,69 @@ using UnityEngine.InputSystem;
 namespace Reconnect.Client.Rooms
 {
     /// <summary>
-    /// The 3D room in Main.unity: themed floor and back walls, furniture from the <see cref="ItemCatalog"/>,
-    /// interactive game stations, lamps with real light, and one <see cref="AvatarView"/> per player –
-    /// seen from a fixed isometric camera (Habbo style). Furniture blocks tiles; avatars walk around it.
-    /// Pure presentation: RoomScreen feeds it with session events and handles the UI.
+    /// The 3D room in Main.unity. Builds the floor (procedural texture per theme), walls from Kenney
+    /// pieces with windows and a door – or, for outdoor themes, a roof terrace with glass railing that
+    /// can sit on the real building in the 3D city – furniture from the <see cref="ItemCatalog"/>,
+    /// <see cref="CustomItems"/>, stacked small items, game stations, lights and one
+    /// <see cref="AvatarView"/> per player. Camera: Habbo-like angle with perspective, drag to pan,
+    /// pinch/scroll to zoom, follows your own avatar. Presentation only; RoomScreen drives it.
     /// </summary>
     public sealed class RoomView : MonoBehaviour
     {
         public const float TileSize = 1f;
         public const string TicTacToeItem = "game-tictactoe";
         public const string QuizItem = "game-quiz";
-        private const float WallHeight = 2.6f;
+
+        private const float WallHeight = 2.57f;          // Kenney wall piece at scale 0.2
+        private const float WallPieceWidth = 2f;
         private const float TapMaxMovePixels = 12f;
+        private const float CameraPitch = 38f;
+        private const float CameraFieldOfView = 24f;
+        private const float MinViewWidth = 5f;
+        private const float StartViewWidthMax = 15f;
+        private const int MaxLampLights = 10;
+
+        private static readonly string[] StackableItems =
+        {
+            "laptop", "books", "computerScreen", "computerKeyboard", "computerMouse", "kitchenCoffeeMachine",
+            "kitchenBlender", "kitchenMicrowave", "toaster", "lampSquareTable", "lampRoundTable", "plantSmall",
+            "radio", "televisionModern", "televisionVintage", "speakerSmall", "pillow", "cardboardBox",
+        };
 
         [SerializeField] private Camera roomCamera;
         [SerializeField] private Material floorMaterial;
-        [SerializeField] private Material floorAltMaterial;
         [SerializeField] private Material wallMaterial;
         [SerializeField] private Material itemMaterial;
         [SerializeField] private Material avatarMaterial;
+        [SerializeField] private Material glassMaterial;
+        [SerializeField] private Material waterMaterial;
         [SerializeField] private ItemCatalog itemCatalog;
         [SerializeField] private AvatarCatalog avatarCatalog;
 
         private readonly Dictionary<Guid, AvatarView> _avatars = new();
         private readonly List<GameStation> _stations = new();
         private readonly HashSet<Vector2Int> _blocked = new();
+        private readonly List<Bounds> _surfaces = new();
         private Transform _content;
         private CameraState _savedCamera;
         private RoomTheme _theme;
-        private Vector2 _pressPosition;
-        private bool _pressed;
+        private CustomItems _custom;
+        private Guid _localUserId;
         private int _width;
         private int _depth;
+        private int _lampLights;
+
+        // Camera rig (local room coordinates).
+        private Vector3 _focus;
+        private float _viewWidth;
+        private bool _follow = true;
+
+        // Pointer state.
+        private Vector2 _pressPosition;
+        private Vector2 _lastPointer;
+        private bool _pressed;
+        private bool _dragging;
+        private float _lastPinchDistance;
 
         /// <summary>Tapped floor tile (only when <see cref="IsPointerOverUi"/> is false).</summary>
         public event Action<Vector2Int> TileTapped;
@@ -52,23 +83,39 @@ namespace Reconnect.Client.Rooms
         public IReadOnlyCollection<AvatarView> Avatars => _avatars.Values;
         public IReadOnlyList<GameStation> Stations => _stations;
         public RoomPathfinder Pathfinder { get; private set; }
+        public bool IsOutdoor => _theme.Outdoor;
 
         public static Vector3 TileCenter(Vector2Int tile) => new((tile.x + 0.5f) * TileSize, 0f, (tile.y + 0.5f) * TileSize);
 
         public static Vector2Int WorldToTile(Vector3 local) =>
             new(Mathf.FloorToInt(local.x / TileSize), Mathf.FloorToInt(local.z / TileSize));
 
-        public void Show(RoomSnapshotDto snapshot, Guid localUserId)
+        /// <param name="groundAnchor">World position the room's centre should stand on (e.g. a real roof); null = default place.</param>
+        public void Show(RoomSnapshotDto snapshot, Guid localUserId, Vector3? groundAnchor = null)
         {
             Hide();
+            _localUserId = localUserId;
             _width = snapshot.Width;
             _depth = snapshot.Depth;
             _theme = RoomTheme.For(snapshot.Room.Theme);
+            _custom = new CustomItems(wallMaterial, waterMaterial, _theme);
+            _lampLights = 0;
+
+            transform.position = groundAnchor.HasValue
+                ? groundAnchor.Value - new Vector3(_width / 2f, 0f, _depth / 2f)
+                : new Vector3(0f, -2000f, 0f);   // far away from the city origin when shown on its own
             _content = new GameObject("Room " + snapshot.Room.Name).transform;
             _content.SetParent(transform, false);
 
             BuildFloor();
-            BuildWalls();
+            if (_theme.Outdoor)
+            {
+                BuildRailing();
+            }
+            else
+            {
+                BuildWalls();
+            }
             BuildFurniture(snapshot.Room.Layout);
             BuildLighting();
             Pathfinder = new RoomPathfinder(_width, _depth, _blocked);
@@ -79,7 +126,7 @@ namespace Reconnect.Client.Rooms
             }
 
             _savedCamera = CameraState.Capture(roomCamera);
-            PlaceCamera();
+            SetupCamera();
             enabled = true;
         }
 
@@ -93,6 +140,7 @@ namespace Reconnect.Client.Rooms
             _avatars.Clear();
             _stations.Clear();
             _blocked.Clear();
+            _surfaces.Clear();
             _savedCamera?.Restore(roomCamera);
             _savedCamera = null;
             enabled = false;
@@ -125,16 +173,53 @@ namespace Reconnect.Client.Rooms
             var from = avatar.NextTile;
             var goal = Pathfinder.NearestWalkable(new Vector2Int(tile.X, tile.Z), from);
             avatar.WalkAlong(Pathfinder.FindPath(from, goal));
+            if (userId == _localUserId)
+            {
+                _follow = true;   // walking re-centres the camera on me
+            }
         }
 
         public AvatarView Avatar(Guid userId) => _avatars.TryGetValue(userId, out var avatar) ? avatar : null;
+
+        /// <summary>Zooms out so the whole room is visible (used for previews/screenshots).</summary>
+        public void FrameWholeRoom()
+        {
+            _follow = false;
+            _focus = new Vector3(_width / 2f, 0f, _depth / 2f);
+            _viewWidth = MaxViewWidth;
+            ApplyCamera();
+        }
+
+        private float MaxViewWidth => (_width + _depth) * 0.7071f * 1.05f;
 
         private void Awake() => enabled = false;
 
         private void Update()
         {
+            HandlePinch();
+            HandlePointer();
+
+            var scroll = Mouse.current?.scroll.ReadValue().y ?? 0f;
+            if (Mathf.Abs(scroll) > 0.01f && !IsPointerOverUi(Mouse.current.position.ReadValue()))
+            {
+                Zoom(1f - scroll * 0.0012f);
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (_follow && Avatar(_localUserId) is { } me)
+            {
+                var target = me.transform.localPosition;
+                _focus = Vector3.Lerp(_focus, new Vector3(target.x, 0f, target.z), 1f - Mathf.Exp(-3f * Time.deltaTime));
+            }
+            ApplyCamera();
+        }
+
+        private void HandlePointer()
+        {
             var pointer = Pointer.current;
-            if (pointer == null)
+            if (pointer == null || _lastPinchDistance > 0f)
             {
                 return;
             }
@@ -143,113 +228,305 @@ namespace Reconnect.Client.Rooms
             if (pointer.press.wasPressedThisFrame)
             {
                 _pressed = !IsPointerOverUi(position);
-                _pressPosition = position;
+                _dragging = false;
+                _pressPosition = _lastPointer = position;
+                return;
             }
-            else if (pointer.press.wasReleasedThisFrame && _pressed)
+            if (!_pressed)
             {
-                _pressed = false;
-                if ((position - _pressPosition).magnitude > TapMaxMovePixels)
-                {
-                    return;
-                }
+                return;
+            }
 
-                var ray = roomCamera.ScreenPointToRay(position);
-                if (Physics.Raycast(ray, out var hit, 200f) && hit.collider.GetComponentInParent<GameStation>() is { } station)
+            if (pointer.press.isPressed)
+            {
+                if (!_dragging && (position - _pressPosition).magnitude > TapMaxMovePixels)
                 {
-                    StationTapped?.Invoke(station);
+                    _dragging = true;
+                    _follow = false;
                 }
-                else if (TryTileAt(ray, out var tile))
+                if (_dragging && TryFloorPoint(_lastPointer, out var from) && TryFloorPoint(position, out var to))
                 {
-                    TileTapped?.Invoke(tile);
+                    _focus += from - to;
+                    ClampFocus();
                 }
+                _lastPointer = position;
+                return;
+            }
+
+            // Released.
+            _pressed = false;
+            if (_dragging)
+            {
+                return;
+            }
+            var ray = roomCamera.ScreenPointToRay(position);
+            if (Physics.Raycast(ray, out var hit, 500f) && hit.collider.GetComponentInParent<GameStation>() is { } station)
+            {
+                StationTapped?.Invoke(station);
+            }
+            else if (TryTileAt(position, out var tile))
+            {
+                TileTapped?.Invoke(tile);
             }
         }
 
-        private bool TryTileAt(Ray ray, out Vector2Int tile)
+        private void HandlePinch()
         {
-            var floor = new Plane(transform.up, transform.position);
-            if (floor.Raycast(ray, out var enter))
+            var touches = Touchscreen.current?.touches;
+            if (touches == null || !touches.Value[0].isInProgress || !touches.Value[1].isInProgress)
             {
-                tile = WorldToTile(transform.InverseTransformPoint(ray.GetPoint(enter)));
+                _lastPinchDistance = 0f;
+                return;
+            }
+            var distance = Vector2.Distance(touches.Value[0].position.ReadValue(), touches.Value[1].position.ReadValue());
+            if (_lastPinchDistance > 0f && distance > 0f)
+            {
+                Zoom(_lastPinchDistance / distance);
+            }
+            _lastPinchDistance = distance;
+            _pressed = false;
+        }
+
+        private void Zoom(float factor)
+        {
+            _viewWidth = Mathf.Clamp(_viewWidth * factor, MinViewWidth, MaxViewWidth);
+        }
+
+        private bool TryTileAt(Vector2 screenPosition, out Vector2Int tile)
+        {
+            if (TryFloorPoint(screenPosition, out var local))
+            {
+                tile = WorldToTile(local);
                 return tile.x >= 0 && tile.x < _width && tile.y >= 0 && tile.y < _depth;
             }
             tile = default;
             return false;
         }
 
+        /// <summary>Screen point → point on the floor in local room coordinates.</summary>
+        private bool TryFloorPoint(Vector2 screenPosition, out Vector3 local)
+        {
+            var ray = roomCamera.ScreenPointToRay(screenPosition);
+            if (new Plane(transform.up, transform.position).Raycast(ray, out var enter))
+            {
+                local = transform.InverseTransformPoint(ray.GetPoint(enter));
+                return true;
+            }
+            local = default;
+            return false;
+        }
+
+        // ---------- Floor, walls, railing ----------
+
         private void BuildFloor()
         {
-            var floorA = Tinted(floorMaterial, _theme.FloorA);
-            var floorB = Tinted(floorAltMaterial, _theme.FloorB);
-            for (var x = 0; x < _width; x++)
-            for (var z = 0; z < _depth; z++)
-            {
-                var tile = Primitive(PrimitiveType.Cube, $"Tile {x}/{z}", (x + z) % 2 == 0 ? floorA : floorB);
-                tile.transform.localPosition = TileCenter(new Vector2Int(x, z)) + Vector3.down * 0.05f;
-                tile.transform.localScale = new Vector3(TileSize * 0.985f, 0.1f, TileSize * 0.985f);
-            }
+            var material = new Material(floorMaterial) { mainTexture = FloorTextures.Create(_theme.Floor, _theme.FloorA, _theme.FloorB) };
+            material.SetColor("_BaseColor", Color.white);
+            material.SetFloat("_Smoothness", _theme.Floor == FloorPattern.Marble ? 0.75f : 0.3f);
+            material.mainTextureScale = new Vector2(_width / FloorTextures.MetersPerTexture, _depth / FloorTextures.MetersPerTexture);
 
-            // A thick base under the floor makes the room read as a solid block (Habbo look).
-            var slab = Primitive(PrimitiveType.Cube, "Floor Base", Tinted(floorAltMaterial, _theme.FloorB * 0.7f));
-            slab.transform.localPosition = new Vector3(_width / 2f, -0.35f, _depth / 2f);
-            slab.transform.localScale = new Vector3(_width, 0.5f, _depth);
+            var floor = Primitive(PrimitiveType.Cube, "Floor", material);
+            floor.transform.localPosition = new Vector3(_width / 2f, -0.05f, _depth / 2f);
+            floor.transform.localScale = new Vector3(_width, 0.1f, _depth);
+
+            // A thick base under the floor: a solid block indoors, the building's roof slab outdoors.
+            var baseColor = _theme.Outdoor ? new Color(0.55f, 0.56f, 0.58f) : _theme.FloorB * 0.6f;
+            var slab = Primitive(PrimitiveType.Cube, "Floor Base", Tinted(wallMaterial, baseColor));
+            var thickness = _theme.Outdoor ? 4f : 0.5f;   // outdoors: a roof structure that meets the building
+            slab.transform.localPosition = new Vector3(_width / 2f, -0.1f - thickness / 2f, _depth / 2f);
+            slab.transform.localScale = new Vector3(_width + (_theme.Outdoor ? 0.6f : 0f), thickness, _depth + (_theme.Outdoor ? 0.6f : 0f));
         }
 
+        /// <summary>North and east walls from Kenney pieces: windows, a door in the middle of the north wall.</summary>
         private void BuildWalls()
         {
-            var wall = Tinted(wallMaterial, _theme.Wall);
+            var wallTint = Tinted(wallMaterial, _theme.Wall);
             var trim = Tinted(wallMaterial, _theme.WallTrim);
+            var northPieces = Mathf.CeilToInt(_width / WallPieceWidth);
+            var eastPieces = Mathf.CeilToInt(_depth / WallPieceWidth);
 
-            // Habbo rooms show the two back walls; the camera looks from the south-west corner.
-            Box("Wall North", wall, new Vector3(_width / 2f, WallHeight / 2f, _depth + 0.1f), new Vector3(_width + 0.4f, WallHeight, 0.2f));
-            Box("Wall East", wall, new Vector3(_width + 0.1f, WallHeight / 2f, _depth / 2f), new Vector3(0.2f, WallHeight, _depth));
-            Box("Skirting North", trim, new Vector3(_width / 2f, 0.08f, _depth - 0.02f), new Vector3(_width, 0.16f, 0.04f));
-            Box("Skirting East", trim, new Vector3(_width - 0.02f, 0.08f, _depth / 2f), new Vector3(0.04f, 0.16f, _depth));
-            Box("Wall Top North", trim, new Vector3(_width / 2f, WallHeight + 0.04f, _depth + 0.1f), new Vector3(_width + 0.44f, 0.08f, 0.24f));
-            Box("Wall Top East", trim, new Vector3(_width + 0.1f, WallHeight + 0.04f, _depth / 2f), new Vector3(0.24f, 0.08f, _depth + 0.2f));
-
-            // A few framed pictures in the theme's accent colour.
-            foreach (var (x, width, height) in new[] { (2.2f, 1.1f, 0.8f), (6.3f, 0.7f, 0.9f) })
+            for (var i = 0; i < northPieces; i++)
             {
-                Box("Frame", trim, new Vector3(x, 1.65f, _depth - 0.01f), new Vector3(width + 0.1f, height + 0.1f, 0.03f));
-                Box("Picture", Tinted(wallMaterial, Color.Lerp(_theme.WallTrim, Color.white, 0.55f)),
-                    new Vector3(x, 1.65f, _depth - 0.03f), new Vector3(width, height, 0.03f));
+                var piece = i == northPieces / 2 ? "wallDoorway" : i % 2 == 1 ? "wallWindow" : "wall";
+                var position = new Vector3(i * WallPieceWidth + WallPieceWidth / 2f, 0f, _depth + 0.06f);
+                PlaceWallPiece(piece, position, 0f, wallTint);
+                if (piece == "wall" && i % 4 == 0)
+                {
+                    Picture(new Vector3(position.x, 1.5f, _depth - 0.01f), new Vector3(1.0f, 0.75f, 0.03f), trim);
+                }
             }
-            Box("Frame", trim, new Vector3(_width - 0.01f, 1.65f, 2.8f), new Vector3(0.03f, 0.9f, 1.3f));
-            Box("Picture", Tinted(wallMaterial, Color.Lerp(_theme.WallTrim, Color.white, 0.4f)),
-                new Vector3(_width - 0.03f, 1.65f, 2.8f), new Vector3(0.03f, 0.8f, 1.2f));
+            for (var i = 0; i < eastPieces; i++)
+            {
+                var piece = i % 2 == 0 ? "wallWindow" : "wall";
+                var position = new Vector3(_width + 0.06f, 0f, i * WallPieceWidth + WallPieceWidth / 2f);
+                PlaceWallPiece(piece, position, 90f, wallTint);
+                if (piece == "wall" && i % 4 == 1)
+                {
+                    Picture(new Vector3(_width - 0.01f, 1.5f, position.z), new Vector3(0.03f, 0.75f, 1.0f), trim);
+                }
+            }
+
+            Box("Skirting North", trim, new Vector3(_width / 2f, 0.07f, _depth - 0.02f), new Vector3(_width, 0.14f, 0.04f));
+            Box("Skirting East", trim, new Vector3(_width - 0.02f, 0.07f, _depth / 2f), new Vector3(0.04f, 0.14f, _depth));
+            Box("Wall Top North", trim, new Vector3(_width / 2f, WallHeight + 0.05f, _depth + 0.06f), new Vector3(_width + 0.3f, 0.1f, 0.3f));
+            Box("Wall Top East", trim, new Vector3(_width + 0.06f, WallHeight + 0.05f, _depth / 2f), new Vector3(0.3f, 0.1f, _depth + 0.3f));
         }
+
+        private void PlaceWallPiece(string itemId, Vector3 localPosition, float rotation, Material tint)
+        {
+            var pivot = new GameObject(itemId).transform;
+            pivot.SetParent(_content, false);
+            pivot.localPosition = localPosition;
+            pivot.localRotation = Quaternion.Euler(0f, rotation, 0f);
+
+            var model = itemCatalog != null ? itemCatalog.Find(itemId) : null;
+            if (model == null)
+            {
+                var wall = Primitive(PrimitiveType.Cube, itemId, tint);
+                wall.transform.SetParent(pivot, false);
+                wall.transform.localPosition = Vector3.up * WallHeight / 2f;
+                wall.transform.localScale = new Vector3(WallPieceWidth, WallHeight, 0.12f);
+                return;
+            }
+
+            var instance = Instantiate(model, pivot, false);
+            instance.transform.localScale = Vector3.one * itemCatalog.modelScale;
+            PlaceCentered(instance);
+            // Kenney walls are white: paint the bright surfaces in the theme colour, keep frames/glass.
+            foreach (var renderer in instance.GetComponentsInChildren<Renderer>())
+            {
+                var materials = renderer.sharedMaterials;
+                for (var m = 0; m < materials.Length; m++)
+                {
+                    var color = materials[m].HasProperty("_BaseColor") ? materials[m].GetColor("_BaseColor") : Color.white;
+                    if (color.grayscale > 0.8f)
+                    {
+                        materials[m] = tint;
+                    }
+                }
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+        private void Picture(Vector3 position, Vector3 size, Material frame)
+        {
+            Box("Picture Frame", frame, position, size + new Vector3(size.x > 0.05f ? 0.1f : 0f, 0.1f, size.z > 0.05f ? 0.1f : 0f));
+            var canvas = Tinted(wallMaterial, Color.Lerp(_theme.WallTrim, Color.white, 0.55f));
+            Box("Picture", canvas, position + new Vector3(size.x > 0.05f ? 0f : -0.01f, 0f, size.z > 0.05f ? 0f : -0.01f), size);
+        }
+
+        /// <summary>Roof terrace edge: stone coping, metal posts, glass panels and a handrail on all four sides.</summary>
+        private void BuildRailing()
+        {
+            const float height = 1.1f;
+            var metal = Tinted(wallMaterial, new Color(0.22f, 0.22f, 0.25f));
+            var stone = Tinted(wallMaterial, new Color(0.82f, 0.8f, 0.76f));
+            var edges = new[]
+            {
+                (from: new Vector3(0f, 0f, 0f), to: new Vector3(_width, 0f, 0f)),
+                (from: new Vector3(_width, 0f, 0f), to: new Vector3(_width, 0f, _depth)),
+                (from: new Vector3(_width, 0f, _depth), to: new Vector3(0f, 0f, _depth)),
+                (from: new Vector3(0f, 0f, _depth), to: new Vector3(0f, 0f, 0f)),
+            };
+            foreach (var (from, to) in edges)
+            {
+                var direction = (to - from).normalized;
+                var length = Vector3.Distance(from, to);
+                var rotation = Quaternion.LookRotation(Vector3.Cross(direction, Vector3.up));
+                var middle = (from + to) / 2f;
+
+                var coping = Primitive(PrimitiveType.Cube, "Coping", stone);
+                coping.transform.localPosition = middle + Vector3.up * 0.06f;
+                coping.transform.localRotation = rotation;
+                coping.transform.localScale = new Vector3(length + 0.3f, 0.12f, 0.3f);
+
+                var glass = Primitive(PrimitiveType.Cube, "Glass", glassMaterial);
+                glass.transform.localPosition = middle + Vector3.up * (0.12f + height / 2f);
+                glass.transform.localRotation = rotation;
+                glass.transform.localScale = new Vector3(length, height - 0.1f, 0.03f);
+
+                var rail = Primitive(PrimitiveType.Cube, "Handrail", metal);
+                rail.transform.localPosition = middle + Vector3.up * (0.12f + height);
+                rail.transform.localRotation = rotation;
+                rail.transform.localScale = new Vector3(length + 0.06f, 0.06f, 0.08f);
+
+                for (var t = 0f; t <= length + 0.01f; t += 2f)
+                {
+                    var post = Primitive(PrimitiveType.Cube, "Post", metal);
+                    post.transform.localPosition = from + direction * t + Vector3.up * (0.12f + height / 2f);
+                    post.transform.localScale = new Vector3(0.06f, height, 0.06f);
+                }
+            }
+        }
+
+        // ---------- Furniture ----------
 
         private void BuildFurniture(IEnumerable<RoomItemDto> layout)
         {
-            foreach (var item in layout ?? Enumerable.Empty<RoomItemDto>())
+            // Big pieces first, so small items can be stacked onto them.
+            var items = (layout ?? Enumerable.Empty<RoomItemDto>()).OrderBy(i => IsStackable(i.ItemId) ? 1 : 0).ToList();
+            foreach (var item in items)
             {
                 var pivot = new GameObject(item.ItemId).transform;
                 pivot.SetParent(_content, false);
                 pivot.localPosition = new Vector3(item.Position.X, item.Position.Y, item.Position.Z);
                 pivot.localRotation = Quaternion.Euler(0f, item.Rotation, 0f);
 
-                switch (item.ItemId)
+                if (item.ItemId == TicTacToeItem)
                 {
-                    case TicTacToeItem:
-                        BuildStation(pivot, "tictactoe", "table", BuildTicTacToeBoard);
-                        break;
-                    case QuizItem:
-                        BuildStation(pivot, "quiz", "cabinetTelevision", top => Stack(top, "televisionModern"));
-                        break;
-                    default:
-                        var bounds = Spawn(pivot, item.ItemId);
-                        if (!IsFlat(item.ItemId, bounds))
-                        {
-                            BlockTiles(bounds);
-                        }
-                        if (item.ItemId.StartsWith("lamp"))
-                        {
-                            AddLampLight(pivot, bounds);
-                        }
-                        break;
+                    BuildStation(pivot, "tictactoe", "table", BuildTicTacToeBoard);
+                    continue;
+                }
+                if (item.ItemId == QuizItem)
+                {
+                    BuildStation(pivot, "quiz", "cabinetTelevision", top => Stack(top, "televisionModern"));
+                    continue;
+                }
+                if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks))
+                {
+                    if (blocks)
+                    {
+                        BlockTiles(Bounds(pivot));
+                    }
+                    continue;
+                }
+
+                var stackable = IsStackable(item.ItemId);
+                if (stackable && item.Position.Y <= 0f)
+                {
+                    pivot.localPosition = new Vector3(item.Position.X, SurfaceHeightAt(pivot.position), item.Position.Z);
+                }
+
+                var bounds = Spawn(pivot, item.ItemId);
+                if (!stackable)
+                {
+                    _surfaces.Add(bounds);
+                    if (!IsFlat(item.ItemId, bounds) && item.Position.Y <= 0f)
+                    {
+                        BlockTiles(bounds);
+                    }
+                }
+                if (item.ItemId.StartsWith("lamp") && _lampLights++ < MaxLampLights)
+                {
+                    AddLampLight(pivot, bounds);
                 }
             }
+        }
+
+        private static bool IsStackable(string itemId) => StackableItems.Any(itemId.StartsWith);
+
+        /// <summary>Local height of the highest furniture top under a world position (0 = floor).</summary>
+        private float SurfaceHeightAt(Vector3 world)
+        {
+            var top = transform.position.y;
+            foreach (var surface in _surfaces)
+            {
+                if (world.x >= surface.min.x && world.x <= surface.max.x && world.z >= surface.min.z && world.z <= surface.max.z)
+                {
+                    top = Mathf.Max(top, surface.max.y);
+                }
+            }
+            return top - transform.position.y;
         }
 
         /// <summary>Instantiates a catalog model centred on the pivot; returns its world bounds.</summary>
@@ -311,15 +588,15 @@ namespace Reconnect.Client.Rooms
             station.Initialize(gameId, WorldToTile(transform.InverseTransformPoint(bounds.center)));
             var collider = pivot.gameObject.AddComponent<BoxCollider>();
             collider.center = pivot.InverseTransformPoint(bounds.center);
-            collider.size = pivot.InverseTransformVector(bounds.size + Vector3.one * 0.2f);
-            collider.size = new Vector3(Mathf.Abs(collider.size.x), Mathf.Abs(collider.size.y), Mathf.Abs(collider.size.z));
+            var size = pivot.InverseTransformVector(bounds.size + Vector3.one * 0.2f);
+            collider.size = new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z));
             _stations.Add(station);
 
             // A soft glowing ring on the floor marks the station as interactive.
             var ring = Primitive(PrimitiveType.Cylinder, "Station Glow", Glowing(_theme.WallTrim));
             ring.transform.SetParent(pivot, true);
             ring.transform.position = new Vector3(bounds.center.x, transform.position.y + 0.005f, bounds.center.z);
-            ring.transform.localScale = new Vector3(1.9f, 0.003f, 1.9f);
+            ring.transform.localScale = new Vector3(2.4f, 0.003f, 2.4f);
         }
 
         private void BuildTicTacToeBoard(Transform table)
@@ -344,17 +621,30 @@ namespace Reconnect.Client.Rooms
             }
         }
 
+        // ---------- Light ----------
+
         private void BuildLighting()
         {
-            // Warm fill light in the room; lamps add their own pools of light.
-            var fill = new GameObject("Room Light").AddComponent<Light>();
-            fill.transform.SetParent(_content, false);
-            fill.transform.localPosition = new Vector3(_width * 0.45f, 3.2f, _depth * 0.45f);
-            fill.type = LightType.Point;
-            fill.color = _theme.Light;
-            fill.intensity = _theme.LightIntensity;
-            fill.range = Mathf.Max(_width, _depth) * 1.3f;
-            fill.shadows = LightShadows.None;
+            if (_theme.Outdoor)
+            {
+                return;   // sun + fairy lights + fire pit
+            }
+
+            // Warm ceiling-like fill lights spread over the room (one per ~8 m).
+            var countX = Mathf.Max(1, Mathf.RoundToInt(_width / 8f));
+            var countZ = Mathf.Max(1, Mathf.RoundToInt(_depth / 8f));
+            for (var ix = 0; ix < countX; ix++)
+            for (var iz = 0; iz < countZ; iz++)
+            {
+                var light = new GameObject("Room Light").AddComponent<Light>();
+                light.transform.SetParent(_content, false);
+                light.transform.localPosition = new Vector3((ix + 0.5f) * _width / countX, 3.2f, (iz + 0.5f) * _depth / countZ);
+                light.type = LightType.Point;
+                light.color = _theme.Light;
+                light.intensity = _theme.LightIntensity;
+                light.range = 10f;
+                light.shadows = LightShadows.None;
+            }
         }
 
         private void AddLampLight(Transform pivot, Bounds bounds)
@@ -364,10 +654,12 @@ namespace Reconnect.Client.Rooms
             light.transform.position = new Vector3(bounds.center.x, bounds.max.y - 0.1f, bounds.center.z);
             light.type = LightType.Point;
             light.color = _theme.Light;
-            light.intensity = 2.2f;
-            light.range = 3.2f;
+            light.intensity = 2f;
+            light.range = 3.5f;
             light.shadows = LightShadows.None;
         }
+
+        // ---------- Tiles & helpers ----------
 
         private static bool IsFlat(string itemId, Bounds bounds) => itemId.StartsWith("rug") || bounds.size.y < 0.06f;
 
@@ -375,9 +667,9 @@ namespace Reconnect.Client.Rooms
         {
             var min = transform.InverseTransformPoint(worldBounds.min);
             var max = transform.InverseTransformPoint(worldBounds.max);
-            // Shrink a little so a sofa that barely touches a neighbouring tile doesn't block it.
-            var from = WorldToTile(new Vector3(Mathf.Min(min.x, max.x) + 0.2f, 0f, Mathf.Min(min.z, max.z) + 0.2f));
-            var to = WorldToTile(new Vector3(Mathf.Max(min.x, max.x) - 0.2f, 0f, Mathf.Max(min.z, max.z) - 0.2f));
+            // Shrink a little so furniture that barely touches a neighbouring tile doesn't block it.
+            var from = WorldToTile(new Vector3(Mathf.Min(min.x, max.x) + 0.25f, 0f, Mathf.Min(min.z, max.z) + 0.25f));
+            var to = WorldToTile(new Vector3(Mathf.Max(min.x, max.x) - 0.25f, 0f, Mathf.Max(min.z, max.z) - 0.25f));
             for (var x = from.x; x <= to.x; x++)
             for (var z = from.y; z <= to.y; z++)
             {
@@ -428,22 +720,49 @@ namespace Reconnect.Client.Rooms
             return material;
         }
 
-        /// <summary>Fixed isometric view from the south-west corner; the whole floor fits the screen width.</summary>
-        private void PlaceCamera()
-        {
-            var center = transform.TransformPoint(new Vector3(_width / 2f, 0.9f, _depth / 2f));
-            roomCamera.clearFlags = CameraClearFlags.SolidColor;
-            roomCamera.backgroundColor = new Color32(20, 18, 32, 255);
-            roomCamera.orthographic = true;
+        // ---------- Camera ----------
 
-            // Seen diagonally, the floor is (width + depth)·cos45° wide; portrait screens are narrow.
-            var halfWidth = (_width + _depth) * 0.7071f / 2f * 0.98f;   // edges may touch the screen border
-            var aspect = Mathf.Max(0.1f, roomCamera.aspect);
-            roomCamera.orthographicSize = Mathf.Max(halfWidth / aspect, (_width + _depth) * 0.3f);
-            roomCamera.nearClipPlane = 0.1f;
-            roomCamera.farClipPlane = 200f;
-            roomCamera.transform.rotation = transform.rotation * Quaternion.Euler(33f, 45f, 0f);
-            roomCamera.transform.position = center - roomCamera.transform.forward * 50f;
+        private void SetupCamera()
+        {
+            roomCamera.orthographic = false;
+            roomCamera.fieldOfView = CameraFieldOfView;
+            roomCamera.nearClipPlane = 0.3f;
+            roomCamera.farClipPlane = _theme.Outdoor ? 40000f : 400f;
+            if (_theme.Outdoor)
+            {
+                roomCamera.clearFlags = CameraClearFlags.Skybox;
+            }
+            else
+            {
+                roomCamera.clearFlags = CameraClearFlags.SolidColor;
+                roomCamera.backgroundColor = new Color32(20, 18, 32, 255);
+            }
+
+            // Small rooms: show everything. Big rooms: start closer, centred on me.
+            _viewWidth = Mathf.Min(MaxViewWidth, StartViewWidthMax);
+            _follow = _viewWidth < MaxViewWidth;
+            var me = Avatar(_localUserId);
+            _focus = _follow && me != null
+                ? new Vector3(me.transform.localPosition.x, 0f, me.transform.localPosition.z)
+                : new Vector3(_width / 2f, 0f, _depth / 2f);
+            ApplyCamera();
+        }
+
+        private void ClampFocus() =>
+            _focus = new Vector3(Mathf.Clamp(_focus.x, 0f, _width), 0f, Mathf.Clamp(_focus.z, 0f, _depth));
+
+        /// <summary>Places the camera so that <see cref="_viewWidth"/> metres of floor are visible around the focus.</summary>
+        private void ApplyCamera()
+        {
+            if (_content == null)
+            {
+                return;
+            }
+            var halfHorizontalFov = Mathf.Atan(Mathf.Tan(CameraFieldOfView * 0.5f * Mathf.Deg2Rad) * Mathf.Max(0.1f, roomCamera.aspect));
+            var distance = _viewWidth / 2f / Mathf.Tan(halfHorizontalFov);
+            var rotation = transform.rotation * Quaternion.Euler(CameraPitch, 45f, 0f);
+            var focus = transform.TransformPoint(_focus + Vector3.up * 0.8f);
+            roomCamera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
         }
 
         /// <summary>The main camera is shared with the city; remember and restore its setup.</summary>
@@ -453,6 +772,7 @@ namespace Reconnect.Client.Rooms
             private Color _background;
             private bool _orthographic;
             private float _size;
+            private float _fieldOfView;
             private float _near;
             private float _far;
             private Vector3 _position;
@@ -464,6 +784,7 @@ namespace Reconnect.Client.Rooms
                 _background = camera.backgroundColor,
                 _orthographic = camera.orthographic,
                 _size = camera.orthographicSize,
+                _fieldOfView = camera.fieldOfView,
                 _near = camera.nearClipPlane,
                 _far = camera.farClipPlane,
                 _position = camera.transform.position,
@@ -476,6 +797,7 @@ namespace Reconnect.Client.Rooms
                 camera.backgroundColor = _background;
                 camera.orthographic = _orthographic;
                 camera.orthographicSize = _size;
+                camera.fieldOfView = _fieldOfView;
                 camera.nearClipPlane = _near;
                 camera.farClipPlane = _far;
                 camera.transform.SetPositionAndRotation(_position, _rotation);

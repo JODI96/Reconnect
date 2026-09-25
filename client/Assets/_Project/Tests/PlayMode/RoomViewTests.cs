@@ -60,7 +60,7 @@ namespace Reconnect.Client.PlayModeTests
                 new RoomItemDto("unknownItem", new Vector3Dto(1.5f, 0f, 1.5f), 0f),
             };
             var dto = new RoomDto(Guid.NewGuid(), "Testraum", Guid.NewGuid(), Other, "Ben", true, layout,
-                DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "rooftop");
+                DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "cozy", RoomGrid.Width, RoomGrid.Depth);
             return new RoomSnapshotDto(dto, RoomGrid.Width, RoomGrid.Depth, new[]
             {
                 new RoomPlayerDto(Me, "Anna", new TilePosition(5, 5)),

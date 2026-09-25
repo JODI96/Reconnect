@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Reconnect.Client.City;
 using Reconnect.Client.Networking;
 using Reconnect.Client.Rooms;
 using Reconnect.Contracts;
 using Reconnect.Contracts.Auth;
+using Reconnect.Contracts.Buildings;
 using Reconnect.Contracts.Common;
 using Reconnect.Contracts.Rooms;
 using UnityEngine;
@@ -17,13 +19,14 @@ using UnityEngine.TestTools;
 namespace Reconnect.Client.PlayModeTests
 {
     /// <summary>
-    /// Loads the five showcase rooms from the running local backend (as the dev admin) and renders
-    /// each into client/Logs/showcase-&lt;n&gt;.png. Skipped if the backend is not running.
+    /// Puts the Rooftop Lounge on the real Prime Tower roof in the streamed 3D city and renders
+    /// client/Logs/rooftop-city.png. Needs the local backend and internet.
     /// </summary>
     [Category("Integration")]
-    public sealed class ShowcaseRoomTests
+    public sealed class RooftopCityTests
     {
         private const string BaseUrl = "http://localhost:5191";
+        private static readonly Guid PrimeTowerId = Guid.Parse("0199a000-0000-7000-8000-000000000003");
 
         [UnitySetUp]
         public IEnumerator LoadMainScene()
@@ -33,7 +36,7 @@ namespace Reconnect.Client.PlayModeTests
         }
 
         [UnityTest]
-        public IEnumerator Showcase_rooms_render_with_furniture_and_players()
+        public IEnumerator Rooftop_stands_on_the_prime_tower_with_the_city_around()
         {
             var api = new ApiClient(new UnityWebRequestTransport(10), BaseUrl);
             var login = api.PostAsync<AuthResponse>(ApiRoutes.Auth.Login, new LoginRequest("Admin", "Admin"));
@@ -42,45 +45,54 @@ namespace Reconnect.Client.PlayModeTests
             {
                 Assert.Ignore("Backend with dev admin not running on " + BaseUrl + ".");
             }
-            var tokens = new StaticToken(login.Result.Value.AccessToken);
-            api.Tokens = tokens;
-
+            api.Tokens = new StaticToken(login.Result.Value.AccessToken);
             var list = api.GetAsync<PagedResponse<RoomSummaryDto>>(ApiRoutes.Rooms.Group + "?pageSize=50");
             yield return Wait(list);
-            var showcase = list.Result.Value.Items.Where(r => r.OwnerDisplayName == "Admin" && r.Name != "Test").OrderBy(r => r.Name).ToList();
-            Assert.AreEqual(5, showcase.Count, "five showcase rooms");
+            var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(list.Result.Value.Items.Single(r => r.Name == "Rooftop Lounge").Id));
+            yield return Wait(detail);
+            var room = detail.Result.Value;
 
+            var city = UnityEngine.Object.FindFirstObjectByType<CityView>();
             var view = UnityEngine.Object.FindFirstObjectByType<RoomView>();
-            // Render into a portrait phone target from the start, so the camera frames the room for it.
             var target = new RenderTexture(1080, 1920, 24);
             view.Camera.targetTexture = target;
-            var number = 0;
-            foreach (var summary in showcase)
+
+            // The city places a marker on the real Prime Tower roof (height sampled from swissBUILDINGS3D).
+            city.ShowBuildings(new[] { new BuildingDto(PrimeTowerId, "Prime Tower", "Hardstrasse 201", 47.38622, 8.51733, null) });
+            city.SetVisible(true);
+            for (var i = 0; i < 300 && (city.RoofPosition(PrimeTowerId)?.y ?? 0f) < 50f; i++)
             {
-                var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(summary.Id));
-                yield return Wait(detail);
-
-                var room = detail.Result.Value;
-                var players = new[]
-                {
-                    new RoomPlayerDto(Guid.NewGuid(), "Anna", new TilePosition(room.Width / 2, 2)),
-                    new RoomPlayerDto(Guid.NewGuid(), "Ben", new TilePosition(room.Width / 2 + 2, 3)),
-                    new RoomPlayerDto(Guid.NewGuid(), "Chiara", new TilePosition(room.Width / 2 - 2, 4)),
-                };
-                view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, players), players[0].UserId);
-                for (var frame = 0; frame < 30; frame++)
-                {
-                    yield return null;   // let animations settle
-                }
-
-                Assert.Greater(detail.Result.Value.Layout.Count, 25, "room is richly furnished");
-                number++;
-                Save(view.Camera, $"showcase-{number}-avatar.png", room.Name);   // start view, zoomed on me
-                view.FrameWholeRoom();
                 yield return null;
-                Save(view.Camera, $"showcase-{number}.png", room.Name);
-                view.Hide();
             }
+            Assert.Greater(city.RoofPosition(PrimeTowerId)?.y ?? 0f, 80f, "roof height sampled (Prime Tower ≈ 126 m)");
+
+            city.ShowAsBackdrop();
+            var anchorTask = city.RoofAnchorAsync(PrimeTowerId, room.Width + 1f, room.Depth + 1f);
+            yield return Wait(anchorTask);
+            var roof = anchorTask.Result;
+            Assert.IsNotNull(roof);
+            var me = Guid.NewGuid();
+            view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, new[]
+            {
+                new RoomPlayerDto(me, "Anna", new TilePosition(9, 6)),
+                new RoomPlayerDto(Guid.NewGuid(), "Ben", new TilePosition(11, 7)),
+            }), me, roof);
+            view.FrameWholeRoom();
+
+            var end = Time.realtimeSinceStartup + 180f;
+            yield return null;
+            while (city.LoadProgress < 99.9f && Time.realtimeSinceStartup < end)
+            {
+                yield return null;
+            }
+            for (var i = 0; i < 10; i++)
+            {
+                yield return null;
+            }
+            Save(view.Camera, "rooftop-city.png");
+            Debug.Log($"[Reconnect] Rooftop on roof at y = {roof.Value.y:0.0} m");
+
+            view.Hide();
             view.Camera.targetTexture = null;
             target.Release();
         }
@@ -95,7 +107,7 @@ namespace Reconnect.Client.PlayModeTests
             }
         }
 
-        private static void Save(Camera camera, string fileName, string roomName)
+        private static void Save(Camera camera, string fileName)
         {
             var target = camera.targetTexture;
             camera.Render();
@@ -104,9 +116,7 @@ namespace Reconnect.Client.PlayModeTests
             image.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
             image.Apply();
             RenderTexture.active = null;
-            var path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", fileName));
-            File.WriteAllBytes(path, image.EncodeToPNG());
-            Debug.Log($"[Reconnect] Showcase {roomName}: {path}");
+            File.WriteAllBytes(Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", fileName)), image.EncodeToPNG());
         }
 
         private sealed class StaticToken : IAccessTokenProvider

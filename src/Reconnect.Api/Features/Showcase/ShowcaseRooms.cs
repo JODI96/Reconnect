@@ -145,8 +145,8 @@ public static partial class ShowcaseRooms
         // Freestanding back-to-back shelf rows forming aisles (north-west quadrant).
         foreach (var z in new[] { 12.6f, 9.6f })
         {
-            items.AddRange(Row("bookcaseClosedWide", x: 1.6f, z: z + 0.26f, dx: 1.6f, dz: 0f, count: 4, South));
-            items.AddRange(Row("bookcaseClosedWide", x: 1.6f, z: z - 0.26f, dx: 1.6f, dz: 0f, count: 4, North));
+            items.AddRange(Row("bookcaseOpen", x: 1.2f, z: z + 0.26f, dx: 0.8f, dz: 0f, count: 8, South));
+            items.AddRange(Row("bookcaseOpen", x: 1.2f, z: z - 0.26f, dx: 0.8f, dz: 0f, count: 8, North));
         }
 
         // Reading tables (north-east) with four chairs, a lamp and books/laptops on each.

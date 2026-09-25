@@ -93,7 +93,12 @@ Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
   nutzt Höhen über Meer). X = Ost, Y = oben, Z = Nord, 1 Einheit = 1 m. Nur über `CityView.ToUnity/ToGeo`
   umrechnen. Höhen von Dächern/Gelände: `Cesium3DTileset.SampleHeightMostDetailed` oder `CityView.SurfaceHeightAt`.
 - **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney`. Möbel-ItemId =
-  Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen. Grössen: Möbel ×0.15, Figuren ×1.4.
+  Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen, `custom-*` baut der Client (Pool, Säule …),
+  Kleinteile (Laptop, Lampe, Kaffeemaschine) werden automatisch auf Möbel gestapelt.
+  Massstab: Möbel ×0.2 ≈ echte Grösse (Tisch 65 cm, Tür 2 m), Figuren ×1.8 (≈ 1.4 m). 1 Rasterfeld = 1 m.
+- **Räume:** eigene Grösse (6–40 m), Themes mit prozeduralem Boden (FloorTextures), Wände aus Kenney-Teilen
+  mit Fenstern/Tür. Outdoor-Themes (rooftop) stehen auf dem echten Gebäudedach in der 3D-Stadt
+  (`CityView.RoofAnchorAsync`), mit Glasgeländer und Stadt als Kulisse.
 - **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
   Vor dem Launch Daten selbst hosten (Fair-Use der geo.admin.ch-Dienste) und Nutzungsbedingungen prüfen.
 - **Screens über der 3D-Welt** sind transparent (`screen--transparent`); Container, die Touches

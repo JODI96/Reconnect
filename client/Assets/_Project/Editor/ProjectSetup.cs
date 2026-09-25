@@ -44,6 +44,8 @@ namespace Reconnect.Client.Editor
         private const string RoomWallMaterialPath = MaterialsDir + "/RoomWall.mat";
         private const string RoomItemMaterialPath = MaterialsDir + "/RoomItem.mat";
         private const string AvatarMaterialPath = MaterialsDir + "/Avatar.mat";
+        private const string GlassMaterialPath = MaterialsDir + "/Glass.mat";
+        private const string WaterMaterialPath = MaterialsDir + "/Water.mat";
         private const string ItemCatalogPath = SettingsDir + "/ItemCatalog.asset";
         private const string AvatarCatalogPath = SettingsDir + "/AvatarCatalog.asset";
         private const string PostProcessingPath = SettingsDir + "/PostProcessing.asset";
@@ -140,7 +142,10 @@ namespace Reconnect.Client.Editor
                 Colored(AvatarMaterialPath, lit, Color.white),
             };
 
-            foreach (var material in roomMaterials.Concat(new[] { marker, selected, sky }))
+            var glass = Transparent(LoadOrCreateMaterial(GlassMaterialPath, lit), new Color(0.75f, 0.9f, 1f, 0.28f), 0.95f);
+            var water = Transparent(LoadOrCreateMaterial(WaterMaterialPath, lit), new Color(0.2f, 0.75f, 0.95f, 0.55f), 0.97f);
+
+            foreach (var material in roomMaterials.Concat(new[] { marker, selected, sky, glass, water }))
             {
                 EditorUtility.SetDirty(material);
             }
@@ -150,7 +155,7 @@ namespace Reconnect.Client.Editor
         private static void CreateItemCatalog()
         {
             var catalog = LoadOrCreate<ItemCatalog>(ItemCatalogPath);
-            catalog.modelScale = 0.15f;
+            catalog.modelScale = 0.2f;   // ≈ real-life size (table 65 cm, door 2 m)
             catalog.items = AssetDatabase.FindAssets("t:Model", new[] { KenneyFurnitureDir })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .OrderBy(path => path)
@@ -176,7 +181,7 @@ namespace Reconnect.Client.Editor
             var catalog = LoadOrCreate<AvatarCatalog>(AvatarCatalogPath);
             catalog.characters = characters.Select(AssetDatabase.LoadAssetAtPath<GameObject>).ToArray();
             catalog.animator = controller;
-            catalog.scale = 1.4f;
+            catalog.scale = 1.8f;        // ≈ 1.4 m chunky figures
             EditorUtility.SetDirty(catalog);
         }
 
@@ -269,6 +274,22 @@ namespace Reconnect.Client.Editor
             EditorUtility.SetDirty(profile);
         }
 
+        /// <summary>Switches a URP Lit material to alpha-blended transparency.</summary>
+        private static Material Transparent(Material material, Color color, float smoothness)
+        {
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_ZWrite", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            material.SetColor("_BaseColor", color);
+            material.SetFloat("_Smoothness", smoothness);
+            return material;
+        }
+
         private static Material Colored(string path, Shader shader, Color color)
         {
             var material = LoadOrCreateMaterial(path, shader);
@@ -345,10 +366,11 @@ namespace Reconnect.Client.Editor
             Assign(roomView,
                 ("roomCamera", camera),
                 ("floorMaterial", Load<Material>(RoomFloorMaterialPath)),
-                ("floorAltMaterial", Load<Material>(RoomFloorAltMaterialPath)),
                 ("wallMaterial", Load<Material>(RoomWallMaterialPath)),
                 ("itemMaterial", Load<Material>(RoomItemMaterialPath)),
                 ("avatarMaterial", Load<Material>(AvatarMaterialPath)),
+                ("glassMaterial", Load<Material>(GlassMaterialPath)),
+                ("waterMaterial", Load<Material>(WaterMaterialPath)),
                 ("itemCatalog", Load<ItemCatalog>(ItemCatalogPath)),
                 ("avatarCatalog", Load<AvatarCatalog>(AvatarCatalogPath)));
 

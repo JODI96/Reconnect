@@ -28,7 +28,7 @@ namespace Reconnect.Client.Rooms
         public Vector2Int Tile { get; private set; }
 
         /// <summary>World position above the head – anchor for name label and speech bubble.</summary>
-        public Vector3 LabelAnchor => transform.position + Vector3.up * 1.35f;
+        public Vector3 LabelAnchor => transform.position + Vector3.up * 1.75f;
 
         public static AvatarView Create(Transform parent, RoomPlayerDto player, AvatarCatalog catalog, Material fallbackMaterial, bool isLocal)
         {

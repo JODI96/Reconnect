@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0284a4ca8ef44f94db6b5fafcbf7cb89, type: 3}
   m_Name: ItemCatalog
   m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.ItemCatalog
-  modelScale: 0.15
+  modelScale: 0.2
   items:
   - itemId: bathroomCabinet
     model: {fileID: 919132149155446097, guid: f88d179555c676b49b74f62ebccc3985, type: 3}

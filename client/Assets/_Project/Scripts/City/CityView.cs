@@ -73,6 +73,58 @@ namespace Reconnect.Client.City
             }
         }
 
+        /// <summary>
+        /// City as scenery behind a roof-terrace room: tiles keep streaming around the (room) camera,
+        /// but markers and the city camera controls are off.
+        /// </summary>
+        public void ShowAsBackdrop()
+        {
+            georeference.gameObject.SetActive(true);
+            _markerRoot.gameObject.SetActive(false);
+            cameraController.enabled = false;
+        }
+
+        /// <summary>Roof position of a building with a marker (height sampled from swissBUILDINGS3D), or null.</summary>
+        public Vector3? RoofPosition(Guid buildingId)
+        {
+            var marker = _markers.FirstOrDefault(m => m.Building.Id == buildingId);
+            return marker != null ? marker.transform.position : null;
+        }
+
+        /// <summary>
+        /// Where a roof terrace of the given size should stand on a building: centred on the building's
+        /// marker, just above the highest roof point under the whole terrace (roofs aren't flat everywhere).
+        /// </summary>
+        public async System.Threading.Tasks.Task<Vector3?> RoofAnchorAsync(Guid buildingId, float width, float depth)
+        {
+            if (RoofPosition(buildingId) is not { } center)
+            {
+                return null;
+            }
+
+            const int samples = 5;
+            var points = new List<double3>();
+            for (var ix = 0; ix < samples; ix++)
+            for (var iz = 0; iz < samples; iz++)
+            {
+                var world = center + new Vector3((ix / (samples - 1f) - 0.5f) * width, 0f, (iz / (samples - 1f) - 0.5f) * depth);
+                var (lat, lon, _) = ToGeo(world);
+                points.Add(new double3(lon, lat, _settings.originHeight));
+            }
+
+            var result = await buildings.SampleHeightMostDetailed(points.ToArray());
+            var highest = center.y;
+            for (var i = 0; i < points.Count; i++)
+            {
+                if (result.sampleSuccess[i])
+                {
+                    var p = result.longitudeLatitudeHeightPositions[i];
+                    highest = Mathf.Max(highest, ToUnity(p.y, p.x, p.z).y);
+                }
+            }
+            return new Vector3(center.x, highest + 0.15f, center.z);
+        }
+
         public void SetLayer(MapLayer layer)
         {
             Layer = layer;

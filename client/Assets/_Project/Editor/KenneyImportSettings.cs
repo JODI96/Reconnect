@@ -83,5 +83,29 @@ namespace Reconnect.Client.Editor
                 Object.DestroyImmediate(instance);
             }
         }
+
+        /// <summary>Diagnostics: size of every furniture model in metres at room scale (0.15) – for laying out rooms.</summary>
+        [MenuItem("Reconnect/Diagnostics/Log Furniture Sizes (m)")]
+        public static void LogFurnitureSizes()
+        {
+            const float scale = 0.15f;
+            var lines = AssetDatabase.FindAssets("t:Model", new[] { Furniture.TrimEnd('/') })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .OrderBy(p => p)
+                .Select(path =>
+                {
+                    var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path));
+                    var renderers = instance.GetComponentsInChildren<Renderer>();
+                    var bounds = renderers[0].bounds;
+                    foreach (var renderer in renderers)
+                    {
+                        bounds.Encapsulate(renderer.bounds);
+                    }
+                    Object.DestroyImmediate(instance);
+                    var s = bounds.size * scale;
+                    return $"{System.IO.Path.GetFileNameWithoutExtension(path)} {s.x:0.00}x{s.z:0.00} h{s.y:0.00}";
+                });
+            Debug.Log("[Reconnect] SIZES " + string.Join(" | ", lines));
+        }
     }
 }
