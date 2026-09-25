@@ -14,6 +14,7 @@ public sealed class Room : IAuditable
     public Guid BuildingId { get; private set; }
     public string Name { get; private set; } = "";
     public bool IsPublic { get; private set; }
+    public string Theme { get; private set; } = RoomThemes.Cozy;
 
     /// <summary>Furniture layout, stored as jsonb.</summary>
     public List<RoomItem> Layout { get; private set; } = [];
@@ -21,7 +22,7 @@ public sealed class Room : IAuditable
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 
-    public static Room Create(Guid ownerId, Guid buildingId, string name, bool isPublic)
+    public static Room Create(Guid ownerId, Guid buildingId, string name, bool isPublic, string? theme = null)
     {
         var room = new Room
         {
@@ -29,12 +30,15 @@ public sealed class Room : IAuditable
             OwnerId = ownerId,
             BuildingId = buildingId,
             IsPublic = isPublic,
+            Theme = RoomThemes.Validate(theme),
         };
         room.Rename(name);
         return room;
     }
 
     public bool IsOwnedBy(Guid userId) => OwnerId == userId;
+
+    public void ChangeTheme(string theme) => Theme = RoomThemes.Validate(theme);
 
     /// <summary>A room is visible to its owner, and to everyone else only if it is public.</summary>
     public bool IsVisibleTo(Guid userId) => IsPublic || IsOwnedBy(userId);

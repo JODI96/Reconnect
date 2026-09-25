@@ -27,9 +27,11 @@ namespace Reconnect.Contracts.Rooms
         bool IsPublic,
         IReadOnlyList<RoomItemDto> Layout,
         DateTimeOffset CreatedAt,
-        DateTimeOffset UpdatedAt);
+        DateTimeOffset UpdatedAt,
+        string Theme);
 
-    public sealed record CreateRoomRequest(Guid BuildingId, string Name, bool IsPublic);
+    /// <param name="Theme">Optional: cozy (default), rooftop, cafe, atelier, opera, library.</param>
+    public sealed record CreateRoomRequest(Guid BuildingId, string Name, bool IsPublic, string? Theme = null);
 
     public sealed record UpdateRoomLayoutRequest(IReadOnlyList<RoomItemDto> Items);
 }

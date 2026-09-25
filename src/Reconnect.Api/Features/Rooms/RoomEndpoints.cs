@@ -73,7 +73,7 @@ public sealed class RoomEndpoints : IEndpointModule
             });
         }
 
-        var room = Room.Create(principal.GetUserId(), request.BuildingId, request.Name, request.IsPublic);
+        var room = Room.Create(principal.GetUserId(), request.BuildingId, request.Name, request.IsPublic, request.Theme);
         db.Rooms.Add(room);
         await db.SaveChangesAsync(ct);
 
