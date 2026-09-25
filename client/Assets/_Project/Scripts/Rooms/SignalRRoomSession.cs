@@ -25,6 +25,9 @@ namespace Reconnect.Client.Rooms
         public event Action<Guid> PlayerLeft;
         public event Action<PlayerMovedDto> PlayerMoved;
         public event Action<RoomChatMessageDto> ChatReceived;
+        public event Action<EmoteDto> EmoteReceived;
+        public event Action<TicTacToeStateDto> TicTacToeUpdated;
+        public event Action<QuizStateDto> QuizUpdated;
         public event Action<string> Disconnected;
 
         public async Task<RoomSnapshotDto> JoinAsync(Guid roomId, CancellationToken ct)
@@ -37,6 +40,20 @@ namespace Reconnect.Client.Rooms
             _connection.InvokeAsync<TilePosition>(RoomHubContract.Server.MoveTo, tile.X, tile.Z);
 
         public Task SayAsync(string text) => _connection.InvokeAsync(RoomHubContract.Server.Say, text);
+
+        public Task EmoteAsync(string emote) => _connection.InvokeAsync(RoomHubContract.Server.Emote, emote);
+
+        public Task<TicTacToeStateDto> TicTacToeJoinAsync() => _connection.InvokeAsync<TicTacToeStateDto>(RoomHubContract.Server.TicTacToeJoin);
+
+        public Task<TicTacToeStateDto> TicTacToeMoveAsync(int cell) => _connection.InvokeAsync<TicTacToeStateDto>(RoomHubContract.Server.TicTacToeMove, cell);
+
+        public Task<TicTacToeStateDto> TicTacToeResetAsync() => _connection.InvokeAsync<TicTacToeStateDto>(RoomHubContract.Server.TicTacToeReset);
+
+        public Task<QuizStateDto> QuizStartAsync() => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizStart);
+
+        public Task<QuizStateDto> QuizAnswerAsync(int answerIndex) => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizAnswer, answerIndex);
+
+        public Task<QuizStateDto> QuizNextAsync() => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizNext);
 
         public async Task LeaveAsync()
         {
@@ -71,6 +88,9 @@ namespace Reconnect.Client.Rooms
             connection.On<Guid>(RoomHubContract.Client.PlayerLeft, id => PlayerLeft?.Invoke(id));
             connection.On<PlayerMovedDto>(RoomHubContract.Client.PlayerMoved, m => PlayerMoved?.Invoke(m));
             connection.On<RoomChatMessageDto>(RoomHubContract.Client.ChatMessage, m => ChatReceived?.Invoke(m));
+            connection.On<EmoteDto>(RoomHubContract.Client.PlayerEmote, e => EmoteReceived?.Invoke(e));
+            connection.On<TicTacToeStateDto>(RoomHubContract.Client.TicTacToeUpdated, t => TicTacToeUpdated?.Invoke(t));
+            connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => QuizUpdated?.Invoke(q));
             connection.Closed += reason =>
             {
                 if (_connection == connection)

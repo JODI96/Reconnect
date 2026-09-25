@@ -66,6 +66,42 @@ namespace Reconnect.Client.Tests
             ben.Session.Dispose();
         }
 
+        [UnityTest]
+        public IEnumerator Two_players_play_tic_tac_toe_to_the_end()
+        {
+            var anna = Player();
+            var ben = Player();
+            var registerAnna = Register(anna, "Anna");
+            yield return Wait(registerAnna);
+            if (registerAnna.Result.StatusCode == 0)
+            {
+                Assert.Ignore("Backend not running on " + BaseUrl + ".");
+            }
+            yield return Wait(Register(ben, "Ben"));
+            var room = anna.Api.PostAsync<RoomDto>(ApiRoutes.Rooms.Group, new CreateRoomRequest(KunsthausId, "Spieltisch", true, "atelier"));
+            yield return Wait(room);
+
+            var benSaw = new List<TicTacToeStateDto>();
+            ben.Session.TicTacToeUpdated += benSaw.Add;
+            yield return Wait(anna.Session.JoinAsync(room.Result.Value.Id, CancellationToken.None));
+            yield return Wait(ben.Session.JoinAsync(room.Result.Value.Id, CancellationToken.None));
+
+            yield return Wait(anna.Session.TicTacToeJoinAsync());
+            yield return Wait(ben.Session.TicTacToeJoinAsync());
+            foreach (var (player, cell) in new[] { (anna, 0), (ben, 3), (anna, 1), (ben, 4) })
+            {
+                yield return Wait(player.Session.TicTacToeMoveAsync(cell));
+            }
+            var winning = anna.Session.TicTacToeMoveAsync(2);
+            yield return Wait(winning);
+
+            Assert.AreEqual(GameStatus.Won, winning.Result.Status);
+            yield return WaitUntil(() => benSaw.Exists(s => s.Status == GameStatus.Won), "Ben sees the result");
+
+            anna.Session.Dispose();
+            ben.Session.Dispose();
+        }
+
         private static (ApiClient Api, AuthService Auth, IRoomSession Session) Player()
         {
             var api = new ApiClient(new UnityWebRequestTransport(10), BaseUrl);

@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Reconnect.Client.Networking.Realtime;
 using Reconnect.Client.Rooms;
+using Reconnect.Client.UI.Games;
 using Reconnect.Contracts.Rooms;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -26,6 +29,9 @@ namespace Reconnect.Client.UI.Screens
         private VisualElement _labelLayer;
         private Label _status;
         private TextField _chatInput;
+        private VisualElement _gamePanel;
+        private TicTacToePanel _ticTacToe;
+        private QuizPanel _quiz;
 
         public RoomScreen(VisualTreeAsset template, RoomView room, IRoomSession session, Guid roomId, Guid localUserId, Action leave)
         {
@@ -51,6 +57,14 @@ namespace Reconnect.Client.UI.Screens
             _chatInput.maxLength = RoomGrid.MaxChatLength;
             Q<Button>("leave").clicked += _leave;
             Q<Button>("send").clicked += SendChat;
+            _gamePanel = Q<VisualElement>("game-panel");
+            _ticTacToe = new TicTacToePanel(Q<VisualElement>("ttt-panel"), _session, _localUserId, RunGameAction);
+            _quiz = new QuizPanel(Q<VisualElement>("quiz-panel"), _session, _localUserId, RunGameAction);
+            Q<Button>("game-close").clicked += () => OpenGame(null);
+            foreach (var emote in Emotes.All)
+            {
+                Q<Button>("emote-" + emote).clicked += () => PlayEmote(emote);
+            }
             _chatInput.RegisterCallback<KeyDownEvent>(e =>
             {
                 if (e.keyCode is KeyCode.Return or KeyCode.KeypadEnter)
@@ -64,7 +78,11 @@ namespace Reconnect.Client.UI.Screens
             _session.PlayerMoved += OnPlayerMoved;
             _session.ChatReceived += OnChat;
             _session.Disconnected += OnDisconnected;
+            _session.EmoteReceived += OnEmote;
+            _session.TicTacToeUpdated += _ticTacToe.Render;
+            _session.QuizUpdated += _quiz.Render;
             _room.TileTapped += OnTileTapped;
+            _room.StationTapped += OnStationTapped;
             _room.IsPointerOverUi = IsPointerOverUi;
 
             Root.schedule.Execute(UpdateOverlays).Every(0);
@@ -78,7 +96,11 @@ namespace Reconnect.Client.UI.Screens
             _session.PlayerMoved -= OnPlayerMoved;
             _session.ChatReceived -= OnChat;
             _session.Disconnected -= OnDisconnected;
+            _session.EmoteReceived -= OnEmote;
+            _session.TicTacToeUpdated -= _ticTacToe.Render;
+            _session.QuizUpdated -= _quiz.Render;
             _room.TileTapped -= OnTileTapped;
+            _room.StationTapped -= OnStationTapped;
             _room.IsPointerOverUi = _ => false;
             _room.Hide();
             _ = _session.LeaveAsync();
@@ -93,6 +115,8 @@ namespace Reconnect.Client.UI.Screens
                 Q<Label>("room-name").text = snapshot.Room.Name;
                 Q<Label>("room-owner").text = "von " + snapshot.Room.OwnerDisplayName;
                 _room.Show(snapshot, _localUserId);
+                _ticTacToe.Render(snapshot.TicTacToe);
+                _quiz.Render(snapshot.Quiz);
                 foreach (var player in snapshot.Players)
                 {
                     AddOverlay(player.UserId, player.DisplayName);
@@ -125,6 +149,47 @@ namespace Reconnect.Client.UI.Screens
                     _room.MovePlayer(_localUserId, accepted);
                 }
             });
+        }
+
+        /// <summary>Walks next to the table/TV and opens its game.</summary>
+        private void OnStationTapped(GameStation station)
+        {
+            OnTileTapped(station.Tile);
+            OpenGame(station.GameId);
+        }
+
+        private void OpenGame(string gameId)
+        {
+            _gamePanel.style.display = gameId == null ? DisplayStyle.None : DisplayStyle.Flex;
+            Q<VisualElement>("ttt-panel").style.display = gameId == "tictactoe" ? DisplayStyle.Flex : DisplayStyle.None;
+            Q<VisualElement>("quiz-panel").style.display = gameId == "quiz" ? DisplayStyle.Flex : DisplayStyle.None;
+            Q<Label>("game-title").text = gameId == "tictactoe" ? "Tic-Tac-Toe" : "Zürich-Quiz";
+        }
+
+        private void PlayEmote(string emote)
+        {
+            _room.Avatar(_localUserId)?.PlayEmote(emote);
+            RunGameAction(() => _session.EmoteAsync(emote), null);
+        }
+
+        private void OnEmote(EmoteDto emote) => _room.Avatar(emote.UserId)?.PlayEmote(emote.Emote);
+
+        /// <summary>Game calls: rule violations from the server ("not your turn") show up as status.</summary>
+        private bool RunGameAction(Func<Task> action, VisualElement busy)
+        {
+            RunAsync(async () =>
+            {
+                try
+                {
+                    await action();
+                    SetStatus(_status, null);
+                }
+                catch (HubException ex)
+                {
+                    SetStatus(_status, ex.Message);
+                }
+            }, busy);
+            return true;
         }
 
         private void SendChat()

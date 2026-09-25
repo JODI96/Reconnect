@@ -17,7 +17,7 @@
                     <ui:Label name="sheet-title" class="sheet__title" />
                     <ui:Label name="sheet-address" class="muted" />
                 </ui:VisualElement>
-                <ui:Button name="sheet-close" text="✕" class="button button--small" />
+                <ui:Button name="sheet-close" text="×" class="button button--small" />
             </ui:VisualElement>
             <ui:Label name="sheet-status" class="status" />
             <ui:ScrollView name="sheet-scroll" class="sheet__rooms">

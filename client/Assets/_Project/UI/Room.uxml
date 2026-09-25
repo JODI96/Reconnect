@@ -11,6 +11,54 @@
         </ui:VisualElement>
         <ui:Label name="status" class="status status--floating" />
         <ui:VisualElement class="pass-through" style="flex-grow: 1;" />
+
+        <!-- Minigames: opened by tapping the tic-tac-toe table or the quiz TV. -->
+        <ui:VisualElement name="game-panel" class="game-panel" style="display: none;">
+            <ui:VisualElement class="sheet__header">
+                <ui:Label name="game-title" class="sheet__title" style="flex-grow: 1;" />
+                <ui:Button name="game-close" text="×" class="button button--small" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="ttt-panel">
+                <ui:Label name="ttt-status" class="status" />
+                <ui:VisualElement class="ttt-grid">
+                    <ui:VisualElement class="ttt-row">
+                        <ui:Button name="cell-0" class="ttt-cell" /><ui:Button name="cell-1" class="ttt-cell" /><ui:Button name="cell-2" class="ttt-cell" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ttt-row">
+                        <ui:Button name="cell-3" class="ttt-cell" /><ui:Button name="cell-4" class="ttt-cell" /><ui:Button name="cell-5" class="ttt-cell" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ttt-row">
+                        <ui:Button name="cell-6" class="ttt-cell" /><ui:Button name="cell-7" class="ttt-cell" /><ui:Button name="cell-8" class="ttt-cell" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="button-row">
+                    <ui:Button name="ttt-join" text="Mitspielen" class="button button--primary" />
+                    <ui:Button name="ttt-reset" text="Neues Spiel" class="button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="quiz-panel">
+                <ui:Label name="quiz-question" class="quiz-question" />
+                <ui:Button name="answer-0" class="button quiz-answer" />
+                <ui:Button name="answer-1" class="button quiz-answer" />
+                <ui:Button name="answer-2" class="button quiz-answer" />
+                <ui:Button name="answer-3" class="button quiz-answer" />
+                <ui:Label name="quiz-status" class="status" />
+                <ui:VisualElement class="button-row">
+                    <ui:Button name="quiz-start" text="Quiz starten" class="button button--primary" />
+                    <ui:Button name="quiz-next" text="Weiter" class="button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="emote-bar">
+            <ui:Button name="emote-wave" text="Winken" class="button button--small emote" />
+            <ui:Button name="emote-yes" text="Ja" class="button button--small emote" />
+            <ui:Button name="emote-no" text="Nein" class="button button--small emote" />
+            <ui:Button name="emote-jump" text="Hüpfen" class="button button--small emote" />
+            <ui:Button name="emote-sit" text="Sitzen" class="button button--small emote" />
+        </ui:VisualElement>
         <ui:VisualElement class="chat-bar">
             <ui:TextField name="chat-input" class="field chat-bar__input" />
             <ui:Button name="send" text="Senden" class="button button--primary button--small" />

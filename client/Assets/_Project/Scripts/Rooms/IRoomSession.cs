@@ -17,6 +17,9 @@ namespace Reconnect.Client.Rooms
         event Action<Guid> PlayerLeft;
         event Action<PlayerMovedDto> PlayerMoved;
         event Action<RoomChatMessageDto> ChatReceived;
+        event Action<EmoteDto> EmoteReceived;
+        event Action<TicTacToeStateDto> TicTacToeUpdated;
+        event Action<QuizStateDto> QuizUpdated;
 
         /// <summary>Connection lost (argument: reason). The room is left implicitly.</summary>
         event Action<string> Disconnected;
@@ -28,6 +31,17 @@ namespace Reconnect.Client.Rooms
         Task<TilePosition> MoveToAsync(TilePosition tile);
 
         Task SayAsync(string text);
+
+        /// <summary>One of <c>Emotes.All</c>; shown to the others (play it locally yourself).</summary>
+        Task EmoteAsync(string emote);
+
+        Task<TicTacToeStateDto> TicTacToeJoinAsync();
+        Task<TicTacToeStateDto> TicTacToeMoveAsync(int cell);
+        Task<TicTacToeStateDto> TicTacToeResetAsync();
+
+        Task<QuizStateDto> QuizStartAsync();
+        Task<QuizStateDto> QuizAnswerAsync(int answerIndex);
+        Task<QuizStateDto> QuizNextAsync();
 
         Task LeaveAsync();
     }

@@ -18,11 +18,12 @@ als Backup unter `C:\Users\Joys9\Reconnect-Unity-Backup-2026-09-25.zip` gesicher
 
 - **Client:** Unity 6.3 **LTS** (6000.3.x), URP, UI Toolkit, Newtonsoft.Json, neues Input System.
   Nur LTS-Versionen verwenden.
-- **Echtzeit in Räumen:** Photon Fusion 2 (ab Phase 3)
+- **Echtzeit in Räumen:** eigener SignalR-Hub `/hubs/room` + Redis (Anwesenheit, Spielstände), lokal ohne
+  Account. Client spricht nur mit `IRoomSession` → später austauschbar (z. B. Photon Fusion 2).
 - **Backend:** ASP.NET Core Minimal APIs auf .NET 10
 - **Datenbank:** PostgreSQL + PostGIS, EF Core mit Npgsql + NetTopologySuite
 - **Cache/Präsenz:** Redis
-- **Chat/Benachrichtigungen:** SignalR (`/hubs/chat`)
+- **Chat/Benachrichtigungen:** SignalR (`/hubs/chat` Match-Chat, `/hubs/room` Raum-Chat)
 - **Auth:** ASP.NET Core Identity + JWT (Access Token + rotierender Refresh Token)
 - **Dateien:** Azure Blob Storage (lokal: Azurite)
 - **Lokale Orchestrierung:** Aspire 13
@@ -51,6 +52,10 @@ client/                      Unity-Projekt
       Core/                  AppBootstrap (Composition Root), ApiSettings
       Networking/            ApiClient, IHttpTransport, Json, ApiResult
       Auth/ Rooms/ …         Ein Ordner pro Feature: Services, die die API aufrufen
+      Rooms/                 Raum: IRoomSession/SignalRRoomSession, RoomView, AvatarView, RoomPathfinder,
+                             ItemCatalog/AvatarCatalog (Kenney-Modelle), RoomTheme, GameStation
+      Networking/Realtime/   Schlanker SignalR-Client (JSON-Protokoll über WebSocket)
+      UI/Games/              TicTacToePanel, QuizPanel
       City/                  3D-Stadt: CityView (Cesium-Tilesets, Marker, Koordinaten ToUnity/ToGeo),
                              CityCameraController (Orbit: Pan/Zoom/Drehen/Neigen/Tap), CityMarker
       UI/                    ScreenNavigator, ScreenBase, UiCatalog
@@ -87,6 +92,8 @@ Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
 - **Welt-Koordinaten:** Unity-Ursprung = Zürich HB auf Bodenhöhe (`CitySettings`, Höhe 408 m – swisstopo-3D
   nutzt Höhen über Meer). X = Ost, Y = oben, Z = Nord, 1 Einheit = 1 m. Nur über `CityView.ToUnity/ToGeo`
   umrechnen. Höhen von Dächern/Gelände: `Cesium3DTileset.SampleHeightMostDetailed` oder `CityView.SurfaceHeightAt`.
+- **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney`. Möbel-ItemId =
+  Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen. Grössen: Möbel ×0.15, Figuren ×1.4.
 - **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
   Vor dem Launch Daten selbst hosten (Fair-Use der geo.admin.ch-Dienste) und Nutzungsbedingungen prüfen.
 - **Screens über der 3D-Welt** sind transparent (`screen--transparent`); Container, die Touches
@@ -136,6 +143,9 @@ dotnet ef migrations add <Name> --project src/Reconnect.Infrastructure --output-
 
 Migrationen werden in der Entwicklung beim Start der API automatisch angewendet.
 
+**Showcase-Räume:** In Development legt `Features/Showcase/ShowcaseRooms.cs` 5 eingerichtete Räume an
+(Rooftop Lounge, Café Limmat, Kunst-Atelier, Opern-Foyer, ETH Bibliothek) und aktualisiert sie bei jedem Start.
+
 **Dev-Login:** In Development legt die API das Konto **Admin / Admin** an (Rolle `Admin`,
 `DevAdmin` in `appsettings.Development.json`, Code: `Features/Auth/DevAdminSeeder.cs`).
 Es umgeht die Passwortregeln und existiert nur, wenn die Umgebung Development ist –
@@ -152,7 +162,8 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"
 
 1. **Backend-Grundgerüst** – Auth, Profile, Räume, Gebäude (PostGIS), Likes/Matches, Blocks/Reports
 2. **Unity-Client mit Login und Raumliste** – Upgrade auf Unity 6 LTS, Contracts-DLL einbinden
-3. **Multiplayer-Raum mit Photon Fusion 2**
+3. **Multiplayer-Raum** – erledigt lokal über SignalR: Avatare, Laufen (Wegfindung), Sprechblasen, Emotes,
+   Minigames (Tic-Tac-Toe, Zürich-Quiz), 5 Showcase-Räume. Offen: Photon/Custom Auth bei Bedarf
 4. **Raum-Editor** (Layout speichern über `PUT /rooms/{id}/layout`)
 5. **Likes/Matches/Chat im Client** (SignalR)
 6. **Stadtquartier aus swisstopo-Daten** – Grundlage steht (Cesium + swissBUILDINGS3D); offen: Gebäude-Eingänge, Self-Hosting, Performance auf Geräten
