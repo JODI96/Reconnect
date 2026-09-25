@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Reconnect.Api.Features.Presence;
 using Reconnect.Infrastructure;
 using Reconnect.Infrastructure.Persistence;
 
@@ -19,7 +20,8 @@ public static class DataSetup
         builder.Services.AddReconnectPersistence(connectionString);
         builder.EnrichNpgsqlDbContext<ReconnectDbContext>();   // health check, tracing, retries
 
-        builder.AddRedisClient(RedisName);                     // presence/cache (used from phase 3)
+        builder.AddRedisClient(RedisName);                     // live room presence
+        builder.Services.AddSingleton<IRoomPresenceStore, RedisRoomPresenceStore>();
         builder.AddAzureBlobServiceClient(BlobsName);          // avatars / room images (later)
 
         return builder;

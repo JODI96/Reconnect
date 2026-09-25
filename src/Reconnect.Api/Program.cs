@@ -38,6 +38,7 @@ if (app.Environment.IsDevelopment())
 app.MapDefaultEndpoints();
 app.MapEndpointModules();
 app.MapHub<ChatHub>(ChatHubContract.Path);
+app.MapHub<RoomHub>(RoomHubContract.Path);
 
 await app.MigrateDatabaseIfEnabledAsync();
 await app.SeedDevAdminIfEnabledAsync();
