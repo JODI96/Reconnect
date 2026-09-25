@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Elements with class "pass-through" don't catch touches, so the floor below can be tapped. -->
+    <ui:VisualElement name="labels" class="city-labels pass-through" />
+    <ui:VisualElement class="city-layout pass-through">
+        <ui:VisualElement class="toolbar toolbar--floating">
+            <ui:VisualElement class="pass-through" style="flex-grow: 1;">
+                <ui:Label name="room-name" text="Raum" class="heading heading--on-map pass-through" />
+                <ui:Label name="room-owner" class="muted pass-through" />
+            </ui:VisualElement>
+            <ui:Button name="leave" text="Verlassen" class="button button--small" />
+        </ui:VisualElement>
+        <ui:Label name="status" class="status status--floating" />
+        <ui:VisualElement class="pass-through" style="flex-grow: 1;" />
+        <ui:VisualElement class="chat-bar">
+            <ui:TextField name="chat-input" class="field chat-bar__input" />
+            <ui:Button name="send" text="Senden" class="button button--primary button--small" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

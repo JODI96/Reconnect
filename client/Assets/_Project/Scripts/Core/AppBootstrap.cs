@@ -22,11 +22,13 @@ namespace Reconnect.Client.Core
         [SerializeField] private CitySettings citySettings;
         [SerializeField] private UiCatalog ui;
         [SerializeField] private CityView city;
+        [SerializeField] private RoomView room;
 
         private ScreenNavigator _navigator;
         private AuthService _auth;
         private RoomService _rooms;
         private BuildingService _buildings;
+        private IRoomSession _roomSession;
 
         private async void Start()
         {
@@ -35,6 +37,7 @@ namespace Reconnect.Client.Core
             api.Tokens = _auth;
             _rooms = new RoomService(api);
             _buildings = new BuildingService(api);
+            _roomSession = new SignalRRoomSession(apiSettings.BaseUrl, _auth);
             city.Initialize(citySettings);
 
             _navigator = new ScreenNavigator(GetComponent<UIDocument>().rootVisualElement, ui.theme);
@@ -60,6 +63,7 @@ namespace Reconnect.Client.Core
             {
                 _auth.SessionChanged -= ShowStartScreen;
             }
+            _roomSession?.Dispose();
         }
 
         private void ShowStartScreen()
@@ -84,6 +88,10 @@ namespace Reconnect.Client.Core
         private void ShowRooms() => _navigator.Show(new RoomListScreen(ui.roomList, ui.roomListItem, _rooms, _auth,
             openRoom: id => ShowRoom(id, back: ShowRooms), openMap: ShowCity));
 
-        private void ShowRoom(Guid roomId, Action back) => _navigator.Show(new RoomDetailScreen(ui.roomDetail, _rooms, roomId, back));
+        private void ShowRoom(Guid roomId, Action back) =>
+            _navigator.Show(new RoomDetailScreen(ui.roomDetail, _rooms, roomId, back, enter: EnterRoom));
+
+        private void EnterRoom(Guid roomId) =>
+            _navigator.Show(new RoomScreen(ui.room, room, _roomSession, roomId, _auth.UserId!.Value, leave: ShowCity));
     }
 }

@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using System.Linq;
 using CesiumForUnity;
 using Reconnect.Client.City;
 using Reconnect.Client.Core;
+using Reconnect.Client.Rooms;
 using Reconnect.Client.UI;
 using UnityEditor;
 using UnityEditor.Build;
@@ -34,6 +36,11 @@ namespace Reconnect.Client.Editor
         private const string MarkerMaterialPath = MaterialsDir + "/Marker.mat";
         private const string SelectedMarkerMaterialPath = MaterialsDir + "/MarkerSelected.mat";
         private const string SkyMaterialPath = MaterialsDir + "/Sky.mat";
+        private const string RoomFloorMaterialPath = MaterialsDir + "/RoomFloor.mat";
+        private const string RoomFloorAltMaterialPath = MaterialsDir + "/RoomFloorAlt.mat";
+        private const string RoomWallMaterialPath = MaterialsDir + "/RoomWall.mat";
+        private const string RoomItemMaterialPath = MaterialsDir + "/RoomItem.mat";
+        private const string AvatarMaterialPath = MaterialsDir + "/Avatar.mat";
 
         // swisstopo (OGD, commercial use allowed with attribution "© swisstopo").
         private const string TerrainUrl = "https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1/layer.json";
@@ -78,6 +85,7 @@ namespace Reconnect.Client.Editor
             catalog.roomListItem = Load<VisualTreeAsset>(UiDir + "/RoomListItem.uxml");
             catalog.roomDetail = Load<VisualTreeAsset>(UiDir + "/RoomDetail.uxml");
             catalog.city = Load<VisualTreeAsset>(UiDir + "/City.uxml");
+            catalog.room = Load<VisualTreeAsset>(UiDir + "/Room.uxml");
             EditorUtility.SetDirty(catalog);
         }
 
@@ -110,10 +118,26 @@ namespace Reconnect.Client.Editor
             sky.SetFloat("_AtmosphereThickness", 0.9f);
             sky.SetFloat("_Exposure", 1.2f);
 
-            foreach (var material in new[] { marker, selected, sky })
+            var roomMaterials = new[]
+            {
+                Colored(RoomFloorMaterialPath, lit, new Color32(214, 170, 120, 255)),
+                Colored(RoomFloorAltMaterialPath, lit, new Color32(196, 150, 104, 255)),
+                Colored(RoomWallMaterialPath, lit, new Color32(236, 226, 214, 255)),
+                Colored(RoomItemMaterialPath, lit, new Color32(120, 170, 220, 255)),
+                Colored(AvatarMaterialPath, lit, Color.white),
+            };
+
+            foreach (var material in roomMaterials.Concat(new[] { marker, selected, sky }))
             {
                 EditorUtility.SetDirty(material);
             }
+        }
+
+        private static Material Colored(string path, Shader shader, Color color)
+        {
+            var material = LoadOrCreateMaterial(path, shader);
+            material.SetColor("_BaseColor", color);
+            return material;
         }
 
         private static void SetEmission(Material material, Color color)
@@ -174,6 +198,15 @@ namespace Reconnect.Client.Editor
                 ("markerMaterial", Load<Material>(MarkerMaterialPath)),
                 ("selectedMarkerMaterial", Load<Material>(SelectedMarkerMaterialPath)));
 
+            var roomView = new GameObject("Room").AddComponent<RoomView>();
+            Assign(roomView,
+                ("roomCamera", camera),
+                ("floorMaterial", Load<Material>(RoomFloorMaterialPath)),
+                ("floorAltMaterial", Load<Material>(RoomFloorAltMaterialPath)),
+                ("wallMaterial", Load<Material>(RoomWallMaterialPath)),
+                ("itemMaterial", Load<Material>(RoomItemMaterialPath)),
+                ("avatarMaterial", Load<Material>(AvatarMaterialPath)));
+
             var app = new GameObject("App");
             var document = app.AddComponent<UIDocument>();
             document.panelSettings = Load<PanelSettings>(PanelSettingsPath);
@@ -182,7 +215,8 @@ namespace Reconnect.Client.Editor
                 ("apiSettings", Load<ApiSettings>(ApiSettingsPath)),
                 ("citySettings", Load<CitySettings>(CitySettingsPath)),
                 ("ui", Load<UiCatalog>(UiCatalogPath)),
-                ("city", cityView));
+                ("city", cityView),
+                ("room", roomView));
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };

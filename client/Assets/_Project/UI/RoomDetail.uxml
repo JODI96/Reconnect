@@ -7,6 +7,6 @@
         <ui:Label name="owner" class="subtitle" />
         <ui:Label name="details" class="muted" style="-unity-text-align: middle-center; white-space: normal; margin-bottom: 32px;" />
         <ui:Label name="status" class="status" />
-        <ui:Button name="enter" text="Betreten (kommt in Phase 3)" class="button button--primary" />
+        <ui:Button name="enter" text="Betreten" class="button button--primary" />
     </ui:VisualElement>
 </ui:UXML>
