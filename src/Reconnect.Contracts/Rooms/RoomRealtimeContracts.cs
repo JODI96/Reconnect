@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Reconnect.Contracts.Rooms
 {
-    /// <summary>Room floor as a grid of 1 m tiles (Habbo style). Fixed size until rooms get their own size.</summary>
+    /// <summary>Room floor as a grid of 1 m tiles (Habbo style). Width/Depth are the defaults – each room has its own size.</summary>
     public static class RoomGrid
     {
         public const int Width = 10;

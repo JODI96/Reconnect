@@ -12,6 +12,8 @@ internal sealed class RoomConfiguration : IEntityTypeConfiguration<Room>
     {
         builder.Property(r => r.Name).HasMaxLength(Room.NameMaxLength);
         builder.Property(r => r.Theme).HasMaxLength(RoomThemes.MaxLength).HasDefaultValue(RoomThemes.Cozy);
+        builder.Property(r => r.Width).HasDefaultValue(Room.DefaultSize);
+        builder.Property(r => r.Depth).HasDefaultValue(Room.DefaultSize);
 
         // Layout is stored as a single jsonb column: [{ ItemId, Position: { X, Y, Z }, Rotation }, ...]
         builder.OwnsMany(r => r.Layout, item =>

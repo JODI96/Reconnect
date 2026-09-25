@@ -50,8 +50,8 @@ public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, 
         }
 
         var displayName = await db.Profiles.Where(p => p.UserId == userId).Select(p => p.DisplayName).SingleAsync(ct);
-        var (x, z) = FindFreeTile(others);
-        var me = new PresenceEntry(roomId, userId, Context.ConnectionId, displayName, x, z);
+        var (x, z) = FindFreeTile(others, room.Width, room.Depth);
+        var me = new PresenceEntry(roomId, userId, Context.ConnectionId, displayName, x, z, room.Width, room.Depth);
 
         var replaced = await presence.AddAsync(me);
         if (replaced is not null)
@@ -65,7 +65,7 @@ public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, 
 
         var ticTacToe = await games.GetAsync<TicTacToeGame>(roomId, TicTacToeId);
         var quiz = await games.GetAsync<QuizGame>(roomId, QuizId);
-        return new RoomSnapshotDto(room, RoomGrid.Width, RoomGrid.Depth,
+        return new RoomSnapshotDto(room, room.Width, room.Depth,
             visibleOthers.Select(ToDto).Append(ToDto(me)).ToList(),
             (ticTacToe ?? new TicTacToeGame()).ToDto(), (quiz ?? new QuizGame()).ToDto());
     }
@@ -75,8 +75,8 @@ public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, 
     public async Task<TilePosition> MoveTo(int x, int z)
     {
         var me = await CurrentEntryAsync();
-        x = Math.Clamp(x, 0, RoomGrid.Width - 1);
-        z = Math.Clamp(z, 0, RoomGrid.Depth - 1);
+        x = Math.Clamp(x, 0, me.Width - 1);
+        z = Math.Clamp(z, 0, me.Depth - 1);
         await presence.UpdateTileAsync(me, x, z);
 
         var tile = new TilePosition(x, z);
@@ -191,17 +191,17 @@ public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, 
     private async Task<HashSet<Guid>> HiddenUsersAsync(Guid userId, CancellationToken ct) =>
         (await db.HiddenUserIdsFor(userId).ToListAsync(ct)).ToHashSet();
 
-    /// <summary>First free tile, spiralling outwards from the middle of the room.</summary>
-    private static (int X, int Z) FindFreeTile(IReadOnlyCollection<PresenceEntry> occupied)
+    /// <summary>First free tile, spiralling outwards from the front middle of the room (where you "come in").</summary>
+    private static (int X, int Z) FindFreeTile(IReadOnlyCollection<PresenceEntry> occupied, int width, int depth)
     {
         var taken = occupied.Select(p => (p.X, p.Z)).ToHashSet();
-        var (cx, cz) = (RoomGrid.Width / 2, RoomGrid.Depth / 2);
-        for (var radius = 0; radius < Math.Max(RoomGrid.Width, RoomGrid.Depth); radius++)
+        var (cx, cz) = (width / 2, Math.Min(2, depth - 1));
+        for (var radius = 0; radius < Math.Max(width, depth); radius++)
         for (var dx = -radius; dx <= radius; dx++)
         for (var dz = -radius; dz <= radius; dz++)
         {
             var (x, z) = (cx + dx, cz + dz);
-            if (x is >= 0 and < RoomGrid.Width && z is >= 0 and < RoomGrid.Depth && !taken.Contains((x, z)))
+            if (x >= 0 && x < width && z >= 0 && z < depth && !taken.Contains((x, z)))
             {
                 return (x, z);
             }

@@ -1,7 +1,8 @@
 namespace Reconnect.Api.Features.Presence;
 
 /// <summary>A user standing in a room, reachable via one SignalR connection.</summary>
-public sealed record PresenceEntry(Guid RoomId, Guid UserId, string ConnectionId, string DisplayName, int X, int Z);
+/// <param name="Width">Room size, kept with the entry so moves can be validated without a database call.</param>
+public sealed record PresenceEntry(Guid RoomId, Guid UserId, string ConnectionId, string DisplayName, int X, int Z, int Width, int Depth);
 
 /// <summary>
 /// Who is in which room right now. Lives in Redis so that several API instances (and restarts)
