@@ -1,0 +1,87 @@
+### Reconnect API – manual testing (Visual Studio / Rider / VS Code "REST Client")
+# 1. Start the AppHost, copy the API URL from the Aspire dashboard into @host.
+# 2. Run "register" (or "login"), copy accessToken into @token.
+
+@host = https://localhost:7141
+@token = paste-access-token-here
+
+### Register (must be 18+)
+# @name register
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "anna@example.com",
+  "password": "Passw0rd!Secure",
+  "displayName": "Anna",
+  "birthDate": "1995-05-17"
+}
+
+### Login
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "anna@example.com",
+  "password": "Passw0rd!Secure"
+}
+
+### Refresh (paste refreshToken from login)
+POST {{host}}/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "paste-refresh-token-here" }
+
+### My profile
+GET {{host}}/profiles/me
+Authorization: Bearer {{token}}
+
+### Update my profile
+PUT {{host}}/profiles/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "displayName": "Anna", "bio": "Kaffee am Limmatquai?" }
+
+### Buildings near Zürich HB (500 m)
+GET {{host}}/buildings/nearby?lat=47.3779&lng=8.5402&radiusMeters=500
+Authorization: Bearer {{token}}
+
+### Create a room in the Prime Tower
+POST {{host}}/rooms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "buildingId": "0199a000-0000-7000-8000-000000000003", "name": "Rooftop Lounge", "isPublic": true }
+
+### List rooms
+GET {{host}}/rooms?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+### Update room layout (owner only) – replace {id}
+PUT {{host}}/rooms/{id}/layout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "items": [
+    { "itemId": "sofa_red", "position": { "x": 1.5, "y": 0, "z": -2 }, "rotation": 90 },
+    { "itemId": "plant_big", "position": { "x": -1, "y": 0, "z": 0 }, "rotation": 0 }
+  ]
+}
+
+### Like a user – replace {userId}
+POST {{host}}/likes/{userId}
+Authorization: Bearer {{token}}
+
+### Block a user
+POST {{host}}/blocks/{userId}
+Authorization: Bearer {{token}}
+
+### Report a user
+POST {{host}}/reports
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "reportedUserId": "{userId}", "reason": "Harassment", "comment": "Beleidigungen im Chat" }

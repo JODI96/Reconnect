@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Reconnect.Api\Reconnect.Api.csproj" />
+    <ProjectReference Include="..\..\src\Reconnect.Infrastructure\Reconnect.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Reconnect.Contracts\Reconnect.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
