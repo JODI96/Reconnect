@@ -4,6 +4,7 @@ using Reconnect.Api.Common.Auth;
 using Reconnect.Api.Common.Endpoints;
 using Reconnect.Api.Common.Errors;
 using Reconnect.Api.Common.OpenApi;
+using Reconnect.Api.Features.Auth;
 using Reconnect.Api.Hubs;
 using Reconnect.Contracts.Hubs;
 using Scalar.AspNetCore;
@@ -39,4 +40,5 @@ app.MapEndpointModules();
 app.MapHub<ChatHub>(ChatHubContract.Path);
 
 await app.MigrateDatabaseIfEnabledAsync();
+await app.SeedDevAdminIfEnabledAsync();
 await app.RunAsync();

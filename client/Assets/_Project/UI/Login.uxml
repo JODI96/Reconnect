@@ -3,7 +3,7 @@
         <ui:Label text="Reconnect" class="title" />
         <ui:Label text="Triff Menschen in Zürich" class="subtitle" />
         <ui:VisualElement name="form" class="form">
-            <ui:TextField name="email" label="E-Mail" keyboard-type="EmailAddress" class="field" />
+            <ui:TextField name="email" label="E-Mail oder Benutzername" keyboard-type="EmailAddress" class="field" />
             <ui:TextField name="password" label="Passwort" password="true" class="field" />
             <ui:Button name="login" text="Anmelden" class="button button--primary" />
             <ui:Label name="status" class="status" />

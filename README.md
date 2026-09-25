@@ -30,7 +30,7 @@ JWT-Schlüssel generiert (User Secrets) und die Migrationen inkl. Zürcher Beisp
 1. Backend starten (siehe oben) – die API läuft auf `http://localhost:5191`.
 2. Unity Hub → *Add project from disk* → Ordner `client` wählen, mit 6000.3.x LTS öffnen.
 3. Szene `Assets/_Project/Scenes/Main.unity` öffnen → Play.
-4. Registrieren (ab 18) oder anmelden → Raumliste.
+4. Anmelden mit **Admin / Admin** (nur lokal in Development vorhanden) oder registrieren (ab 18).
 
 Nach Änderungen an `src/Reconnect.Contracts` einmal `dotnet build` ausführen: die DLL wird
 automatisch nach `client/Assets/Plugins/Reconnect.Contracts/` kopiert.

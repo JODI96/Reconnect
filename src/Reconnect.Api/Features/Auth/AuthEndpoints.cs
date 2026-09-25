@@ -62,7 +62,8 @@ public sealed class AuthEndpoints : IEndpointModule
         LoginRequest request, UserManager<AppUser> users, SignInManager<AppUser> signIn, TokenService tokens,
         CancellationToken ct)
     {
-        var user = await users.FindByEmailAsync(request.Email);
+        // "Email" accepts the email address or the user name (registered users: user name = email).
+        var user = await users.FindByEmailAsync(request.Email) ?? await users.FindByNameAsync(request.Email);
         if (user is null)
         {
             return TypedResults.Unauthorized();

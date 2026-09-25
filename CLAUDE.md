@@ -132,6 +132,11 @@ dotnet ef migrations add <Name> --project src/Reconnect.Infrastructure --output-
 
 Migrationen werden in der Entwicklung beim Start der API automatisch angewendet.
 
+**Dev-Login:** In Development legt die API das Konto **Admin / Admin** an (Rolle `Admin`,
+`DevAdmin` in `appsettings.Development.json`, Code: `Features/Auth/DevAdminSeeder.cs`).
+Es umgeht die Passwortregeln und existiert nur, wenn die Umgebung Development ist –
+nie in anderen Umgebungen aktivieren (ein Test prüft das).
+
 ```powershell
 # Unity (Editor geschlossen) – Pfad zur installierten LTS-Version anpassen
 $unity = "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"
