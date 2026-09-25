@@ -107,12 +107,20 @@ namespace Reconnect.Client.UI.Screens
 
         private void OnTileTapped(Vector2Int tile)
         {
-            // Walk immediately (feels instant), then follow what the server accepted.
-            _room.MovePlayer(_localUserId, new TilePosition(tile.x, tile.y));
+            var me = _room.Avatar(_localUserId);
+            if (me == null)
+            {
+                return;
+            }
+
+            // Tapped a sofa/table? Walk to the free tile next to it. Walk immediately (feels instant),
+            // then follow what the server accepted.
+            var target = _room.Pathfinder.NearestWalkable(tile, me.NextTile);
+            _room.MovePlayer(_localUserId, new TilePosition(target.x, target.y));
             RunAsync(async () =>
             {
-                var accepted = await _session.MoveToAsync(new TilePosition(tile.x, tile.y));
-                if (accepted.X != tile.x || accepted.Z != tile.y)
+                var accepted = await _session.MoveToAsync(new TilePosition(target.x, target.y));
+                if (accepted.X != target.x || accepted.Z != target.y)
                 {
                     _room.MovePlayer(_localUserId, accepted);
                 }

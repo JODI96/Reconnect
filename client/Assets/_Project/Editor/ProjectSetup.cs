@@ -12,6 +12,9 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEditor.Animations;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
@@ -41,6 +44,13 @@ namespace Reconnect.Client.Editor
         private const string RoomWallMaterialPath = MaterialsDir + "/RoomWall.mat";
         private const string RoomItemMaterialPath = MaterialsDir + "/RoomItem.mat";
         private const string AvatarMaterialPath = MaterialsDir + "/Avatar.mat";
+        private const string ItemCatalogPath = SettingsDir + "/ItemCatalog.asset";
+        private const string AvatarCatalogPath = SettingsDir + "/AvatarCatalog.asset";
+        private const string PostProcessingPath = SettingsDir + "/PostProcessing.asset";
+        private const string AnimationDir = Root + "/Animation";
+        private const string AvatarControllerPath = AnimationDir + "/Avatar.controller";
+        private const string KenneyFurnitureDir = "Assets/ThirdParty/Kenney/Furniture";
+        private const string KenneyCharactersDir = "Assets/ThirdParty/Kenney/Characters";
 
         // swisstopo (OGD, commercial use allowed with attribution "© swisstopo").
         private const string TerrainUrl = "https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1/layer.json";
@@ -62,6 +72,9 @@ namespace Reconnect.Client.Editor
             CreateUiCatalog();
             CreatePanelSettings();
             CreateCityMaterials();
+            CreateItemCatalog();
+            CreateAvatarCatalog();
+            CreatePostProcessing();
             AssetDatabase.SaveAssets();
 
             // 2) Build the scene. It re-loads every asset by path: references held from step 1 can
@@ -133,6 +146,129 @@ namespace Reconnect.Client.Editor
             }
         }
 
+        /// <summary>ItemId = model file name, e.g. "loungeSofa" (Kenney Furniture Kit, CC0).</summary>
+        private static void CreateItemCatalog()
+        {
+            var catalog = LoadOrCreate<ItemCatalog>(ItemCatalogPath);
+            catalog.modelScale = 0.15f;
+            catalog.items = AssetDatabase.FindAssets("t:Model", new[] { KenneyFurnitureDir })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .OrderBy(path => path)
+                .Select(path => new ItemCatalog.Entry
+                {
+                    itemId = Path.GetFileNameWithoutExtension(path),
+                    model = AssetDatabase.LoadAssetAtPath<GameObject>(path),
+                })
+                .ToList();
+            EditorUtility.SetDirty(catalog);
+        }
+
+        /// <summary>12 Kenney Mini Characters with one shared animator (all use the same skeleton).</summary>
+        private static void CreateAvatarCatalog()
+        {
+            var characters = AssetDatabase.FindAssets("t:Model", new[] { KenneyCharactersDir })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(path => Path.GetFileName(path).StartsWith("character-"))
+                .OrderBy(path => path)
+                .ToList();
+
+            var controller = CreateAvatarController(characters[0]);
+            var catalog = LoadOrCreate<AvatarCatalog>(AvatarCatalogPath);
+            catalog.characters = characters.Select(AssetDatabase.LoadAssetAtPath<GameObject>).ToArray();
+            catalog.animator = controller;
+            catalog.scale = 1.4f;
+            EditorUtility.SetDirty(catalog);
+        }
+
+        private static AnimatorController CreateAvatarController(string clipSourcePath)
+        {
+            Directory.CreateDirectory(AnimationDir);
+            AssetDatabase.DeleteAsset(AvatarControllerPath);   // rebuilt from scratch every run
+            var clips = AssetDatabase.LoadAllAssetsAtPath(clipSourcePath).OfType<AnimationClip>()
+                .Where(c => !c.name.StartsWith("__preview__"))
+                .ToDictionary(c => c.name);
+
+            var controller = AnimatorController.CreateAnimatorControllerAtPath(AvatarControllerPath);
+            controller.AddParameter("Walking", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("Sitting", AnimatorControllerParameterType.Bool);
+            var machine = controller.layers[0].stateMachine;
+
+            var idle = machine.AddState("Idle");
+            idle.motion = clips["idle"];
+            machine.defaultState = idle;
+            var walk = machine.AddState("Walk");
+            walk.motion = clips["walk"];
+            var sit = machine.AddState("Sit");
+            sit.motion = clips["sit"];
+
+            Connect(idle, walk, AnimatorConditionMode.If, "Walking");
+            Connect(walk, idle, AnimatorConditionMode.IfNot, "Walking");
+            Connect(idle, sit, AnimatorConditionMode.If, "Sitting");
+            Connect(sit, idle, AnimatorConditionMode.IfNot, "Sitting");
+
+            // One-shot emotes (trigger name = emote id), back to idle when done.
+            foreach (var (trigger, clip) in new[] { ("yes", "emote-yes"), ("no", "emote-no"), ("jump", "jump"), ("wave", "interact-right") })
+            {
+                controller.AddParameter(trigger, AnimatorControllerParameterType.Trigger);
+                var state = machine.AddState(trigger);
+                state.motion = clips[clip];
+                var enter = machine.AddAnyStateTransition(state);
+                enter.AddCondition(AnimatorConditionMode.If, 0, trigger);
+                enter.duration = 0.1f;
+                var exit = state.AddTransition(idle);
+                exit.hasExitTime = true;
+                exit.exitTime = 0.95f;
+                exit.duration = 0.15f;
+            }
+            return controller;
+        }
+
+        private static void Connect(AnimatorState from, AnimatorState to, AnimatorConditionMode mode, string parameter)
+        {
+            var transition = from.AddTransition(to);
+            transition.AddCondition(mode, 0, parameter);
+            transition.hasExitTime = false;
+            transition.duration = 0.12f;
+        }
+
+        /// <summary>Warm, slightly punchy grading with soft bloom on lamps and emissive markers.</summary>
+        private static void CreatePostProcessing()
+        {
+            var profile = LoadOrCreate<VolumeProfile>(PostProcessingPath);
+            foreach (var component in profile.components.ToList())
+            {
+                Object.DestroyImmediate(component, true);
+            }
+            profile.components.Clear();
+
+            var bloom = profile.Add<Bloom>(true);
+            bloom.intensity.Override(0.45f);
+            bloom.threshold.Override(1.05f);
+            bloom.scatter.Override(0.65f);
+
+            var tonemapping = profile.Add<Tonemapping>(true);
+            tonemapping.mode.Override(TonemappingMode.Neutral);
+
+            var color = profile.Add<ColorAdjustments>(true);
+            color.postExposure.Override(0.15f);
+            color.contrast.Override(12f);
+            color.saturation.Override(14f);
+
+            var vignette = profile.Add<Vignette>(true);
+            vignette.intensity.Override(0.2f);
+            vignette.smoothness.Override(0.45f);
+
+            foreach (var component in profile.components)
+            {
+                component.name = component.GetType().Name;
+                if (!AssetDatabase.IsSubAsset(component))
+                {
+                    AssetDatabase.AddObjectToAsset(component, profile);
+                }
+            }
+            EditorUtility.SetDirty(profile);
+        }
+
         private static Material Colored(string path, Shader shader, Color color)
         {
             var material = LoadOrCreateMaterial(path, shader);
@@ -155,6 +291,13 @@ namespace Reconnect.Client.Editor
             var camera = cameraGo.AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.Skybox;
             var cameraController = cameraGo.AddComponent<CityCameraController>();
+            var cameraData = cameraGo.AddComponent<UniversalAdditionalCameraData>();
+            cameraData.renderPostProcessing = true;
+            cameraData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+
+            var volume = new GameObject("Post Processing").AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = Load<VolumeProfile>(PostProcessingPath);
 
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
@@ -205,7 +348,9 @@ namespace Reconnect.Client.Editor
                 ("floorAltMaterial", Load<Material>(RoomFloorAltMaterialPath)),
                 ("wallMaterial", Load<Material>(RoomWallMaterialPath)),
                 ("itemMaterial", Load<Material>(RoomItemMaterialPath)),
-                ("avatarMaterial", Load<Material>(AvatarMaterialPath)));
+                ("avatarMaterial", Load<Material>(AvatarMaterialPath)),
+                ("itemCatalog", Load<ItemCatalog>(ItemCatalogPath)),
+                ("avatarCatalog", Load<AvatarCatalog>(AvatarCatalogPath)));
 
             var app = new GameObject("App");
             var document = app.AddComponent<UIDocument>();

@@ -5,7 +5,9 @@
         "Reconnect.Client",
         "Unity.InputSystem",
         "UnityEngine.UI",
-        "CesiumForUnity"
+        "CesiumForUnity",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [
         "Editor"

@@ -51,12 +51,16 @@ namespace Reconnect.Client.PlayModeTests
         {
             var layout = new[]
             {
-                new RoomItemDto("sofa", new Vector3Dto(2.5f, 0f, 8.5f), 180f),
-                new RoomItemDto("table", new Vector3Dto(4.5f, 0f, 6.5f), 0f),
-                new RoomItemDto("plant", new Vector3Dto(0.5f, 0f, 9.5f), 0f),
+                new RoomItemDto("loungeSofa", new Vector3Dto(5f, 0f, 9.3f), 180f),
+                new RoomItemDto("tableCoffee", new Vector3Dto(5f, 0f, 7.8f), 0f),
+                new RoomItemDto("rugRound", new Vector3Dto(5f, 0f, 7.8f), 0f),
+                new RoomItemDto("pottedPlant", new Vector3Dto(9.4f, 0f, 9.4f), 0f),
+                new RoomItemDto("bookcaseClosedWide", new Vector3Dto(9.6f, 0f, 5f), 270f),
+                new RoomItemDto("lampRoundFloor", new Vector3Dto(3.2f, 0f, 9.4f), 0f),
+                new RoomItemDto("unknownItem", new Vector3Dto(1.5f, 0f, 1.5f), 0f),
             };
             var dto = new RoomDto(Guid.NewGuid(), "Testraum", Guid.NewGuid(), Other, "Ben", true, layout,
-                DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
+                DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, "rooftop");
             return new RoomSnapshotDto(dto, RoomGrid.Width, RoomGrid.Depth, new[]
             {
                 new RoomPlayerDto(Me, "Anna", new TilePosition(5, 5)),
