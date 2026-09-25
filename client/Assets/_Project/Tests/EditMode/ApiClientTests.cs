@@ -51,6 +51,33 @@ namespace Reconnect.Client.Tests
         }
 
         [Test]
+        public void Token_renewal_does_not_signal_a_login_change_but_restoring_does()
+        {
+            // Regression: renewing the token before entering a room raised SessionChanged, and the app
+            // navigated back to the start screen – the room closed immediately.
+            var transport = new FakeTransport(req => req.Url.EndsWith("/auth/refresh")
+                ? Ok(AuthJson("new", "refresh-2"))
+                : Ok(AuthJson("old", "refresh-1")));
+            var (_, auth, store) = Create(transport);
+            var changes = 0;
+            auth.SessionChanged += () => changes++;
+
+            FakeTransport.Run(auth.LoginAsync("anna@example.com", "pw"));
+            Assert.AreEqual(1, changes, "login");
+
+            Assert.IsTrue(FakeTransport.Run(auth.TryRefreshAsync(default)));
+            Assert.AreEqual(1, changes, "renewal is not a login change");
+            Assert.AreEqual("new", auth.AccessToken);
+
+            // App restart: a new AuthService restores the session from the stored refresh token.
+            var restarted = new AuthService(new ApiClient(transport, BaseUrl), store);
+            var restartChanges = 0;
+            restarted.SessionChanged += () => restartChanges++;
+            Assert.IsTrue(FakeTransport.Run(restarted.TryRestoreSessionAsync()));
+            Assert.AreEqual(1, restartChanges, "restore on app start logs in");
+        }
+
+        [Test]
         public void Rejected_refresh_token_logs_out()
         {
             var transport = new FakeTransport(req => req.Url.EndsWith("/auth/login")

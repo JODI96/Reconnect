@@ -21,7 +21,7 @@ namespace Reconnect.Client.Auth
             _store = store;
         }
 
-        /// <summary>Raised after login, register, restore and logout.</summary>
+        /// <summary>Raised when the login state changes: login, register, restore, logout – not on token renewal.</summary>
         public event Action SessionChanged;
 
         public bool IsLoggedIn => _session != null;
@@ -94,7 +94,9 @@ namespace Reconnect.Client.Auth
 
             if (result.IsSuccess)
             {
-                SetSession(result.Value);
+                // Only a restore (no session before) changes the login state; a token renewal must not
+                // (listeners navigate on SessionChanged – e.g. back to the start screen).
+                SetSession(result.Value, notify: previous == null);
                 return true;
             }
 
@@ -109,11 +111,14 @@ namespace Reconnect.Client.Auth
             return false;
         }
 
-        private void SetSession(AuthResponse session)
+        private void SetSession(AuthResponse session, bool notify = true)
         {
             _session = session;
             _store.SaveRefreshToken(session.RefreshToken);
-            SessionChanged?.Invoke();
+            if (notify)
+            {
+                SessionChanged?.Invoke();
+            }
         }
     }
 }
