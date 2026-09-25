@@ -67,8 +67,9 @@ public sealed class BlockTests(ReconnectApiFactory factory)
         await anna.Client.PostAsync(ApiRoutes.Blocks.ForUser(ben.Id), null);
 
         Assert.Equal(HttpStatusCode.NotFound, (await anna.Client.GetAsync(ApiRoutes.Rooms.ById(room.Id))).StatusCode);
-        var list = await (await anna.Client.GetAsync($"{ApiRoutes.Rooms.Group}?buildingId={ZurichBuildings.PrimeTowerId}&pageSize=100"))
-            .ReadAsync<PagedResponse<RoomSummaryDto>>();
+        var listResponse = await anna.Client.GetAsync($"{ApiRoutes.Rooms.Group}?buildingId={ZurichBuildings.PrimeTowerId}&pageSize=100");
+        Assert.True(listResponse.IsSuccessStatusCode, await listResponse.Content.ReadAsStringAsync());
+        var list = await listResponse.ReadAsync<PagedResponse<RoomSummaryDto>>();
         Assert.DoesNotContain(list.Items, r => r.Id == room.Id);
     }
 }

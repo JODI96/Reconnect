@@ -39,13 +39,17 @@ public sealed class RoomEndpoints : IEndpointModule
         }
 
         var total = await query.CountAsync(ct);
+        // Sort/page on entity columns first; EF can't order by members of a constructed DTO.
         var items = await query
-            .Join(db.Profiles, r => r.OwnerId, o => o.UserId, (r, o) => new RoomSummaryDto(
-                r.Id, r.Name, r.BuildingId, r.OwnerId, o.DisplayName, r.IsPublic, r.UpdatedAt))
             .OrderByDescending(r => r.UpdatedAt)
             .ThenBy(r => r.Id)
             .Skip((p - 1) * size)
             .Take(size)
+            .Join(db.Profiles, r => r.OwnerId, o => o.UserId, (r, o) => new { Room = r, OwnerName = o.DisplayName })
+            .OrderByDescending(x => x.Room.UpdatedAt)
+            .ThenBy(x => x.Room.Id)
+            .Select(x => new RoomSummaryDto(
+                x.Room.Id, x.Room.Name, x.Room.BuildingId, x.Room.OwnerId, x.OwnerName, x.Room.IsPublic, x.Room.UpdatedAt))
             .ToListAsync(ct);
 
         return TypedResults.Ok(new PagedResponse<RoomSummaryDto>(items, p, size, total));
