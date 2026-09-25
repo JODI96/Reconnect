@@ -18,8 +18,14 @@ namespace Reconnect.Contracts.Rooms
 
     public sealed record RoomPlayerDto(Guid UserId, string DisplayName, TilePosition Tile);
 
-    /// <summary>Everything a client needs when entering: the room and who is already there (including the caller).</summary>
-    public sealed record RoomSnapshotDto(RoomDto Room, int Width, int Depth, IReadOnlyList<RoomPlayerDto> Players);
+    /// <summary>Everything a client needs when entering: the room, who is already there (including the caller) and running games.</summary>
+    public sealed record RoomSnapshotDto(
+        RoomDto Room,
+        int Width,
+        int Depth,
+        IReadOnlyList<RoomPlayerDto> Players,
+        TicTacToeStateDto? TicTacToe = null,
+        QuizStateDto? Quiz = null);
 
     public sealed record PlayerMovedDto(Guid UserId, TilePosition Tile);
 

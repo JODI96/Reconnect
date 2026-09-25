@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Reconnect.Api.Features.Minigames;
 using Reconnect.Api.Features.Presence;
 using Reconnect.Infrastructure;
 using Reconnect.Infrastructure.Persistence;
@@ -22,6 +23,7 @@ public static class DataSetup
 
         builder.AddRedisClient(RedisName);                     // live room presence
         builder.Services.AddSingleton<IRoomPresenceStore, RedisRoomPresenceStore>();
+        builder.Services.AddSingleton<IRoomGameStore, RedisRoomGameStore>();
         builder.AddAzureBlobServiceClient(BlobsName);          // avatars / room images (later)
 
         return builder;

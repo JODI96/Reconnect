@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Reconnect.Api.Common.Auth;
 using Reconnect.Api.Features.Blocks;
+using Reconnect.Api.Features.Minigames;
 using Reconnect.Api.Features.Presence;
 using Reconnect.Api.Features.Rooms;
 using Reconnect.Contracts.Rooms;
@@ -17,6 +18,9 @@ public interface IRoomClient
     Task PlayerLeft(Guid userId);
     Task PlayerMoved(PlayerMovedDto move);
     Task ChatMessage(RoomChatMessageDto message);
+    Task PlayerEmote(EmoteDto emote);
+    Task TicTacToeUpdated(TicTacToeStateDto state);
+    Task QuizUpdated(QuizStateDto state);
 }
 
 /// <summary>
@@ -26,7 +30,8 @@ public interface IRoomClient
 /// The client talks to this through IRoomSession, so a Photon implementation can replace it later.
 /// </summary>
 [Authorize]
-public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, TimeProvider time) : Hub<IRoomClient>
+public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, IRoomGameStore games, TimeProvider time)
+    : Hub<IRoomClient>
 {
     public async Task<RoomSnapshotDto> JoinRoom(Guid roomId)
     {
@@ -58,8 +63,11 @@ public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, 
         var visibleOthers = others.Where(p => !hidden.Contains(p.UserId)).ToList();
         await Clients.Clients(visibleOthers.Select(p => p.ConnectionId).ToList()).PlayerJoined(ToDto(me));
 
+        var ticTacToe = await games.GetAsync<TicTacToeGame>(roomId, TicTacToeId);
+        var quiz = await games.GetAsync<QuizGame>(roomId, QuizId);
         return new RoomSnapshotDto(room, RoomGrid.Width, RoomGrid.Depth,
-            visibleOthers.Select(ToDto).Append(ToDto(me)).ToList());
+            visibleOthers.Select(ToDto).Append(ToDto(me)).ToList(),
+            (ticTacToe ?? new TicTacToeGame()).ToDto(), (quiz ?? new QuizGame()).ToDto());
     }
 
     public Task LeaveRoom() => LeaveCurrentRoomAsync();
@@ -89,6 +97,29 @@ public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, 
         await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: true)).ChatMessage(message);
     }
 
+    public async Task Emote(string emote)
+    {
+        if (!Emotes.All.Contains(emote))
+        {
+            throw new HubException("Unknown emote.");
+        }
+        var me = await CurrentEntryAsync();
+        await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).PlayerEmote(new EmoteDto(me.UserId, emote));
+    }
+
+    public Task<TicTacToeStateDto> TicTacToeJoin() => UpdateTicTacToeAsync((game, me) => game.Join(me.UserId, me.DisplayName));
+
+    public Task<TicTacToeStateDto> TicTacToeMove(int cell) => UpdateTicTacToeAsync((game, me) => game.Move(me.UserId, cell));
+
+    public Task<TicTacToeStateDto> TicTacToeReset() => UpdateTicTacToeAsync((game, _) => game.Reset());
+
+    public Task<QuizStateDto> QuizStart() => UpdateQuizAsync((game, _) => game.Start(Random.Shared));
+
+    public Task<QuizStateDto> QuizAnswer(int answerIndex) =>
+        UpdateQuizAsync((game, me) => game.Answer(me.UserId, me.DisplayName, answerIndex));
+
+    public Task<QuizStateDto> QuizNext() => UpdateQuizAsync((game, _) => game.Next());
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         await LeaveCurrentRoomAsync();
@@ -100,8 +131,47 @@ public sealed class RoomHub(ReconnectDbContext db, IRoomPresenceStore presence, 
         var me = await presence.RemoveByConnectionAsync(Context.ConnectionId);
         if (me is not null)
         {
+            // Leaving the room gives up the seat at the tic-tac-toe table.
+            var freed = false;
+            var table = await games.UpdateAsync<TicTacToeGame>(me.RoomId, TicTacToeId, game => freed = game.Leave(me.UserId));
+            if (freed)
+            {
+                await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false, CancellationToken.None)).TicTacToeUpdated(table.ToDto());
+            }
+
             // Don't use ConnectionAborted here: it is already cancelled when the client disconnected.
             await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false, CancellationToken.None)).PlayerLeft(me.UserId);
+        }
+    }
+
+    private const string TicTacToeId = "tictactoe";
+    private const string QuizId = "quiz";
+
+    private async Task<TicTacToeStateDto> UpdateTicTacToeAsync(Action<TicTacToeGame, PresenceEntry> action)
+    {
+        var me = await CurrentEntryAsync();
+        var state = (await UpdateGameAsync<TicTacToeGame>(me, TicTacToeId, game => action(game, me))).ToDto();
+        await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).TicTacToeUpdated(state);
+        return state;
+    }
+
+    private async Task<QuizStateDto> UpdateQuizAsync(Action<QuizGame, PresenceEntry> action)
+    {
+        var me = await CurrentEntryAsync();
+        var state = (await UpdateGameAsync<QuizGame>(me, QuizId, game => action(game, me))).ToDto();
+        await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).QuizUpdated(state);
+        return state;
+    }
+
+    private async Task<T> UpdateGameAsync<T>(PresenceEntry me, string gameId, Action<T> action) where T : class, new()
+    {
+        try
+        {
+            return await games.UpdateAsync(me.RoomId, gameId, action);
+        }
+        catch (MinigameException ex)
+        {
+            throw new HubException(ex.Message);
         }
     }
 
