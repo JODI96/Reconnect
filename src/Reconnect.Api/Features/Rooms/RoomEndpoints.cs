@@ -40,11 +40,12 @@ public sealed class RoomEndpoints : IEndpointModule
 
         var total = await query.CountAsync(ct);
         var items = await query
-            .OrderByDescending(r => r.UpdatedAt)
-            .Skip((p - 1) * size)
-            .Take(size)
             .Join(db.Profiles, r => r.OwnerId, o => o.UserId, (r, o) => new RoomSummaryDto(
                 r.Id, r.Name, r.BuildingId, r.OwnerId, o.DisplayName, r.IsPublic, r.UpdatedAt))
+            .OrderByDescending(r => r.UpdatedAt)
+            .ThenBy(r => r.Id)
+            .Skip((p - 1) * size)
+            .Take(size)
             .ToListAsync(ct);
 
         return TypedResults.Ok(new PagedResponse<RoomSummaryDto>(items, p, size, total));

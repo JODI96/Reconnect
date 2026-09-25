@@ -49,9 +49,9 @@ public sealed class ProfileEndpoints : IEndpointModule
     private static async Task<Results<Ok<ProfileDto>, NotFound>> GetById(
         Guid id, ClaimsPrincipal principal, ReconnectDbContext db, TimeProvider time, CancellationToken ct)
     {
-        var viewerId = principal.GetUserId();
+        var hiddenUserIds = db.HiddenUserIdsFor(principal.GetUserId());
         var profile = await db.Profiles
-            .Where(p => p.UserId == id && !db.HiddenUserIdsFor(viewerId).Contains(p.UserId))
+            .Where(p => p.UserId == id && !hiddenUserIds.Contains(p.UserId))
             .SingleOrDefaultAsync(ct);
 
         return profile is null

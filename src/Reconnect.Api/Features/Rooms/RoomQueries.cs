@@ -9,10 +9,11 @@ namespace Reconnect.Api.Features.Rooms;
 public static class RoomQueries
 {
     /// <summary>Rooms the user may see: own rooms and public rooms of users not blocked in either direction.</summary>
-    public static IQueryable<Room> VisibleRooms(this ReconnectDbContext db, Guid userId) =>
-        db.Rooms.Where(r =>
-            r.OwnerId == userId ||
-            (r.IsPublic && !db.HiddenUserIdsFor(userId).Contains(r.OwnerId)));
+    public static IQueryable<Room> VisibleRooms(this ReconnectDbContext db, Guid userId)
+    {
+        var hiddenUserIds = db.HiddenUserIdsFor(userId);
+        return db.Rooms.Where(r => r.OwnerId == userId || (r.IsPublic && !hiddenUserIds.Contains(r.OwnerId)));
+    }
 
     public static async Task<RoomDto?> QueryRoomDto(this ReconnectDbContext db, IQueryable<Room> rooms, CancellationToken ct)
     {

@@ -45,13 +45,16 @@ public sealed class BuildingEndpoints : IEndpointModule
         }
 
         var origin = Building.CreatePoint(lat, lng);
-        var buildings = await db.Buildings
+        var rows = await db.Buildings
             .Where(b => b.Location.IsWithinDistance(origin, radius))
             .OrderBy(b => b.Location.Distance(origin))
             .Take(MaxResults)
-            .Select(b => new BuildingDto(b.Id, b.Name, b.Address, b.Location.Y, b.Location.X, b.Location.Distance(origin)))
+            .Select(b => new { b.Id, b.Name, b.Address, b.Location, Distance = b.Location.Distance(origin) })
             .ToListAsync(ct);
 
-        return TypedResults.Ok(buildings);
+        // Coordinates are read from the loaded point (ST_X/ST_Y don't accept geography).
+        return TypedResults.Ok(rows
+            .Select(b => new BuildingDto(b.Id, b.Name, b.Address, b.Location.Y, b.Location.X, b.Distance))
+            .ToList());
     }
 }
