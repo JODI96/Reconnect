@@ -42,6 +42,10 @@ namespace Reconnect.Client.PlayModeTests
             Assert.IsNotNull(city, "CityView in scene");
             yield return null;   // AppBootstrap.Start has initialized the city
 
+            // Render into a phone-sized target, so level of detail matches a real 1080×1920 screen.
+            var target = new RenderTexture(1080, 1920, 24);
+            city.Camera.targetTexture = target;
+
             city.ShowBuildings(new[]
             {
                 new BuildingDto(Guid.NewGuid(), "Zürich HB", "Bahnhofplatz 1", 47.37785, 8.54018, null),
@@ -51,18 +55,36 @@ namespace Reconnect.Client.PlayModeTests
             });
             city.SetVisible(true);
 
-            yield return WaitFor(() => city.PendingTiles == 0, 90f);
-            var tiles = city.transform.Find("Tiles").childCount;
-            if (tiles == 0)
+            yield return WaitForTiles(city);
+            if (city.Ground.VisibleTiles == 0)
             {
                 Assert.Ignore("No map tiles loaded – offline?");
             }
 
             Assert.AreEqual(4, city.Markers.Count);
-            Assert.Greater(tiles, 20, "ground covered with tiles");
+            Assert.Greater(city.Ground.VisibleTiles, 10, "ground covered with tiles");
+            var overview = SaveCameraImage(city.Camera, "city-preview.png");
+            Debug.Log($"[Reconnect] City preview: {overview} ({city.Ground.VisibleTiles} tiles, max zoom {city.Ground.MaxVisibleZoom})");
 
-            var file = SaveCameraImage(city.Camera, 1080, 1920);
-            Debug.Log($"[Reconnect] City preview: {file} ({tiles} tiles)");
+            // Street level above Paradeplatz: the LOD system must stream the 10 cm/px tiles.
+            var paradeplatz = city.Projection.ToWorld(47.36970, 8.53920);
+            city.CameraController.LookAt(paradeplatz, 45f);
+            yield return WaitForTiles(city);
+
+            Assert.AreEqual(20, city.Ground.MaxVisibleZoom, "sharpest swisstopo tiles at street level");
+            var street = SaveCameraImage(city.Camera, "city-street.png");
+            Debug.Log($"[Reconnect] Street preview: {street} ({city.Ground.VisibleTiles} tiles, loaded {city.Ground.LoadedTiles})");
+
+            city.Camera.targetTexture = null;
+            target.Release();
+        }
+
+        private static IEnumerator WaitForTiles(CityView city)
+        {
+            yield return null;   // let the LOD selection run for the new camera position
+            yield return null;
+            yield return WaitFor(() => city.PendingTiles == 0, 120f);
+            yield return null;
         }
 
         private static VisualElement Root() =>
@@ -81,26 +103,22 @@ namespace Reconnect.Client.PlayModeTests
             }
         }
 
-        private static string SaveCameraImage(Camera camera, int width, int height)
+        /// <summary>Renders the camera (which draws into its target texture) and writes client/Logs/&lt;fileName&gt;.</summary>
+        private static string SaveCameraImage(Camera camera, string fileName)
         {
-            var target = new RenderTexture(width, height, 24);
-            var previous = camera.targetTexture;
-            camera.targetTexture = target;
+            var target = camera.targetTexture;
             camera.Render();
 
             RenderTexture.active = target;
-            var image = new Texture2D(width, height, TextureFormat.RGB24, false);
-            image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            var image = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
+            image.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
             image.Apply();
-
-            camera.targetTexture = previous;
             RenderTexture.active = null;
 
-            var path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "city-preview.png"));
+            var path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", fileName));
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllBytes(path, image.EncodeToPNG());
             UnityEngine.Object.Destroy(image);
-            target.Release();
             return path;
         }
     }

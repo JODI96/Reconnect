@@ -91,6 +91,7 @@ namespace Reconnect.Client.Editor
             var lit = Shader.Find("Universal Render Pipeline/Lit");
 
             var tile = LoadOrCreateMaterial(TileMaterialPath, unlit);
+            tile.SetFloat("_ZWrite", 0f);   // tiles are layered by render queue (zoom), not by depth
 
             var building = LoadOrCreateMaterial(BuildingMaterialPath, lit);
             building.SetColor("_BaseColor", new Color32(255, 92, 138, 255));

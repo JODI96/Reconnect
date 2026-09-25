@@ -51,7 +51,8 @@ client/                      Unity-Projekt
       Core/                  AppBootstrap (Composition Root), ApiSettings
       Networking/            ApiClient, IHttpTransport, Json, ApiResult
       Auth/ Rooms/ …         Ein Ordner pro Feature: Services, die die API aufrufen
-      City/                  Stadtansicht: GeoProjection (WGS84 → Unity-Meter), swisstopo-Kacheln,
+      City/                  Stadtansicht: GeoProjection (WGS84 → Unity-Meter), TiledGround (LOD-Kachel-
+                             Streaming bis 10 cm/px, Quadtree in TileLodSelector),
                              CityView (3D in der Szene), CityCameraController (Pan/Zoom/Tap)
       UI/                    ScreenNavigator, ScreenBase, UiCatalog
       UI/Screens/            Ein Screen = Klasse + UXML-Template

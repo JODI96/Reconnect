@@ -17,11 +17,13 @@ MonoBehaviour:
   loadRadiusMeters: 3000
   buildingHeight: 35
   buildingSize: 45
-  tileZoom: 16
+  baseZoom: 14
+  maxZoom: 20
+  tileDetail: 1
+  maxLoadedTiles: 350
   tileMarginMeters: 900
-  maxTiles: 220
   defaultLayer: 0
-  minCameraHeight: 120
+  minCameraHeight: 25
   maxCameraHeight: 3500
   startCameraHeight: 2400
   cameraPitch: 60
