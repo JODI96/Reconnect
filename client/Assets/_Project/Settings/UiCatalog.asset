@@ -18,3 +18,4 @@ MonoBehaviour:
   roomList: {fileID: 9197481963319205126, guid: d31dd6150734e474f9a398454ba02d11, type: 3}
   roomListItem: {fileID: 9197481963319205126, guid: c2b349b075f05b8479cebabb84ccee86, type: 3}
   roomDetail: {fileID: 9197481963319205126, guid: bf0ade94c0b096c42a29406f30d6c8cb, type: 3}
+  city: {fileID: 9197481963319205126, guid: 03ab56ad7b4d8124ebb7efd8cee35f8d, type: 3}

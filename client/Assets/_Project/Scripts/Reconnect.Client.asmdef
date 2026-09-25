@@ -1,7 +1,9 @@
 {
     "name": "Reconnect.Client",
     "rootNamespace": "Reconnect.Client",
-    "references": [],
+    "references": [
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

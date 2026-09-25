@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement class="toolbar">
         <ui:Label text="Räume" class="heading" />
+        <ui:Button name="map" text="Karte" class="button button--small" />
         <ui:Button name="refresh" text="Aktualisieren" class="button button--small" />
         <ui:Button name="logout" text="Abmelden" class="button button--small" />
     </ui:VisualElement>

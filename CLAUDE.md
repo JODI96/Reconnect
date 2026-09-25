@@ -51,13 +51,16 @@ client/                      Unity-Projekt
       Core/                  AppBootstrap (Composition Root), ApiSettings
       Networking/            ApiClient, IHttpTransport, Json, ApiResult
       Auth/ Rooms/ …         Ein Ordner pro Feature: Services, die die API aufrufen
+      City/                  Stadtansicht: GeoProjection (WGS84 → Unity-Meter), swisstopo-Kacheln,
+                             CityView (3D in der Szene), CityCameraController (Pan/Zoom/Tap)
       UI/                    ScreenNavigator, ScreenBase, UiCatalog
       UI/Screens/            Ein Screen = Klasse + UXML-Template
     UI/                      UXML-Layouts + Theme.uss
     Settings/                ScriptableObjects (ApiSettings, UiCatalog, PanelSettings)
     Scenes/Main.unity        Einzige Szene (vorerst)
     Editor/ProjectSetup.cs   Menü "Reconnect → Setup Project": Szene/Assets/PlayerSettings anlegen
-    Tests/EditMode/          Unity-Tests (NUnit)
+    Tests/EditMode/          Unity-Tests (NUnit), schnell, ohne Szene
+    Tests/PlayMode/          Startet Main.unity; City-Test rendert client/Logs/city-preview.png
 ```
 
 Abhängigkeiten: `Api → Infrastructure → Domain`, `Api → Contracts`, `AppHost → Api`.
@@ -78,6 +81,12 @@ Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
 - `.meta`-Dateien immer mit committen.
 - Backend-URL: `Settings/ApiSettings.asset` (Editor: localhost, Android-Emulator: 10.0.2.2,
   echtes Gerät: LAN-IP des PCs).
+- **Welt-Koordinaten:** Unity-Ursprung = Zürich HB (`CitySettings`), X = Ost, Z = Nord, 1 Einheit = 1 m.
+  Nur über `GeoProjection` umrechnen. Die aktuelle Stadtansicht (Luftbild-Kacheln + Platzhalter-Blöcke)
+  ist ein Vorgeschmack und wird in Phase 6 durch echte swisstopo-3D-Daten ersetzt.
+- **swisstopo-Daten** (WMTS, OGD): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
+- **Screens über der 3D-Welt** sind transparent (`screen--transparent`); Container, die Touches
+  zur Karte durchlassen sollen, bekommen die Klasse `pass-through`.
 
 ### Neues Feature hinzufügen
 

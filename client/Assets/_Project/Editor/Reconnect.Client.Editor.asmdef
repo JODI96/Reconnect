@@ -2,7 +2,9 @@
     "name": "Reconnect.Client.Editor",
     "rootNamespace": "Reconnect.Client.Editor",
     "references": [
-        "Reconnect.Client"
+        "Reconnect.Client",
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"

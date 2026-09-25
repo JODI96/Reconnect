@@ -14,8 +14,9 @@ namespace Reconnect.Client.UI
         {
             root.styleSheets.Add(theme);
             root.AddToClassList("app-root");
+            root.pickingMode = PickingMode.Ignore;   // containers never swallow touches meant for the 3D world
 
-            _host = new VisualElement { name = "screen-host" };
+            _host = new VisualElement { name = "screen-host", pickingMode = PickingMode.Ignore };
             _host.AddToClassList("screen-host");
             root.Add(_host);
         }

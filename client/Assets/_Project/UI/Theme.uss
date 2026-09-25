@@ -11,9 +11,11 @@
     --radius: 14px;
 }
 
-.app-root { flex-grow: 1; background-color: var(--color-bg); }
+.app-root { flex-grow: 1; }
 .screen-host { flex-grow: 1; }
-.screen { flex-grow: 1; padding: 24px; }
+.screen { flex-grow: 1; padding: 24px; background-color: var(--color-bg); }
+/* Screens over the 3D city: no background, padding handled by their own layout. */
+.screen--transparent { background-color: rgba(0, 0, 0, 0); padding: 0; }
 
 .title { font-size: 44px; -unity-font-style: bold; color: var(--color-primary); -unity-text-align: middle-center; margin-bottom: 4px; }
 .subtitle { font-size: 20px; color: var(--color-text-muted); -unity-text-align: middle-center; margin-bottom: 32px; }
@@ -75,3 +77,47 @@
 .room-item__badge { color: var(--color-primary); font-size: 14px; }
 .unity-collection-view__item--selected .room-item { background-color: var(--color-surface-hover); }
 .unity-list-view__item { background-color: rgba(0, 0, 0, 0); }
+
+/* City (map) screen */
+.city-labels { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.city-layout { flex-grow: 1; padding: 16px; }
+.toolbar--floating {
+    background-color: rgba(20, 18, 32, 0.85);
+    border-radius: var(--radius);
+    padding: 8px 8px 8px 16px;
+}
+.heading--on-map { font-size: 26px; }
+.status--floating { background-color: rgba(20, 18, 32, 0.85); border-radius: var(--radius); padding: 8px 12px; align-self: center; }
+
+.building-label {
+    position: absolute;
+    translate: -50% -100%;
+    background-color: rgba(20, 18, 32, 0.85);
+    color: var(--color-text);
+    border-radius: 10px;
+    padding: 4px 10px;
+    font-size: 18px;
+    -unity-font-style: bold;
+    border-width: 2px;
+    border-color: rgba(0, 0, 0, 0);
+}
+.building-label:hover { background-color: var(--color-surface-hover); }
+.building-label--selected { border-color: var(--color-primary); color: var(--color-primary); }
+
+.sheet {
+    background-color: rgba(20, 18, 32, 0.95);
+    border-radius: var(--radius);
+    padding: 16px;
+    max-height: 55%;
+    margin-bottom: 8px;
+}
+.sheet__header { flex-direction: row; align-items: flex-start; }
+.sheet__title { font-size: 26px; -unity-font-style: bold; color: var(--color-primary); white-space: normal; }
+.sheet__rooms { flex-shrink: 1; margin: 8px 0; }
+.sheet__room { -unity-text-align: middle-left; padding-left: 16px; -unity-font-style: normal; min-height: 48px; font-size: 18px; }
+.sheet__create { flex-direction: row; align-items: center; }
+.sheet__input { flex-grow: 1; margin: 0; }
+.sheet__input .unity-base-text-field__input { min-height: 44px; font-size: 18px; padding: 8px 12px; }
+
+.city-footer { flex-direction: row; justify-content: space-between; }
+.attribution { color: rgb(255, 255, 255); font-size: 13px; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); }

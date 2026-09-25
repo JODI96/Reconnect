@@ -1,0 +1,37 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Elements with class "pass-through" don't catch touches, so the map below can be dragged. -->
+    <ui:VisualElement name="labels" class="city-labels pass-through" />
+    <ui:VisualElement class="city-layout pass-through">
+        <ui:VisualElement class="toolbar toolbar--floating">
+            <ui:Label text="Zürich" class="heading heading--on-map pass-through" />
+            <ui:Button name="layer" text="Karte" class="button button--small" />
+            <ui:Button name="rooms" text="Räume" class="button button--small" />
+            <ui:Button name="logout" text="Abmelden" class="button button--small" />
+        </ui:VisualElement>
+        <ui:Label name="status" class="status status--floating" />
+        <ui:VisualElement class="pass-through" style="flex-grow: 1;" />
+
+        <ui:VisualElement name="sheet" class="sheet">
+            <ui:VisualElement class="sheet__header">
+                <ui:VisualElement style="flex-grow: 1;">
+                    <ui:Label name="sheet-title" class="sheet__title" />
+                    <ui:Label name="sheet-address" class="muted" />
+                </ui:VisualElement>
+                <ui:Button name="sheet-close" text="✕" class="button button--small" />
+            </ui:VisualElement>
+            <ui:Label name="sheet-status" class="status" />
+            <ui:ScrollView name="sheet-scroll" class="sheet__rooms">
+                <ui:VisualElement name="sheet-rooms" />
+            </ui:ScrollView>
+            <ui:VisualElement class="sheet__create">
+                <ui:TextField name="new-room-name" max-length="80" class="field sheet__input" />
+                <ui:Button name="create-room" text="+ Raum erstellen" class="button button--primary button--small" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="city-footer pass-through">
+            <ui:Label name="tile-status" class="attribution pass-through" />
+            <ui:Label text="© swisstopo" class="attribution pass-through" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

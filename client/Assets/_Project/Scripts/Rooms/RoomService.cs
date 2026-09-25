@@ -19,10 +19,22 @@ namespace Reconnect.Client.Rooms
             _api = api;
         }
 
-        public Task<ApiResult<PagedResponse<RoomSummaryDto>>> GetRoomsAsync(int page, CancellationToken ct = default) =>
-            _api.GetAsync<PagedResponse<RoomSummaryDto>>($"{ApiRoutes.Rooms.Group}?page={page}&pageSize={PageSize}", ct);
+        /// <param name="buildingId">Only rooms in this building, or all visible rooms if null.</param>
+        public Task<ApiResult<PagedResponse<RoomSummaryDto>>> GetRoomsAsync(int page, Guid? buildingId = null,
+            CancellationToken ct = default)
+        {
+            var path = $"{ApiRoutes.Rooms.Group}?page={page}&pageSize={PageSize}";
+            if (buildingId != null)
+            {
+                path += "&buildingId=" + buildingId.Value;
+            }
+            return _api.GetAsync<PagedResponse<RoomSummaryDto>>(path, ct);
+        }
 
         public Task<ApiResult<RoomDto>> GetRoomAsync(Guid id, CancellationToken ct = default) =>
             _api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(id), ct);
+
+        public Task<ApiResult<RoomDto>> CreateRoomAsync(Guid buildingId, string name, bool isPublic, CancellationToken ct = default) =>
+            _api.PostAsync<RoomDto>(ApiRoutes.Rooms.Group, new CreateRoomRequest(buildingId, name.Trim(), isPublic), ct);
     }
 }

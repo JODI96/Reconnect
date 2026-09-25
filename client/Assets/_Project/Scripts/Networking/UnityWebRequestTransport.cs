@@ -35,26 +35,13 @@ namespace Reconnect.Client.Networking
 
             using (ct.Register(web.Abort))
             {
-                await AsTask(web.SendWebRequest());
+                await web.SendWebRequest().AsTask();
             }
             ct.ThrowIfCancellationRequested();
 
             return web.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.DataProcessingError
                 ? new HttpResponse(0, null, web.error)
                 : new HttpResponse(web.responseCode, web.downloadHandler.text);
-        }
-
-        /// <summary>Completes on the main thread when Unity finishes the request.</summary>
-        private static Task AsTask(UnityWebRequestAsyncOperation operation)
-        {
-            if (operation.isDone)
-            {
-                return Task.CompletedTask;
-            }
-
-            var tcs = new TaskCompletionSource<bool>();
-            operation.completed += _ => tcs.TrySetResult(true);
-            return tcs.Task;
         }
     }
 }

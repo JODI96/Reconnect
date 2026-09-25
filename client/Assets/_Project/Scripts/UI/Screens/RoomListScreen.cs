@@ -15,6 +15,7 @@ namespace Reconnect.Client.UI.Screens
         private readonly RoomService _rooms;
         private readonly AuthService _auth;
         private readonly Action<Guid> _openRoom;
+        private readonly Action _openMap;
 
         private readonly List<RoomSummaryDto> _items = new();
         private int _loadedPage;
@@ -25,13 +26,14 @@ namespace Reconnect.Client.UI.Screens
         private Button _loadMore;
 
         public RoomListScreen(VisualTreeAsset template, VisualTreeAsset itemTemplate, RoomService rooms, AuthService auth,
-            Action<Guid> openRoom)
+            Action<Guid> openRoom, Action openMap)
         {
             _template = template;
             _itemTemplate = itemTemplate;
             _rooms = rooms;
             _auth = auth;
             _openRoom = openRoom;
+            _openMap = openMap;
         }
 
         protected override VisualTreeAsset Template => _template;
@@ -55,6 +57,7 @@ namespace Reconnect.Client.UI.Screens
                 }
             };
 
+            Q<Button>("map").clicked += _openMap;
             Q<Button>("refresh").clicked += Reload;
             Q<Button>("logout").clicked += _auth.Logout;
             _loadMore.clicked += () => RunAsync(() => LoadPageAsync(_loadedPage + 1), _loadMore);
@@ -74,7 +77,7 @@ namespace Reconnect.Client.UI.Screens
         private async System.Threading.Tasks.Task LoadPageAsync(int page)
         {
             SetStatus(_status, "Lade Räume …", isError: false);
-            var result = await _rooms.GetRoomsAsync(page, Lifetime);
+            var result = await _rooms.GetRoomsAsync(page, ct: Lifetime);
             if (!result.IsSuccess)
             {
                 SetStatus(_status, result.Error.ToDisplayString());
