@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32d7263c0f5191347a8adb338a0ea338, type: 3}
+  m_Name: UiCatalog
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.UI.UiCatalog
+  theme: {fileID: 7433441132597879392, guid: 125b3c6c076ff3d4a906b0bab22ba89a, type: 3}
+  login: {fileID: 9197481963319205126, guid: 876efe7aa919370429a59916d3bb4b79, type: 3}
+  register: {fileID: 9197481963319205126, guid: 445ed03af21438b4cb502b4e1322661a, type: 3}
+  roomList: {fileID: 9197481963319205126, guid: d31dd6150734e474f9a398454ba02d11, type: 3}
+  roomListItem: {fileID: 9197481963319205126, guid: c2b349b075f05b8479cebabb84ccee86, type: 3}
+  roomDetail: {fileID: 9197481963319205126, guid: bf0ade94c0b096c42a29406f30d6c8cb, type: 3}

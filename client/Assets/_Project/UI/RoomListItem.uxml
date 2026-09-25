@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="room-item">
+        <ui:VisualElement class="room-item__text">
+            <ui:Label name="name" class="room-item__name" />
+            <ui:Label name="owner" class="room-item__owner" />
+        </ui:VisualElement>
+        <ui:Label name="visibility" class="room-item__badge" />
+    </ui:VisualElement>
+</ui:UXML>

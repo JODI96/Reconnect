@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:ScrollView class="centered">
+        <ui:Label text="Konto erstellen" class="title" />
+        <ui:Label text="Reconnect ist ab 18 Jahren" class="subtitle" />
+        <ui:VisualElement name="form" class="form">
+            <ui:TextField name="display-name" label="Anzeigename" max-length="50" class="field" />
+            <ui:TextField name="email" label="E-Mail" keyboard-type="EmailAddress" class="field" />
+            <ui:TextField name="password" label="Passwort (mind. 8 Zeichen, Gross-/Kleinbuchstabe, Ziffer)" password="true" class="field" />
+            <ui:TextField name="birth-date" label="Geburtsdatum (TT.MM.JJJJ)" keyboard-type="NumbersAndPunctuation" max-length="10" class="field" />
+            <ui:Button name="register" text="Registrieren" class="button button--primary" />
+            <ui:Label name="status" class="status" />
+            <ui:Button name="back" text="Zurück zur Anmeldung" class="button button--link" />
+        </ui:VisualElement>
+    </ui:ScrollView>
+</ui:UXML>

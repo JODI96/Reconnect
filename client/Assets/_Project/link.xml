@@ -1,0 +1,5 @@
+<!-- IL2CPP code stripping: keep types that are only created via reflection (JSON deserialization). -->
+<linker>
+    <assembly fullname="Reconnect.Contracts" preserve="all" />
+    <assembly fullname="Newtonsoft.Json" preserve="all" />
+</linker>

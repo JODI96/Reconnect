@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="toolbar">
+        <ui:Label text="Räume" class="heading" />
+        <ui:Button name="refresh" text="Aktualisieren" class="button button--small" />
+        <ui:Button name="logout" text="Abmelden" class="button button--small" />
+    </ui:VisualElement>
+    <ui:Label name="status" class="status" />
+    <ui:ListView name="rooms" class="room-list" virtualization-method="DynamicHeight" show-border="false" />
+    <ui:Button name="load-more" text="Mehr laden" class="button" style="display: none;" />
+</ui:UXML>

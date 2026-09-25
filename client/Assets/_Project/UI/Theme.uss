@@ -1,0 +1,77 @@
+/* Reconnect – shared UI Toolkit theme. Colors as variables so they can be re-themed later. */
+:root {
+    --color-bg: rgb(20, 18, 32);
+    --color-surface: rgb(36, 32, 56);
+    --color-surface-hover: rgb(48, 43, 74);
+    --color-primary: rgb(255, 92, 138);
+    --color-primary-dark: rgb(214, 62, 108);
+    --color-text: rgb(240, 238, 248);
+    --color-text-muted: rgb(160, 156, 184);
+    --color-error: rgb(255, 120, 120);
+    --radius: 14px;
+}
+
+.app-root { flex-grow: 1; background-color: var(--color-bg); }
+.screen-host { flex-grow: 1; }
+.screen { flex-grow: 1; padding: 24px; }
+
+.title { font-size: 44px; -unity-font-style: bold; color: var(--color-primary); -unity-text-align: middle-center; margin-bottom: 4px; }
+.subtitle { font-size: 20px; color: var(--color-text-muted); -unity-text-align: middle-center; margin-bottom: 32px; }
+.heading { font-size: 30px; -unity-font-style: bold; color: var(--color-text); flex-grow: 1; }
+.muted { color: var(--color-text-muted); font-size: 18px; }
+
+.form { width: 100%; max-width: 520px; align-self: center; }
+.centered { flex-grow: 1; justify-content: center; }
+
+/* Text fields */
+.field { margin: 0 0 16px 0; }
+.field > Label { color: var(--color-text-muted); font-size: 16px; min-width: 0; margin-bottom: 4px; }
+.field { flex-direction: column; }
+.field .unity-base-text-field__input {
+    background-color: var(--color-surface);
+    border-width: 0;
+    border-radius: var(--radius);
+    color: var(--color-text);
+    font-size: 22px;
+    padding: 14px 16px;
+    min-height: 56px;
+}
+
+/* Buttons */
+.button {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    border-width: 0;
+    border-radius: var(--radius);
+    font-size: 20px;
+    min-height: 56px;
+    margin: 6px 0;
+    -unity-font-style: bold;
+}
+.button:hover { background-color: var(--color-surface-hover); }
+.button--primary { background-color: var(--color-primary); color: rgb(255, 255, 255); }
+.button--primary:hover { background-color: var(--color-primary-dark); }
+.button--link { background-color: rgba(0, 0, 0, 0); color: var(--color-text-muted); -unity-font-style: normal; }
+.button--small { min-height: 44px; font-size: 16px; padding: 0 14px; margin: 0 0 0 8px; }
+.button:disabled { opacity: 0.5; }
+
+.status { color: var(--color-text-muted); font-size: 18px; white-space: normal; margin: 8px 0; -unity-text-align: middle-center; }
+.status--error { color: var(--color-error); }
+
+/* Room list */
+.toolbar { flex-direction: row; align-items: center; margin-bottom: 16px; }
+.room-list { flex-grow: 1; }
+.room-item {
+    background-color: var(--color-surface);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    flex-direction: row;
+    align-items: center;
+}
+.room-item__text { flex-grow: 1; }
+.room-item__name { color: var(--color-text); font-size: 22px; -unity-font-style: bold; }
+.room-item__owner { color: var(--color-text-muted); font-size: 16px; }
+.room-item__badge { color: var(--color-primary); font-size: 14px; }
+.unity-collection-view__item--selected .room-item { background-color: var(--color-surface-hover); }
+.unity-list-view__item { background-color: rgba(0, 0, 0, 0); }
