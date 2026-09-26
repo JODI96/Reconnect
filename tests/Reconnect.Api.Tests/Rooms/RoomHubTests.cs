@@ -138,7 +138,7 @@ public sealed class RoomHubTests(ReconnectApiFactory factory)
             new RoomItemDto("tableCoffee", new Vector3Dto(2, 0, 2), 0),
             new RoomItemDto("chair", new Vector3Dto(4, 0, 2), 0),
             new RoomItemDto("loungeSofa", new Vector3Dto(6, 0, 2), 0),
-        });
+        }.Select(RoomLayout.Snap).ToList());
         (await anna.Client.PutAsJsonAsync(ApiRoutes.Rooms.Layout(room.Id), layout, TestUsers.Json)).EnsureSuccessStatusCode();
         await using var annaHub = await RoomHubClient.ConnectAsync(factory, anna);
         await using var benHub = await RoomHubClient.ConnectAsync(factory, ben);

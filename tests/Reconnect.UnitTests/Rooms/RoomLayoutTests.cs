@@ -88,7 +88,7 @@ public sealed class RoomLayoutTests
     [Fact]
     public void Nothing_may_stick_out_of_the_room()
     {
-        var problems = Check(At("ph-potted_plant_01", 19, 15), At("table", -1, 2));
+        var problems = Check(At("ph-potted_plant_01", 19, 16), At("table", -1, 2));
 
         Assert.Equal(2, problems.Count);
         Assert.All(problems, p => Assert.Contains("ragt aus dem Raum", p.Message));

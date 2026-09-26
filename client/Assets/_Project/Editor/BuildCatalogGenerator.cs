@@ -67,6 +67,12 @@ namespace Reconnect.Client.Editor
             "CoffeeCart", "custom-skybar", "custom-backbar", "custom-reception", "custom-openkitchen", "outdoor_table_chair_set",
         };
 
+        /// <summary>Items whose top is much wider than what stands on the floor (parasol: only the pole).</summary>
+        private static readonly Dictionary<string, (int, int)> Footprints = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["custom-parasol"] = (1, 1),
+        };
+
         /// <summary>Counters whose top is not the highest point (shelves, hoods above them).</summary>
         private static readonly Dictionary<string, float> SurfaceOverrides = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -215,9 +221,14 @@ namespace Reconnect.Client.Editor
         {
             var kind = KindOf(id);
             var height = bounds.size.y;
-            int Cells(float metres) => Math.Max(1, Mathf.CeilToInt((metres - 0.08f) / BuildGrid.CellSize));
+            // Up to 10 cm may overhang on each side (splayed legs, cushions), otherwise a 60 cm chair would take a whole metre.
+            int Cells(float metres) => Math.Max(1, Mathf.CeilToInt((metres - 0.2f) / BuildGrid.CellSize));
             var width = Cells(bounds.size.x);
             var depth = kind == ItemKind.Wall ? 1 : Cells(bounds.size.z);
+            if (Footprints.TryGetValue(id, out var footprint))
+            {
+                (width, depth) = footprint;
+            }
             var surface = SurfaceOverrides.TryGetValue(id, out var counter) ? counter
                 : kind == ItemKind.Floor && !RoomSeats.IsSeat(id) && !id.StartsWith("chair", StringComparison.OrdinalIgnoreCase)
                   && SurfaceWords.Any(w => id.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0)

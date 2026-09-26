@@ -27,6 +27,7 @@ public sealed class RoomHubClient : IAsyncDisposable
         connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => Quiz.Enqueue(q));
         connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdates.Enqueue(q));
         connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => Arrivals.Enqueue(s));
+        connection.On<RoomLayoutChangedDto>(RoomHubContract.Client.RoomLayoutChanged, l => LayoutChanges.Enqueue(l));
     }
 
     public TestUser User { get; }
@@ -36,6 +37,7 @@ public sealed class RoomHubClient : IAsyncDisposable
     public ConcurrentBag<RoomChatMessageDto> Chat { get; } = [];
     public ConcurrentBag<EmoteDto> EmotesSeen { get; } = [];
     public ConcurrentQueue<PlayerSeatDto> Seats { get; } = new();
+    public ConcurrentQueue<RoomLayoutChangedDto> LayoutChanges { get; } = new();
     public ConcurrentQueue<TicTacToeStateDto> TicTacToe { get; } = new();
     public ConcurrentQueue<QuizStateDto> Quiz { get; } = new();
     public ConcurrentQueue<QueueStatusDto> QueueUpdates { get; } = new();

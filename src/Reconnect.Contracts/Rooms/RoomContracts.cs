@@ -38,5 +38,12 @@ namespace Reconnect.Contracts.Rooms
     /// <param name="Theme">Optional: cozy (default), rooftop, cafe, atelier, opera, library, skylounge, lobby, coworking, conference.</param>
     public sealed record CreateRoomRequest(Guid BuildingId, string Name, bool IsPublic, string? Theme = null);
 
+    /// <summary>
+    /// Replaces the whole layout (owner or admin). Every item must follow the build rules (<see cref="RoomLayout"/>);
+    /// otherwise 400 with one error per broken rule, keyed "items[index]".
+    /// </summary>
     public sealed record UpdateRoomLayoutRequest(IReadOnlyList<RoomItemDto> Items);
+
+    /// <summary>Hub event: the room was rebuilt (everyone stands up, seats are addressed by the new layout).</summary>
+    public sealed record RoomLayoutChangedDto(Guid RoomId, IReadOnlyList<RoomItemDto> Layout);
 }

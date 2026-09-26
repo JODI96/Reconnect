@@ -1,3 +1,5 @@
+using Reconnect.Contracts.Rooms;
+
 namespace Reconnect.Modules.Rooms.Domain;
 
 /// <summary>A placed furniture item. <see cref="ItemId"/> references the client-side item catalogue.</summary>
@@ -10,6 +12,18 @@ internal sealed class RoomItem
 
     /// <summary>Rotation around the Y axis in degrees.</summary>
     public float Rotation { get; init; }
+
+    /// <summary>
+    /// An item placed like the build editor does: its footprint starts at build cell (<paramref name="x"/>,
+    /// <paramref name="z"/>) – 50 cm cells, see <see cref="RoomLayout"/> – turned by <paramref name="rotation"/> (0/90/180/270).
+    /// </summary>
+    public static RoomItem AtCell(string itemId, int x, int z, float rotation = 0f)
+    {
+        var definition = ItemDefinitions.Find(itemId) ?? throw new ArgumentException($"Unknown item {itemId}.", nameof(itemId));
+        var (width, depth) = RoomLayout.Size(definition, RoomLayout.Quarter(rotation));
+        var (cx, cz) = RoomLayout.Centre(new CellRect(x, z, width, depth));
+        return new RoomItem { ItemId = itemId, Position = new Position3 { X = cx, Z = cz }, Rotation = rotation };
+    }
 }
 
 /// <summary>Position inside a room in Unity world units (Y is up).</summary>

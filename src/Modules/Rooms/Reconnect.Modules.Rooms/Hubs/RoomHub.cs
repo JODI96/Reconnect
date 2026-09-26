@@ -26,6 +26,7 @@ public interface IRoomClient
     Task QuizUpdated(QuizStateDto state);
     Task QueueUpdated(QueueStatusDto status);
     Task ElevatorArrived(RoomSnapshotDto snapshot);
+    Task RoomLayoutChanged(RoomLayoutChangedDto change);
 }
 
 /// <summary>
@@ -43,9 +44,6 @@ internal sealed class RoomHub(
     IRoomPresenceStore presence, IRoomGameStore games, IElevatorQueue queue, TimeProvider time)
     : Hub<IRoomClient>
 {
-    /// <summary>Custom item of the lift bank; people arriving by lift appear in front of it.</summary>
-    public const string ElevatorItem = "custom-elevator";
-
     public async Task<RoomSnapshotDto> JoinRoom(Guid roomId)
     {
         var userId = Context.User!.GetUserId();
@@ -226,7 +224,8 @@ internal sealed class RoomHub(
         var hidden = await HiddenUsersAsync(userId, ct);
         var others = (await presence.GetPlayersAsync(room.Id)).Where(p => p.UserId != userId).ToList();
         var displayName = await profiles.GetDisplayNameAsync(userId, ct) ?? throw new HubException("Profile not found.");
-        var (x, z) = FindFreeTile(others, room.Width, room.Depth, byElevator ? ElevatorLanding(room) : null);
+        var blocked = RoomLayout.BlockedTiles(room.Layout);
+        var (x, z) = FindFreeTile(others, blocked, room.Width, room.Depth, byElevator ? ElevatorLanding(room) : null);
         var me = new PresenceEntry(room.Id, userId, connectionId, displayName, x, z, room.Width, room.Depth);
 
         var (added, replaced) = await presence.TryAddAsync(me, room.Capacity);
@@ -342,16 +341,8 @@ internal sealed class RoomHub(
     /// <summary>Tile in front of the lift bank (where the doors open), if the room has one.</summary>
     private static (int X, int Z)? ElevatorLanding(RoomDto room)
     {
-        var lift = room.Layout.FirstOrDefault(i => i.ItemId == ElevatorItem);
-        if (lift is null)
-        {
-            return null;
-        }
-        // The lift faces into the room: step 1.5 m out of it along its facing direction.
-        var radians = lift.Rotation * MathF.PI / 180f;
-        var x = lift.Position.X - MathF.Sin(radians) * 1.5f;
-        var z = lift.Position.Z - MathF.Cos(radians) * 1.5f;
-        return ((int)MathF.Floor(x), (int)MathF.Floor(z));
+        var lift = room.Layout.FirstOrDefault(i => i.ItemId == RoomZones.ElevatorItem);
+        return lift is null ? null : RoomZones.ElevatorLanding(lift);
     }
 
     private const string TicTacToeId = "tictactoe";
@@ -405,9 +396,12 @@ internal sealed class RoomHub(
     /// First free tile, spiralling outwards from <paramref name="start"/> – by default the front middle of the
     /// room (where you "come in"), for lift arrivals the landing in front of the lift.
     /// </summary>
-    private static (int X, int Z) FindFreeTile(IReadOnlyCollection<PresenceEntry> occupied, int width, int depth, (int X, int Z)? start = null)
+    /// <summary>Nearest tile to <paramref name="start"/> that has neither a person nor furniture on it.</summary>
+    private static (int X, int Z) FindFreeTile(IReadOnlyCollection<PresenceEntry> occupied, HashSet<(int X, int Z)> blocked,
+        int width, int depth, (int X, int Z)? start = null)
     {
         var taken = occupied.Select(p => (p.X, p.Z)).ToHashSet();
+        taken.UnionWith(blocked);
         var (cx, cz) = start is { } s
             ? (Math.Clamp(s.X, 0, width - 1), Math.Clamp(s.Z, 0, depth - 1))
             : (width / 2, Math.Min(2, depth - 1));

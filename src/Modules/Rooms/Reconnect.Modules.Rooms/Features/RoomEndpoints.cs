@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Reconnect.Contracts;
 using Reconnect.Contracts.Common;
@@ -10,6 +11,7 @@ using Reconnect.Contracts.Rooms;
 using Reconnect.Modules.City.Public;
 using Reconnect.Modules.Profiles.Public;
 using Reconnect.Modules.Rooms.Domain;
+using Reconnect.Modules.Rooms.Hubs;
 using Reconnect.Modules.Rooms.Infrastructure;
 using Reconnect.SharedKernel.Web;
 
@@ -86,25 +88,49 @@ internal static class RoomEndpoints
         return TypedResults.Created(ApiRoutes.Rooms.ById(room.Id), await reader.ToDtoAsync(room, ct));
     }
 
-    /// <summary>Replaces the whole layout. Only the owner may do this (403 otherwise).</summary>
-    private static async Task<Results<Ok<RoomDto>, NotFound, ForbidHttpResult>> UpdateLayout(
+    /// <summary>
+    /// Replaces the whole layout (build editor). The owner may build in their room, admins in every room (403 otherwise).
+    /// Every item must follow the build rules – 400 with one error per broken rule. Everyone in the room gets the new
+    /// layout live and stands up (seats are addressed by layout index).
+    /// </summary>
+    private static async Task<Results<Ok<RoomDto>, NotFound, ForbidHttpResult, ValidationProblem>> UpdateLayout(
         Guid id, UpdateRoomLayoutRequest request, ClaimsPrincipal principal, RoomsDbContext db, RoomReader reader,
-        CancellationToken ct)
+        IRoomPresenceStore presence, IHubContext<RoomHub, IRoomClient> hub, CancellationToken ct)
     {
         var userId = principal.GetUserId();
-        var room = await (await reader.VisibleRoomsAsync(userId, ct)).SingleOrDefaultAsync(r => r.Id == id, ct);
+        var isAdmin = principal.IsInRole(AppRoles.Admin);
+        var rooms = isAdmin ? db.Rooms : await reader.VisibleRoomsAsync(userId, ct);
+        var room = await rooms.SingleOrDefaultAsync(r => r.Id == id, ct);
         if (room is null)
         {
             return TypedResults.NotFound();
         }
-        if (!room.IsOwnedBy(userId))
+        if (!room.IsOwnedBy(userId) && !isAdmin)
         {
             return TypedResults.Forbid();
         }
 
-        room.ReplaceLayout(request.Items.Select(RoomMappings.ToDomain));
+        var items = request.Items ?? [];
+        var problems = RoomLayout.Validate(RoomZones.ContextFor(room.Theme, room.Width, room.Depth, items), items);
+        if (problems.Count > 0)
+        {
+            return TypedResults.ValidationProblem(problems
+                .GroupBy(p => p.Index < 0 ? "items" : $"items[{p.Index}]")
+                .ToDictionary(g => g.Key, g => g.Select(p => p.Message).ToArray()));
+        }
+
+        room.ReplaceLayout(items.Select(RoomMappings.ToDomain));
         await db.SaveChangesAsync(ct);
 
-        return TypedResults.Ok(await reader.ToDtoAsync(room, ct));
+        var players = await presence.GetPlayersAsync(room.Id);
+        foreach (var player in players.Where(p => p.Seat is not null))
+        {
+            await presence.UpdateSeatAsync(player, null);
+        }
+        var dto = await reader.ToDtoAsync(room, ct);
+        await hub.Clients.Clients(players.Select(p => p.ConnectionId).ToList())
+            .RoomLayoutChanged(new RoomLayoutChangedDto(room.Id, dto.Layout));
+
+        return TypedResults.Ok(dto);
     }
 }

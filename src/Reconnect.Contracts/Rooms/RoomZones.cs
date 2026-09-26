@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -44,23 +45,44 @@ namespace Reconnect.Contracts.Rooms
             }
             foreach (var elevator in items.Where(i => i.ItemId == ElevatorItem))
             {
+                // Two tiles deep in front of the doors, three wide.
                 var (x, z) = ElevatorLanding(elevator);
-                reserved.Add(new CellRect((x - 1) * per, (z - 1) * per, 3 * per, 2 * per));
+                var (fx, fz) = Forward(elevator.Rotation);
+                var (sx, sz) = (fz, fx);
+                var tiles = new[] { 0, 1 }.SelectMany(k => new[] { -1, 0, 1 }.Select(s => (X: x + k * fx + s * sx, Z: z + k * fz + s * sz))).ToList();
+                var minX = tiles.Min(t => t.X);
+                var minZ = tiles.Min(t => t.Z);
+                reserved.Add(new CellRect(minX * per, minZ * per, (tiles.Max(t => t.X) - minX + 1) * per, (tiles.Max(t => t.Z) - minZ + 1) * per));
             }
             return reserved;
         }
 
-        /// <summary>Tile in front of the lift doors (the doors face the item's -Z side) where arriving people appear.</summary>
+        /// <summary>
+        /// First tile in front of the lift doors (the doors face the item's -Z side) that the lift doesn't cover:
+        /// people arriving by lift appear here.
+        /// </summary>
         public static (int X, int Z) ElevatorLanding(RoomItemDto elevator)
         {
             var definition = ItemDefinitions.Find(elevator.ItemId);
-            var depth = definition != null ? RoomLayout.Size(definition, RoomLayout.Quarter(elevator.Rotation)).Depth * BuildGrid.CellSize : 2.4f;
-            var radians = elevator.Rotation * System.Math.PI / 180.0;
-            // Forward (-Z at rotation 0) turned around Y.
-            var dx = -System.Math.Sin(radians);
-            var dz = -System.Math.Cos(radians);
-            var reach = depth / 2 + 0.8;
-            return ((int)System.Math.Floor(elevator.Position.X + dx * reach), (int)System.Math.Floor(elevator.Position.Z + dz * reach));
+            var covered = definition == null
+                ? new HashSet<(int X, int Z)>()
+                : new HashSet<(int X, int Z)>(RoomLayout.Tiles(RoomLayout.Footprint(elevator, definition)));
+            var (fx, fz) = Forward(elevator.Rotation);
+            var tile = ((int)Math.Floor(elevator.Position.X), (int)Math.Floor(elevator.Position.Z));
+            for (var step = 0; step < 20 && covered.Contains(tile); step++)
+            {
+                tile = (tile.Item1 + fx, tile.Item2 + fz);
+            }
+            return tile;
         }
+
+        /// <summary>The item's front (-Z at rotation 0) in whole tiles, turned in quarter steps.</summary>
+        private static (int X, int Z) Forward(float rotation) => RoomLayout.Quarter(rotation) switch
+        {
+            1 => (-1, 0),
+            2 => (0, 1),
+            3 => (1, 0),
+            _ => (0, -1),
+        };
     }
 }

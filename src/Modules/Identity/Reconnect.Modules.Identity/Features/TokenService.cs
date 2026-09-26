@@ -76,7 +76,7 @@ internal sealed class TokenService(IdentityDbContext db, IOptions<JwtOptions> op
         });
         await db.SaveChangesAsync(ct);
 
-        return new AuthResponse(user.Id, accessToken, accessExpires, refreshToken, refreshExpires);
+        return new AuthResponse(user.Id, accessToken, accessExpires, refreshToken, refreshExpires, roles);
     }
 
     /// <summary>Validates and revokes the given refresh token and issues a new pair. Null if invalid.</summary>

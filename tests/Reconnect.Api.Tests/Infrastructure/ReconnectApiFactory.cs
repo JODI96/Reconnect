@@ -18,6 +18,9 @@ public sealed class ReconnectApiFactory : WebApplicationFactory<Program>, IAsync
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgis/postgis:17-3.5").Build();
     private readonly RedisContainer _redis = new RedisBuilder("redis:7-alpine").Build();
 
+    /// <summary>The test database (e.g. to give a user a role directly).</summary>
+    public string DatabaseConnectionString => _postgres.GetConnectionString();
+
     public async Task InitializeAsync() => await Task.WhenAll(_postgres.StartAsync(), _redis.StartAsync());
 
     public new async Task DisposeAsync()

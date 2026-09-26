@@ -96,6 +96,9 @@ namespace Reconnect.Contracts.Hubs
 
             /// <summary>Payload: RoomSnapshotDto – it was my turn: the lift brought me to the floor I waited for.</summary>
             public const string ElevatorArrived = "ElevatorArrived";
+
+            /// <summary>Payload: RoomLayoutChangedDto – the owner or an admin saved a new layout (build editor).</summary>
+            public const string RoomLayoutChanged = "RoomLayoutChanged";
         }
     }
 }
