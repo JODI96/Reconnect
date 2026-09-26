@@ -50,32 +50,184 @@ internal static class PrimeTowerFloors
         await db.SaveChangesAsync(ct);
     }
 
-    /// <summary>Ground floor: entrance hall, reception, turnstiles, lift bank – and the waiting area of the lift queue.</summary>
-    private static List<RoomItem> Lobby() =>
-    [
-        Item(RoomHubElevatorItem, 15f, 18.8f),
-        Item("custom-hologram", 15f, 9f),
-        Ph("sofa_02", 5f, 6f, East), Ph("sofa_02", 25f, 6f, West),
-        Ph("pachira_aquatica_01", 1f, 19f), Ph("pachira_aquatica_01", 29f, 19f),
-    ];
+    /// <summary>
+    /// Ground floor (30 × 20 m): serpentine wall with two lift banks (low-rise and high-rise group, as in the
+    /// real tower), access gates in front of them, reception, lobby café at the glass and two waiting lounges –
+    /// the lobby is where people wait for the lift queue.
+    /// </summary>
+    private static List<RoomItem> Lobby()
+    {
+        var items = new List<RoomItem>
+        {
+            Item(RoomHubElevatorItem, 10.5f, 18.8f), Item(RoomHubElevatorItem, 19.5f, 18.8f),
+            Ph("Ottoman_01", 14.2f, 19.2f), Ph("Ottoman_01", 15.8f, 19.2f),
+            Item("custom-turnstiles", 15f, 14.2f),
+            Item("custom-queuelane", 15f, 11.4f),
 
-    private static List<RoomItem> Coworking() =>
-    [
-        Item(RoomHubElevatorItem, 11f, 9.4f),
-        Ph("sofa_03", 3f, 13f, South),
-    ];
+            // Reception with two staff seats behind the desk.
+            Item("custom-reception", 6f, 12.6f),
+            Ph("GreenChair_01", 5.1f, 13.7f, South), Ph("GreenChair_01", 6.9f, 13.7f, South),
+            Ph("Shelf_01", 3.6f, 15.9f), Ph("Shelf_01", 4.7f, 15.9f),
 
+            // Tower info hologram next to the café, busts flanking the entrance.
+            Item("custom-ruground", 23.6f, 16.2f),
+            Item("custom-hologram", 23.6f, 16.2f),
+            Ph("side_table_tall_01", 12f, 3.2f), Ph("marble_bust_01", 12f, 3.2f),
+            Ph("side_table_tall_01", 18f, 3.2f), Ph("marble_bust_01", 18f, 3.2f),
+
+            // Waiting lounge west: two sofas facing each other.
+            Item("custom-rug", 5f, 5f),
+            Ph("sofa_02", 5f, 6.6f, South), Ph("sofa_02", 5f, 3.4f, North),
+            Ph("modern_coffee_table_01", 5f, 5f), Ph("tea_set_01", 5f, 5f),
+            Ph("mid_century_lounge_chair", 2.4f, 5f, East), Ph("mid_century_lounge_chair", 7.6f, 5f, West),
+
+            // Waiting lounge east at the glass: four armchairs around a round table.
+            Item("custom-ruground", 24.5f, 5f),
+            Ph("coffee_table_round_01", 24.5f, 5f), Ph("ceramic_vase_01", 24.5f, 5f),
+            Ph("modern_arm_chair_01", 23.2f, 5f, East), Ph("modern_arm_chair_01", 25.8f, 5f, West),
+            Ph("modern_arm_chair_01", 24.5f, 3.7f, North), Ph("modern_arm_chair_01", 24.5f, 6.3f, South),
+
+            // Lobby café along the street glass.
+            Item("custom-skybar", 27.2f, 12.2f, West),
+
+            // Plants.
+            Ph("pachira_aquatica_01", 1f, 19f), Ph("pachira_aquatica_01", 29f, 19f),
+            Ph("pachira_aquatica_01", 29f, 1f), Ph("potted_plant_02", 1f, 1f),
+            Ph("potted_plant_04", 8.2f, 19.2f), Ph("potted_plant_04", 21.8f, 19.2f),
+            Item("custom-planter", 29.2f, 8f, West), Item("custom-planter", 29.2f, 17.2f, West),
+            Item("custom-planter", 9f, 0.6f), Item("custom-planter", 21f, 0.6f),
+        };
+        items.AddRange(Enumerable.Range(0, 4).Select(i => Ph("bar_chair_round_01", 26f, 10.4f + i * 1.2f, East)));
+        return items;
+    }
+
+    /// <summary>Coworking (22 × 16 m): two desk islands, glass meeting room, café counter, lounge, lift core in the middle.</summary>
+    private static List<RoomItem> Coworking()
+    {
+        var items = new List<RoomItem>
+        {
+            Item(RoomHubElevatorItem, 11f, 9.4f),
+
+            // Meeting room behind glass (north-west).
+            Ph("dining_table", 4f, 12.6f),
+            Ph("dining_chair_02", 3.3f, 11.6f, North), Ph("dining_chair_02", 4.7f, 11.6f, North),
+            Ph("dining_chair_02", 3.3f, 13.6f, South), Ph("dining_chair_02", 4.7f, 13.6f, South),
+            Ph("dining_chair_02", 2.4f, 12.6f, East), Ph("dining_chair_02", 5.6f, 12.6f, West),
+            Item("custom-divider", 7f, 12.6f, West), Item("custom-divider", 4f, 10.9f),
+
+            // Café counter (north-east) with standing tables.
+            Item("custom-openkitchen", 18f, 15.1f),
+            Ph("side_table_tall_01", 16.8f, 12.8f), Ph("side_table_tall_01", 19.2f, 12.8f),
+            Ph("bar_chair_round_01", 16.8f, 12f, North), Ph("bar_chair_round_01", 19.2f, 12f, North),
+
+            // Lounge at the east glass.
+            Item("custom-rug", 19.6f, 7.6f, West),
+            Ph("sofa_03", 21f, 7.6f, West), Ph("coffee_table_round_01", 19.6f, 7.6f),
+            Ph("modern_arm_chair_01", 18.2f, 6.8f, East), Ph("modern_arm_chair_01", 18.2f, 8.4f, East),
+
+            // Tic-tac-toe next to the lift core.
+            Item("game-tictactoe", 15.8f, 10.4f),
+            Ph("dining_chair_02", 14.8f, 10.4f, East), Ph("dining_chair_02", 16.8f, 10.4f, West),
+
+            // Shelves and plants.
+            Ph("Shelf_01", 8.6f, 15.6f), Ph("Shelf_01", 9.7f, 15.6f),
+            Ph("pachira_aquatica_01", 0.9f, 15.1f), Ph("pachira_aquatica_01", 21.1f, 0.9f),
+            Ph("potted_plant_02", 0.8f, 0.8f), Ph("potted_plant_04", 21.2f, 15.2f),
+        };
+        items.AddRange(DeskIsland(2.3f));
+        items.AddRange(DeskIsland(15.3f));
+        return items;
+    }
+
+    /// <summary>Two rows of three desks back to back, each with chair, laptop and lamp (x = first desk).</summary>
+    private static IEnumerable<RoomItem> DeskIsland(float x)
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            var dx = x + i * 2.2f;
+            yield return Ph("metal_office_desk", dx, 2.6f, South);
+            yield return Ph("dining_chair_02", dx, 1.7f, North);
+            yield return Ph("desk_lamp_arm_01", dx + 0.7f, 2.75f);
+            yield return Ph("metal_office_desk", dx, 3.65f, North);
+            yield return Ph("dining_chair_02", dx, 4.55f, South);
+        }
+    }
+
+    /// <summary>Sky Office (22 × 16 m): executive desks, boardroom table, lounge, quiz screen, sideboard, viewer.</summary>
     private static List<RoomItem> SkyOffice() =>
     [
         Item(RoomHubElevatorItem, 11f, 9.4f),
-        Ph("sofa_02", 3f, 13f, South),
+
+        // Two executive desks with bookshelves behind (west).
+        Ph("metal_office_desk", 3.2f, 5.6f, East), Ph("ArmChair_01", 2.2f, 5.6f, East),
+        Ph("desk_lamp_arm_01", 3.3f, 6.3f),
+        Ph("metal_office_desk", 3.2f, 9.4f, East), Ph("ArmChair_01", 2.2f, 9.4f, East),
+        Ph("desk_lamp_arm_01", 3.3f, 10.1f),
+        Ph("Shelf_01", 0.4f, 4.6f, East), Ph("Shelf_01", 0.4f, 7.5f, East), Ph("Shelf_01", 0.4f, 10.4f, East),
+
+        // Boardroom table (north).
+        Ph("dining_table", 6.8f, 13.4f),
+        Ph("GreenChair_01", 6.1f, 12.4f, North), Ph("GreenChair_01", 7.5f, 12.4f, North),
+        Ph("GreenChair_01", 6.1f, 14.4f, South), Ph("GreenChair_01", 7.5f, 14.4f, South),
+        Ph("GreenChair_01", 5.2f, 13.4f, East), Ph("GreenChair_01", 8.4f, 13.4f, West),
+
+        // Lounge (south-west of the core).
+        Item("custom-rug", 8f, 3f),
+        Ph("sofa_02", 8f, 1.6f, North), Ph("modern_coffee_table_01", 8f, 3f), Ph("tea_set_01", 8f, 3f),
+        Ph("mid_century_lounge_chair", 6.2f, 3.6f, East), Ph("mid_century_lounge_chair", 9.8f, 3.6f, West),
+
+        // Quiz screen with armchairs (east) and tic-tac-toe.
+        Item("game-quiz", 21f, 5f, West),
+        Ph("ArmChair_01", 18.3f, 4.1f, East), Ph("ArmChair_01", 18.3f, 5.9f, East), Ph("side_table_01", 18.3f, 5f),
+        Item("game-tictactoe", 15.6f, 12.6f),
+        Ph("dining_chair_02", 14.6f, 12.6f, East), Ph("dining_chair_02", 16.6f, 12.6f, West),
+
+        // Sideboard with tea at the north glass, viewer at the east glass.
+        Ph("modern_wooden_cabinet", 17.5f, 15.4f), Ph("ceramic_vase_01", 16.8f, 15.4f), Ph("tea_set_01", 18.2f, 15.4f),
+        Item("custom-telescope", 21.2f, 10.6f, West),
+        Ph("pachira_aquatica_01", 0.9f, 15.1f), Ph("pachira_aquatica_01", 21.1f, 15.1f),
+        Ph("potted_plant_04", 21.2f, 0.8f), Ph("potted_plant_02", 12.8f, 0.8f),
+        Item("custom-ruground", 16.5f, 3f),
+        Ph("sofa_03", 16.5f, 1.4f, North), Ph("coffee_table_round_01", 16.5f, 3f), Ph("ceramic_vase_01", 16.5f, 3f),
+        Ph("GreenChair_01", 14.9f, 3.6f, East), Ph("GreenChair_01", 18.1f, 3.6f, West),
     ];
 
-    private static List<RoomItem> Conference() =>
-    [
-        Item(RoomHubElevatorItem, 12f, 9.4f),
-        Ph("round_wooden_table_01", 5f, 5f),
-    ];
+    /// <summary>Konferenzzentrum (24 × 16 m): hall with stage and presentation wall, boardroom behind glass, foyer.</summary>
+    private static List<RoomItem> Conference()
+    {
+        var items = new List<RoomItem>
+        {
+            Item(RoomHubElevatorItem, 20.6f, 8f, West),
+
+            // Hall: stage with presentation wall (north-west).
+            Item("custom-screenwall", 8f, 13.8f),
+
+            // Boardroom behind glass (north-east).
+            Ph("dining_table", 18f, 13.8f),
+            Ph("GreenChair_01", 17.3f, 12.8f, North), Ph("GreenChair_01", 18.7f, 12.8f, North),
+            Ph("GreenChair_01", 17.3f, 14.8f, South), Ph("GreenChair_01", 18.7f, 14.8f, South),
+            Ph("GreenChair_01", 16.4f, 13.8f, East), Ph("GreenChair_01", 19.6f, 13.8f, West),
+            Item("custom-divider", 15f, 13.8f, West), Item("custom-divider", 18f, 11.9f),
+
+            // Foyer with standing tables and a coffee sideboard (south-east).
+            Ph("side_table_tall_01", 15f, 3f), Ph("side_table_tall_01", 18f, 3f),
+            Ph("bar_chair_round_01", 15f, 2.2f, North), Ph("bar_chair_round_01", 18f, 2.2f, North),
+            Ph("modern_wooden_cabinet", 23.2f, 3.5f, West), Ph("tea_set_01", 23.2f, 3f),
+
+            Ph("pachira_aquatica_01", 0.9f, 15.1f), Ph("pachira_aquatica_01", 23.1f, 0.9f),
+            Ph("potted_plant_02", 0.8f, 0.8f), Ph("potted_plant_04", 23.2f, 15.2f),
+        };
+
+        // Audience: four rows facing the stage, with an aisle in the middle.
+        foreach (var z in new[] { 10.8f, 9.6f, 8.4f, 7.2f })
+        {
+            foreach (var x in new[] { 3.5f, 4.5f, 5.5f, 6.5f, 9.5f, 10.5f, 11.5f, 12.5f })
+            {
+                items.Add(Ph("dining_chair_02", x, z, North));
+            }
+        }
+        return items;
+    }
 
     /// <summary>
     /// Clouds, 35th floor: modelled on the real "Clouds": cocktail bar with a

@@ -53,6 +53,10 @@ namespace Reconnect.Client.Rooms
                 case "custom-pendant": Pendant(pivot); blocksTiles = false; return true;
                 case "custom-ledstrip": LedStrip(pivot); blocksTiles = false; return true;
                 case ElevatorItem: Elevator(pivot); return true;
+                case "custom-turnstiles": Turnstiles(pivot); blocksTiles = false; return true;
+                case "custom-reception": Reception(pivot); return true;
+                case "custom-screenwall": ScreenWall(pivot); return true;
+                case "custom-queuelane": QueueLane(pivot); blocksTiles = false; return true;
                 case "custom-rug": Rug(pivot, round: false); blocksTiles = false; return true;
                 case "custom-ruground": Rug(pivot, round: true); blocksTiles = false; return true;
                 default: return false;
@@ -416,6 +420,107 @@ namespace Reconnect.Client.Rooms
             Sphere(pivot, Glow(_theme.WallTrim, 2.5f), new Vector3(0f, 1.23f, front - 0.035f), new Vector3(0.05f, 0.05f, 0.02f));
             Sphere(pivot, Glow(new Color(1f, 0.95f, 0.85f), 1.5f), new Vector3(0f, 1.07f, front - 0.035f), new Vector3(0.05f, 0.05f, 0.02f));
             AddLight(pivot, new Vector3(0f, 2.9f, front - 0.8f), new Color(1f, 0.93f, 0.82f), 1.1f, 3.5f);
+        }
+
+        /// <summary>
+        /// Row of five access gates (6 m): steel pedestals with glass wings and green status lights.
+        /// Visual only – avatars can walk through (the lifts behind must stay reachable).
+        /// </summary>
+        private void Turnstiles(Transform pivot)
+        {
+            var steel = Lit(new Color(0.78f, 0.8f, 0.84f), 0.85f);
+            var glass = Tinted(_glass, new Color(0.85f, 0.95f, 0.95f, 0.4f));
+            var ok = Glow(new Color(0.3f, 1f, 0.55f), 2.5f);
+            for (var i = 0; i <= 5; i++)
+            {
+                var x = -3f + i * 1.2f;
+                Box(pivot, steel, new Vector3(x, 0.5f, 0f), new Vector3(0.22f, 1f, 1.1f));
+                Box(pivot, Lit(new Color(0.05f, 0.05f, 0.06f), 0.9f), new Vector3(x, 1.005f, 0f), new Vector3(0.2f, 0.01f, 1.06f));
+                Box(pivot, ok, new Vector3(x, 1.012f, -0.4f), new Vector3(0.1f, 0.005f, 0.06f));
+                if (i < 5)
+                {
+                    Box(pivot, glass, new Vector3(x + 0.33f, 0.75f, 0f), new Vector3(0.42f, 0.6f, 0.02f));
+                    Box(pivot, glass, new Vector3(x + 0.87f, 0.75f, 0f), new Vector3(0.42f, 0.6f, 0.02f));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Queue lane (6 × 2.4 m) like at an airport: chrome posts with navy retractable belts forming three
+        /// lanes that zigzag towards the gates. Visual only – avatars walk through.
+        /// </summary>
+        private void QueueLane(Transform pivot)
+        {
+            var chrome = Lit(new Color(0.82f, 0.84f, 0.88f), 0.9f);
+            var belt = Lit(new Color(0.1f, 0.14f, 0.32f), 0.3f);
+            var rows = new[] { -1.2f, 0f, 1.2f };
+            var columns = new[] { -3f, -1.5f, 0f, 1.5f, 3f };
+            foreach (var z in rows)
+            {
+                foreach (var x in columns)
+                {
+                    Cylinder(pivot, chrome, new Vector3(x, 0.015f, z), new Vector3(0.32f, 0.015f, 0.32f));
+                    Cylinder(pivot, chrome, new Vector3(x, 0.5f, z), new Vector3(0.05f, 0.5f, 0.05f));
+                    Cylinder(pivot, chrome, new Vector3(x, 0.98f, z), new Vector3(0.08f, 0.03f, 0.08f));
+                }
+            }
+            // Belts: each row closed except one opening, alternating ends (zigzag).
+            for (var r = 0; r < rows.Length; r++)
+            {
+                var open = r % 2 == 0 ? columns.Length - 2 : 0;
+                for (var c = 0; c < columns.Length - 1; c++)
+                {
+                    if (c == open)
+                    {
+                        continue;
+                    }
+                    Box(pivot, belt, new Vector3((columns[c] + columns[c + 1]) / 2f, 0.92f, rows[r]), new Vector3(1.4f, 0.05f, 0.01f));
+                }
+            }
+        }
+
+        /// <summary>Reception desk (4.2 m): stone front with a brass edge, light top, two slim monitors, backlit base.</summary>
+        private void Reception(Transform pivot)
+        {
+            const float length = 4.2f, depth = 0.9f, height = 1.1f;
+            var stone = Lit(Color.Lerp(_theme.Wall, Color.black, 0.2f), 0.8f);
+            var brass = Lit(_theme.WallTrim, 0.8f);
+            Box(pivot, stone, new Vector3(0f, height / 2f, 0f), new Vector3(length, height, depth));
+            Box(pivot, Lit(new Color(0.93f, 0.91f, 0.87f), 0.7f), new Vector3(0f, height + 0.025f, -0.05f), new Vector3(length + 0.1f, 0.05f, depth + 0.15f));
+            Box(pivot, brass, new Vector3(0f, height - 0.08f, -depth / 2f - 0.005f), new Vector3(length, 0.04f, 0.01f));
+            Box(pivot, Glow(new Color(1f, 0.85f, 0.6f), 1.6f), new Vector3(0f, 0.04f, -depth / 2f - 0.02f), new Vector3(length - 0.2f, 0.02f, 0.03f));
+            // Staff side: a lower work top with two monitors.
+            Box(pivot, Lit(new Color(0.2f, 0.2f, 0.22f)), new Vector3(0f, 0.75f, depth / 2f - 0.15f), new Vector3(length - 0.4f, 0.04f, 0.5f));
+            foreach (var x in new[] { -0.9f, 0.9f })
+            {
+                Box(pivot, Lit(new Color(0.08f, 0.08f, 0.09f)), new Vector3(x, 1.05f, depth / 2f - 0.2f), new Vector3(0.56f, 0.34f, 0.03f));
+                Box(pivot, Glow(new Color(0.55f, 0.8f, 1f), 0.8f), new Vector3(x, 1.05f, depth / 2f - 0.22f), new Vector3(0.52f, 0.3f, 0.005f));
+                Box(pivot, Lit(new Color(0.6f, 0.62f, 0.66f), 0.8f), new Vector3(x, 0.85f, depth / 2f - 0.18f), new Vector3(0.05f, 0.2f, 0.05f));
+            }
+        }
+
+        /// <summary>Presentation wall (5.5 m) on a low stage: black frame, glowing screen with a keynote slide.</summary>
+        private void ScreenWall(Transform pivot)
+        {
+            const float width = 5.5f, height = 2.8f;
+            var frame = Lit(new Color(0.05f, 0.05f, 0.06f), 0.8f);
+            Box(pivot, Lit(new Color(0.18f, 0.18f, 0.2f), 0.5f), new Vector3(0f, 0.12f, 0.6f), new Vector3(width + 1.2f, 0.24f, 2f));   // stage
+            Box(pivot, frame, new Vector3(0f, 0.24f + 0.35f + height / 2f, 1.45f), new Vector3(width + 0.2f, height + 0.2f, 0.12f));
+            Box(pivot, Glow(new Color(0.1f, 0.16f, 0.3f), 1f), new Vector3(0f, 0.24f + 0.35f + height / 2f, 1.38f), new Vector3(width, height, 0.02f));
+            // Slide: title bar, three content blocks, accent line.
+            var screenZ = 1.365f;
+            var centreY = 0.24f + 0.35f + height / 2f;
+            Box(pivot, Glow(new Color(1f, 0.97f, 0.92f), 1.4f), new Vector3(-0.8f, centreY + 0.9f, screenZ), new Vector3(3.2f, 0.28f, 0.01f));
+            for (var i = 0; i < 3; i++)
+            {
+                Box(pivot, Glow(Color.Lerp(_theme.WallTrim, new Color(0.4f, 0.8f, 1f), i / 2f), 1.2f),
+                    new Vector3(-1.7f + i * 1.7f, centreY - 0.2f, screenZ), new Vector3(1.4f, 1.1f, 0.01f));
+            }
+            Box(pivot, Glow(_theme.WallTrim, 2f), new Vector3(0f, centreY - 1.05f, screenZ), new Vector3(width - 0.6f, 0.04f, 0.01f));
+            // Lectern.
+            Box(pivot, Lit(new Color(0.12f, 0.12f, 0.14f), 0.7f), new Vector3(2.2f, 0.24f + 0.55f, 0f), new Vector3(0.6f, 1.1f, 0.5f));
+            Box(pivot, Glow(_theme.WallTrim, 1.5f), new Vector3(2.2f, 0.24f + 0.2f, -0.26f), new Vector3(0.5f, 0.03f, 0.01f));
+            AddLight(pivot, new Vector3(0f, 2.6f, -0.8f), new Color(0.7f, 0.8f, 1f), 1.2f, 5f);
         }
 
         /// <summary>4 m LED line set into the floor.</summary>

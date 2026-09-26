@@ -17,6 +17,9 @@ MODELS = [
     # Light, plants, decoration
     "modern_ceiling_lamp_01", "potted_plant_02", "potted_plant_04", "pachira_aquatica_01",
     "throw_pillows_01", "tea_set_01", "ceramic_vase_01", "marble_bust_01",
+    # Offices and conference centre (Prime Tower)
+    "metal_office_desk", "desk_lamp_arm_01", "Shelf_01", "GreenChair_01", "ArmChair_01", "modern_wooden_cabinet",
+    "dining_table",
 ]
 RESOLUTION = "1k"
 ROOT = os.path.join(os.path.dirname(__file__), "..", "client", "Assets", "ThirdParty", "PolyHaven")

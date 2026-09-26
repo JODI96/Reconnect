@@ -434,6 +434,9 @@ MonoBehaviour:
   - itemId: washerDryerStacked
     model: {fileID: 919132149155446097, guid: 6ced3d5ec148e8b48bc9626a69514596, type: 3}
     scale: 0
+  - itemId: ph-ArmChair_01
+    model: {fileID: -928704106413691644, guid: 24698ff49ef1d9c468ed995e384d2dd3, type: 3}
+    scale: 1
   - itemId: ph-bar_chair_round_01
     model: {fileID: -3548539386462537285, guid: f77bfbae39798d84592f8dc48f1b4074, type: 3}
     scale: 1
@@ -443,11 +446,23 @@ MonoBehaviour:
   - itemId: ph-coffee_table_round_01
     model: {fileID: -6831534129546790398, guid: 74cd990480edbec4dbeb2970de4c96cd, type: 3}
     scale: 1
+  - itemId: ph-desk_lamp_arm_01
+    model: {fileID: 4091485004506188150, guid: 391433454587f3340bfd9c862ae48eff, type: 3}
+    scale: 1
   - itemId: ph-dining_chair_02
     model: {fileID: 7979168729728466460, guid: b2b84c0fc40298f498a2dfb14ccdc5fb, type: 3}
     scale: 1
+  - itemId: ph-dining_table
+    model: {fileID: 8771091787928289351, guid: 3bc15b23d28df8a4aada9192f79733fa, type: 3}
+    scale: 1
+  - itemId: ph-GreenChair_01
+    model: {fileID: -8483069254667367646, guid: 6685f9ab07a19b649800f41dfb918a7b, type: 3}
+    scale: 1
   - itemId: ph-marble_bust_01
     model: {fileID: 851007600454473606, guid: fbc65ffa581ce50468fcb426bd507f85, type: 3}
+    scale: 1
+  - itemId: ph-metal_office_desk
+    model: {fileID: 8771091787928289351, guid: 71f341803609c894fb52c8e93991771c, type: 3}
     scale: 1
   - itemId: ph-mid_century_lounge_chair
     model: {fileID: 7216191201510177953, guid: eeffa4a2f2f8d944fb4762247daaef70, type: 3}
@@ -460,6 +475,9 @@ MonoBehaviour:
     scale: 1
   - itemId: ph-modern_coffee_table_01
     model: {fileID: -8971402639452374730, guid: 3537c85f435a6034f855465cdc646c72, type: 3}
+    scale: 1
+  - itemId: ph-modern_wooden_cabinet
+    model: {fileID: 8771091787928289351, guid: acf55a25626315f48b5a60245aada04e, type: 3}
     scale: 1
   - itemId: ph-Ottoman_01
     model: {fileID: 1343387698442568313, guid: 660e85c0a83cc3a41b4ffd5c7a8f748f, type: 3}
@@ -475,6 +493,9 @@ MonoBehaviour:
     scale: 1
   - itemId: ph-round_wooden_table_01
     model: {fileID: 8771091787928289351, guid: 4e42c1287b2f9d642ba3fc266e127409, type: 3}
+    scale: 1
+  - itemId: ph-Shelf_01
+    model: {fileID: 6545657021925134051, guid: bb0979cb2563797449cb4b85ff76cff1, type: 3}
     scale: 1
   - itemId: ph-side_table_01
     model: {fileID: -5053868829779351764, guid: a17bd5db0251344458fefb7f134eeaba, type: 3}

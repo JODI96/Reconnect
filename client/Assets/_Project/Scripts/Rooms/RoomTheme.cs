@@ -23,6 +23,9 @@ namespace Reconnect.Client.Rooms
 
         /// <summary>Glass box on top of a tower: floor-to-ceiling glass facade, luminous ceiling, city around it.</summary>
         GlassFacade,
+
+        /// <summary>Entrance hall of a tower: 10 m polished stone wall (lift core side), full-height glass to the street.</summary>
+        StoneHall,
     }
 
     /// <summary>Look of a room theme (ids must match the backend's RoomThemes).</summary>
@@ -50,11 +53,17 @@ namespace Reconnect.Client.Rooms
         public float LightIntensity { get; }
         public Enclosure Enclosure { get; }
 
-        /// <summary>The room stands on its real building in the 3D city (terrace or glass top floor).</summary>
+        /// <summary>The room stands on its real building in the 3D city (terrace, glass floor or tower lobby).</summary>
         public bool Outdoor => Enclosure != Enclosure.Walls;
+
+        /// <summary>Wall/stone texture: the lobby's green serpentine.</summary>
+        public bool StoneWalls => Enclosure == Enclosure.StoneHall;
 
         public static RoomTheme For(string id) => id switch
         {
+            "lobby" => new RoomTheme(FloorPattern.Marble, Hex(0xD6D0C5), Hex(0xA69D8F), Hex(0x1E3B30), Hex(0xC9A45C), Hex(0xFFE6C4), 1.1f, Enclosure.StoneHall),
+            "coworking" => new RoomTheme(FloorPattern.Planks, Hex(0xCDAA7D), Hex(0xB38D62), Hex(0x55675F), Hex(0xFFB547), Hex(0xFFF1DC), 1.5f, Enclosure.GlassFacade),
+            "conference" => new RoomTheme(FloorPattern.Concrete, Hex(0x4B505B), Hex(0x3C414B), Hex(0x6B7A74), Hex(0xFFC46B), Hex(0xFFEAD0), 1.6f, Enclosure.GlassFacade),
             "skylounge" => new RoomTheme(FloorPattern.Terrazzo, Hex(0xCFC9BE), Hex(0xBDB6AA), Hex(0x9FD8CF), Hex(0x5CE1FF), Hex(0xFFE2C0), 1.4f, Enclosure.GlassFacade),
             "rooftop" => new RoomTheme(FloorPattern.Planks, Hex(0xA87450), Hex(0x8C5E3E), Hex(0xE8E4DC), Hex(0xFF5C8A), Hex(0xFFC98A), 1.6f, Enclosure.Railing),
             "cafe" => new RoomTheme(FloorPattern.Checker, Hex(0xF1EBDD), Hex(0x2B2B30), Hex(0xE9D3B0), Hex(0x7A4A2E), Hex(0xFFD9A0), 2.0f),
