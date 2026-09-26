@@ -9,8 +9,8 @@ namespace Reconnect.Client.Rooms
 {
     /// <summary>
     /// The 3D room in Main.unity. Builds the floor (procedural texture per theme), walls from Kenney
-    /// pieces with windows and a door – or, for outdoor themes, a roof terrace with glass railing that
-    /// can sit on the real building in the 3D city – furniture from the <see cref="ItemCatalog"/>,
+    /// pieces with windows and a door – or a roof terrace with glass railing / a glass-walled top floor
+    /// that sits on the real building in the 3D city – furniture from the <see cref="ItemCatalog"/>,
     /// <see cref="CustomItems"/>, stacked small items, game stations, lights and one
     /// <see cref="AvatarView"/> per player. Camera: Habbo-like angle with perspective, drag to pan,
     /// pinch/scroll to zoom, follows your own avatar. Presentation only; RoomScreen drives it.
@@ -29,12 +29,14 @@ namespace Reconnect.Client.Rooms
         private const float MinViewWidth = 5f;
         private const float StartViewWidthMax = 15f;
         private const int MaxLampLights = 10;
+        private const float FacadeHeight = 3.4f;         // glass top floor: floor-to-ceiling glass
 
         private static readonly string[] StackableItems =
         {
             "laptop", "books", "computerScreen", "computerKeyboard", "computerMouse", "kitchenCoffeeMachine",
             "kitchenBlender", "kitchenMicrowave", "toaster", "lampSquareTable", "lampRoundTable", "plantSmall",
             "radio", "televisionModern", "televisionVintage", "speakerSmall", "pillow", "cardboardBox",
+            "ph-tea_set_01", "ph-ceramic_vase_01", "ph-throw_pillows_01", "ph-marble_bust_01",
         };
 
         [SerializeField] private Camera roomCamera;
@@ -51,6 +53,7 @@ namespace Reconnect.Client.Rooms
         private readonly List<GameStation> _stations = new();
         private readonly HashSet<Vector2Int> _blocked = new();
         private readonly List<Bounds> _surfaces = new();
+        private readonly List<string> _missingItems = new();
         private Transform _content;
         private CameraState _savedCamera;
         private RoomTheme _theme;
@@ -85,6 +88,9 @@ namespace Reconnect.Client.Rooms
         public RoomPathfinder Pathfinder { get; private set; }
         public bool IsOutdoor => _theme.Outdoor;
 
+        /// <summary>Item ids of the current layout that have no model (shown as placeholder boxes) – should stay empty.</summary>
+        public IReadOnlyList<string> MissingItems => _missingItems;
+
         public static Vector3 TileCenter(Vector2Int tile) => new((tile.x + 0.5f) * TileSize, 0f, (tile.y + 0.5f) * TileSize);
 
         public static Vector2Int WorldToTile(Vector3 local) =>
@@ -98,7 +104,7 @@ namespace Reconnect.Client.Rooms
             _width = snapshot.Width;
             _depth = snapshot.Depth;
             _theme = RoomTheme.For(snapshot.Room.Theme);
-            _custom = new CustomItems(wallMaterial, waterMaterial, _theme);
+            _custom = new CustomItems(wallMaterial, waterMaterial, glassMaterial, _theme);
             _lampLights = 0;
 
             transform.position = groundAnchor.HasValue
@@ -108,13 +114,11 @@ namespace Reconnect.Client.Rooms
             _content.SetParent(transform, false);
 
             BuildFloor();
-            if (_theme.Outdoor)
+            switch (_theme.Enclosure)
             {
-                BuildRailing();
-            }
-            else
-            {
-                BuildWalls();
+                case Enclosure.Railing: BuildRailing(); break;
+                case Enclosure.GlassFacade: BuildGlassFacade(); break;
+                default: BuildWalls(); break;
             }
             BuildFurniture(snapshot.Room.Layout);
             BuildLighting();
@@ -141,6 +145,7 @@ namespace Reconnect.Client.Rooms
             _stations.Clear();
             _blocked.Clear();
             _surfaces.Clear();
+            _missingItems.Clear();
             _savedCamera?.Restore(roomCamera);
             _savedCamera = null;
             enabled = false;
@@ -322,7 +327,12 @@ namespace Reconnect.Client.Rooms
         {
             var material = new Material(floorMaterial) { mainTexture = FloorTextures.Create(_theme.Floor, _theme.FloorA, _theme.FloorB) };
             material.SetColor("_BaseColor", Color.white);
-            material.SetFloat("_Smoothness", _theme.Floor == FloorPattern.Marble ? 0.75f : 0.3f);
+            material.SetFloat("_Smoothness", _theme.Floor switch
+            {
+                FloorPattern.Marble => 0.75f,
+                FloorPattern.Terrazzo => 0.55f,   // polished, without mirror-like light spots
+                _ => 0.3f,
+            });
             material.mainTextureScale = new Vector2(_width / FloorTextures.MetersPerTexture, _depth / FloorTextures.MetersPerTexture);
 
             var floor = Primitive(PrimitiveType.Cube, "Floor", material);
@@ -390,7 +400,7 @@ namespace Reconnect.Client.Rooms
             }
 
             var instance = Instantiate(model, pivot, false);
-            instance.transform.localScale = Vector3.one * itemCatalog.modelScale;
+            instance.transform.localScale = Vector3.one * itemCatalog.ScaleFor(itemId);
             PlaceCentered(instance);
             // Kenney walls are white: paint the bright surfaces in the theme colour, keep frames/glass.
             foreach (var renderer in instance.GetComponentsInChildren<Renderer>())
@@ -459,6 +469,62 @@ namespace Reconnect.Client.Rooms
             }
         }
 
+        /// <summary>
+        /// Glass top floor (modelled on the "Clouds" on top of Zurich's Prime Tower): floor-to-ceiling,
+        /// frameless green-tinted glass on the back sides, a low glass parapet on the camera sides so you
+        /// can look in, slim mullions and LED lines – the top edge breathes softly like the Clouds' light ceiling.
+        /// </summary>
+        private void BuildGlassFacade()
+        {
+            var glass = Tinted(glassMaterial, new Color(0.62f, 0.86f, 0.82f, 0.14f));
+            var frame = Tinted(wallMaterial, new Color(0.1f, 0.11f, 0.13f));
+            var led = Glowing(_theme.WallTrim);
+            var sides = new[]
+            {
+                (from: new Vector3(0f, 0f, _depth), to: new Vector3(_width, 0f, _depth), back: true),     // north
+                (from: new Vector3(_width, 0f, _depth), to: new Vector3(_width, 0f, 0f), back: true),     // east
+                (from: new Vector3(_width, 0f, 0f), to: new Vector3(0f, 0f, 0f), back: false),            // south
+                (from: new Vector3(0f, 0f, 0f), to: new Vector3(0f, 0f, _depth), back: false),            // west
+            };
+            foreach (var (from, to, back) in sides)
+            {
+                var direction = (to - from).normalized;
+                var length = Vector3.Distance(from, to);
+                var rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.up, direction));
+                var middle = (from + to) / 2f;
+                var height = back ? FacadeHeight : 1.05f;
+
+                Oriented("Facade Glass", glass, middle + Vector3.up * height / 2f, rotation, new Vector3(length, height, 0.03f));
+                Oriented("Facade Sill", frame, middle + Vector3.up * 0.05f, rotation, new Vector3(length + 0.1f, 0.1f, 0.14f));
+                Oriented("Facade Top", frame, middle + Vector3.up * height, rotation, new Vector3(length + 0.1f, 0.08f, 0.14f));
+                Oriented("Facade LED", led, middle + new Vector3(0f, 0.012f, 0f) + Vector3.Cross(Vector3.up, direction) * 0.12f, rotation,
+                    new Vector3(length, 0.02f, 0.03f));
+
+                // Slim mullions every 1.5 m (the real facade is frameless outside – from inside you see thin joints).
+                for (var t = 0f; t <= length + 0.01f; t += 1.5f)
+                {
+                    Box("Mullion", frame, from + direction * t + Vector3.up * height / 2f, new Vector3(0.05f, height, 0.05f));
+                }
+
+                if (back)
+                {
+                    var inward = Vector3.Cross(Vector3.up, direction);
+                    var cornice = Oriented("Facade Cornice LED", Glowing(_theme.WallTrim), middle + Vector3.up * (height - 0.02f) + inward * 0.1f,
+                        rotation, new Vector3(length, 0.04f, 0.04f));
+                    cornice.AddComponent<ShimmerPanel>().Initialize(_theme.WallTrim * 1.6f, from.x + from.z);
+                }
+            }
+        }
+
+        private GameObject Oriented(string name, Material material, Vector3 position, Quaternion rotation, Vector3 size)
+        {
+            var box = Primitive(PrimitiveType.Cube, name, material);
+            box.transform.localPosition = position;
+            box.transform.localRotation = rotation;
+            box.transform.localScale = size;
+            return box;
+        }
+
         // ---------- Furniture ----------
 
         private void BuildFurniture(IEnumerable<RoomItemDto> layout)
@@ -498,15 +564,16 @@ namespace Reconnect.Client.Rooms
                 }
 
                 var bounds = Spawn(pivot, item.ItemId);
-                if (!stackable)
+                // Only furniture standing on the floor carries small items; hanging lamps don't.
+                if (!stackable && item.Position.Y <= 0f)
                 {
                     _surfaces.Add(bounds);
-                    if (!IsFlat(item.ItemId, bounds) && item.Position.Y <= 0f)
+                    if (!IsFlat(item.ItemId, bounds))
                     {
                         BlockTiles(bounds);
                     }
                 }
-                if (item.ItemId.StartsWith("lamp") && _lampLights++ < MaxLampLights)
+                if (IsLamp(item.ItemId) && _lampLights++ < MaxLampLights)
                 {
                     AddLampLight(pivot, bounds);
                 }
@@ -514,6 +581,8 @@ namespace Reconnect.Client.Rooms
         }
 
         private static bool IsStackable(string itemId) => StackableItems.Any(itemId.StartsWith);
+
+        private static bool IsLamp(string itemId) => itemId.StartsWith("lamp") || itemId.Contains("_lamp");
 
         /// <summary>Local height of the highest furniture top under a world position (0 = floor).</summary>
         private float SurfaceHeightAt(Vector3 world)
@@ -537,10 +606,11 @@ namespace Reconnect.Client.Rooms
             if (model != null)
             {
                 instance = Instantiate(model, pivot, false);
-                instance.transform.localScale = Vector3.one * itemCatalog.modelScale;
+                instance.transform.localScale = Vector3.one * itemCatalog.ScaleFor(itemId);
             }
             else
             {
+                _missingItems.Add(itemId);
                 instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 instance.transform.SetParent(pivot, false);
                 instance.transform.localScale = new Vector3(0.9f, 0.7f, 0.6f);
@@ -625,12 +695,13 @@ namespace Reconnect.Client.Rooms
 
         private void BuildLighting()
         {
-            if (_theme.Outdoor)
+            if (_theme.Enclosure == Enclosure.Railing)
             {
                 return;   // sun + fairy lights + fire pit
             }
 
-            // Warm ceiling-like fill lights spread over the room (one per ~8 m).
+            // Warm ceiling-like fill lights spread over the room (one per ~8 m). Glass rooms get daylight
+            // through the facade, so their fill lights stay soft.
             var countX = Mathf.Max(1, Mathf.RoundToInt(_width / 8f));
             var countZ = Mathf.Max(1, Mathf.RoundToInt(_depth / 8f));
             for (var ix = 0; ix < countX; ix++)
@@ -638,11 +709,11 @@ namespace Reconnect.Client.Rooms
             {
                 var light = new GameObject("Room Light").AddComponent<Light>();
                 light.transform.SetParent(_content, false);
-                light.transform.localPosition = new Vector3((ix + 0.5f) * _width / countX, 3.2f, (iz + 0.5f) * _depth / countZ);
+                light.transform.localPosition = new Vector3((ix + 0.5f) * _width / countX, _theme.Enclosure == Enclosure.GlassFacade ? FacadeHeight : 3.2f, (iz + 0.5f) * _depth / countZ);
                 light.type = LightType.Point;
                 light.color = _theme.Light;
                 light.intensity = _theme.LightIntensity;
-                light.range = 10f;
+                light.range = _theme.Enclosure == Enclosure.GlassFacade ? 8f : 10f;
                 light.shadows = LightShadows.None;
             }
         }
@@ -802,6 +873,31 @@ namespace Reconnect.Client.Rooms
                 camera.farClipPlane = _far;
                 camera.transform.SetPositionAndRotation(_position, _rotation);
             }
+        }
+    }
+
+    /// <summary>Slowly breathing emission (LED cornice of the glass top floor).</summary>
+    public sealed class ShimmerPanel : MonoBehaviour
+    {
+        private Material _material;
+        private Color _color;
+        private float _phase;
+
+        public void Initialize(Color color, float phase)
+        {
+            _material = GetComponent<Renderer>().material;
+            _color = color;
+            _phase = phase;
+        }
+
+        private void Update()
+        {
+            if (_material == null)
+            {
+                return;
+            }
+            var level = 1.1f + 0.45f * Mathf.PerlinNoise(_phase, Time.time * 0.25f);
+            _material.SetColor("_EmissionColor", _color * level);
         }
     }
 }

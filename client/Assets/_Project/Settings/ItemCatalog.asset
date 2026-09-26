@@ -16,281 +16,481 @@ MonoBehaviour:
   items:
   - itemId: bathroomCabinet
     model: {fileID: 919132149155446097, guid: f88d179555c676b49b74f62ebccc3985, type: 3}
+    scale: 0
   - itemId: bathroomCabinetDrawer
     model: {fileID: 919132149155446097, guid: 2e23e7340e166a845bee48b58262ccaf, type: 3}
+    scale: 0
   - itemId: bathroomMirror
     model: {fileID: 919132149155446097, guid: d861588bf7db564479e8436c764dd561, type: 3}
+    scale: 0
   - itemId: bathroomSink
     model: {fileID: 919132149155446097, guid: 8b0ba4a6c814538489c9e291c1b53e0d, type: 3}
+    scale: 0
   - itemId: bathroomSinkSquare
     model: {fileID: 919132149155446097, guid: efddc6a5acbcae24e97e2433fdff77ac, type: 3}
+    scale: 0
   - itemId: bathtub
     model: {fileID: 919132149155446097, guid: 77a31fc62a6ed0444b97a018030be7ce, type: 3}
+    scale: 0
   - itemId: bear
     model: {fileID: 919132149155446097, guid: deb84a77a7448174bb654f7732bcde02, type: 3}
+    scale: 0
   - itemId: bedBunk
     model: {fileID: 919132149155446097, guid: 044bf5d94b017ed4ca244b569752bdfa, type: 3}
+    scale: 0
   - itemId: bedDouble
     model: {fileID: 919132149155446097, guid: 20d2ff6083db40a47933f70059c1f112, type: 3}
+    scale: 0
   - itemId: bedSingle
     model: {fileID: 919132149155446097, guid: fd7f27651b7891449b7d365563cda22c, type: 3}
+    scale: 0
   - itemId: bench
     model: {fileID: 919132149155446097, guid: 26cf8c8fb4b55c0458f8df5c4e381d75, type: 3}
+    scale: 0
   - itemId: benchCushion
     model: {fileID: 919132149155446097, guid: 9c818080d58c32f4daf0a862a74b38b8, type: 3}
+    scale: 0
   - itemId: benchCushionLow
     model: {fileID: 919132149155446097, guid: b1f2bdf4acd23ea48a46c7e121957ba4, type: 3}
+    scale: 0
   - itemId: bookcaseClosed
     model: {fileID: 919132149155446097, guid: 17fa691d4c9c4904f9bf80fead6a6239, type: 3}
+    scale: 0
   - itemId: bookcaseClosedDoors
     model: {fileID: 919132149155446097, guid: 6c57275b3bc0e674d8f443cfa8d480aa, type: 3}
+    scale: 0
   - itemId: bookcaseClosedWide
     model: {fileID: 919132149155446097, guid: 69e95e892cc63ac4db9c324121aa380d, type: 3}
+    scale: 0
   - itemId: bookcaseOpen
     model: {fileID: 919132149155446097, guid: 1a78f5d7d1de8ee42ac44fd69169f2ea, type: 3}
+    scale: 0
   - itemId: bookcaseOpenLow
     model: {fileID: 919132149155446097, guid: 72659f64fbba74c4a8163501dfdde944, type: 3}
+    scale: 0
   - itemId: books
     model: {fileID: 919132149155446097, guid: 2b4dee2a571b09c47a85533e6d132d50, type: 3}
+    scale: 0
   - itemId: cabinetBed
     model: {fileID: 919132149155446097, guid: ffdbe0b1dabb06647b3b8029f2a2cd91, type: 3}
+    scale: 0
   - itemId: cabinetBedDrawer
     model: {fileID: 919132149155446097, guid: e6786459dd875dd478162e37575a8cd0, type: 3}
+    scale: 0
   - itemId: cabinetBedDrawerTable
     model: {fileID: 919132149155446097, guid: 2bf72595fa4adfd4ba23127b74df559f, type: 3}
+    scale: 0
   - itemId: cabinetTelevision
     model: {fileID: 919132149155446097, guid: e89c0a3048cc7bb46846dd8af53e87d9, type: 3}
+    scale: 0
   - itemId: cabinetTelevisionDoors
     model: {fileID: 919132149155446097, guid: 196506a14b6a78045997676a81f727ad, type: 3}
+    scale: 0
   - itemId: cardboardBoxClosed
     model: {fileID: 919132149155446097, guid: 2dda91e297e5da94db9949f239257bad, type: 3}
+    scale: 0
   - itemId: cardboardBoxOpen
     model: {fileID: 919132149155446097, guid: 53de3d07ec2f7554eb7d181d0e0af0f4, type: 3}
+    scale: 0
   - itemId: ceilingFan
     model: {fileID: 919132149155446097, guid: 67fb3128e2d2d0142826b5067a9737f8, type: 3}
+    scale: 0
   - itemId: chair
     model: {fileID: 919132149155446097, guid: e9bf4f3cf5eca62458cd6202f6fbb8c2, type: 3}
+    scale: 0
   - itemId: chairCushion
     model: {fileID: 919132149155446097, guid: 4488b974d83e7b14096d82a7978479dc, type: 3}
+    scale: 0
   - itemId: chairDesk
     model: {fileID: 919132149155446097, guid: 4484534e0419bb74691324e0d3d60a1c, type: 3}
+    scale: 0
   - itemId: chairModernCushion
     model: {fileID: 919132149155446097, guid: 287f95eb20a49a2458b9db1720d6ba6a, type: 3}
+    scale: 0
   - itemId: chairModernFrameCushion
     model: {fileID: 919132149155446097, guid: b858c9c77dcaed249b4b17fdb9671374, type: 3}
+    scale: 0
   - itemId: chairRounded
     model: {fileID: 919132149155446097, guid: 61a0c077d49b2ad48a21fd9675dc6711, type: 3}
+    scale: 0
   - itemId: coatRack
     model: {fileID: 919132149155446097, guid: 413c6b8cafd61d04eb7da90dfa4dcda3, type: 3}
+    scale: 0
   - itemId: coatRackStanding
     model: {fileID: 919132149155446097, guid: f4330ceb61fe9fc4e912dfc814799466, type: 3}
+    scale: 0
   - itemId: computerKeyboard
     model: {fileID: 919132149155446097, guid: c7ed113035c7ad54f87ccf7f95290d30, type: 3}
+    scale: 0
   - itemId: computerMouse
     model: {fileID: 919132149155446097, guid: 5f3db92ad5000f24bbbe39246e07fd02, type: 3}
+    scale: 0
   - itemId: computerScreen
     model: {fileID: 919132149155446097, guid: baadd60103cd4c3409154a26a82b16b4, type: 3}
+    scale: 0
   - itemId: desk
     model: {fileID: 919132149155446097, guid: e2031eb6a7798264d97d0d50c13a3a7e, type: 3}
+    scale: 0
   - itemId: deskCorner
     model: {fileID: 919132149155446097, guid: 05a0cc78b095208499a325fb4e856ef9, type: 3}
+    scale: 0
   - itemId: doorway
     model: {fileID: 919132149155446097, guid: 1f63fedd3d196e941926cddba6556a48, type: 3}
+    scale: 0
   - itemId: doorwayFront
     model: {fileID: 919132149155446097, guid: 3727e42e6e87da043b3e1a3cabfe501a, type: 3}
+    scale: 0
   - itemId: doorwayOpen
     model: {fileID: 919132149155446097, guid: 0c5ef0263d94a1e49b6f341849e9cced, type: 3}
+    scale: 0
   - itemId: dryer
     model: {fileID: 919132149155446097, guid: dd3ce10413d9d19479715fe07df11c5b, type: 3}
+    scale: 0
   - itemId: floorCorner
     model: {fileID: 919132149155446097, guid: 1b9c30c1184c26640a07e360956f0034, type: 3}
+    scale: 0
   - itemId: floorCornerRound
     model: {fileID: 919132149155446097, guid: 1c0b80dd75c2ba94fb317d409e4b8ac6, type: 3}
+    scale: 0
   - itemId: floorFull
     model: {fileID: 919132149155446097, guid: a754e2e840496bd4ea6cc2e29f8befa4, type: 3}
+    scale: 0
   - itemId: floorHalf
     model: {fileID: 919132149155446097, guid: 757cf449ec465e24fbcd24ba73849b5b, type: 3}
+    scale: 0
   - itemId: hoodLarge
     model: {fileID: 919132149155446097, guid: 23e621d4fdf860c4698e0dd9c2d7dab2, type: 3}
+    scale: 0
   - itemId: hoodModern
     model: {fileID: 919132149155446097, guid: d6d0817bda22f524c8aa83ae165a4e32, type: 3}
+    scale: 0
   - itemId: kitchenBar
     model: {fileID: 919132149155446097, guid: 4bccdff88538dd947bfc6734fdf66073, type: 3}
+    scale: 0
   - itemId: kitchenBarEnd
     model: {fileID: 919132149155446097, guid: 6c709df5f08492d439cf99e88c0fb06e, type: 3}
+    scale: 0
   - itemId: kitchenBlender
     model: {fileID: 919132149155446097, guid: 4b05bb99669c3ac4983853fbfbd5c1a6, type: 3}
+    scale: 0
   - itemId: kitchenCabinet
     model: {fileID: 919132149155446097, guid: 1ea14f268f81e0e4da377c1006e3d3c9, type: 3}
+    scale: 0
   - itemId: kitchenCabinetCornerInner
     model: {fileID: 919132149155446097, guid: b9d8b1245b01cbb48bdcc77610b1fbe7, type: 3}
+    scale: 0
   - itemId: kitchenCabinetCornerRound
     model: {fileID: 919132149155446097, guid: e5fcdc28d71d0f5428dd35a2aa5a3c18, type: 3}
+    scale: 0
   - itemId: kitchenCabinetDrawer
     model: {fileID: 919132149155446097, guid: 3ca1d78c01d939b4cbd5441dd5280095, type: 3}
+    scale: 0
   - itemId: kitchenCabinetUpper
     model: {fileID: 919132149155446097, guid: b6d6da17e9d8bd7448eead096ec5ab4e, type: 3}
+    scale: 0
   - itemId: kitchenCabinetUpperCorner
     model: {fileID: 919132149155446097, guid: b9d53cfb1bd637944b65ec51612f2b12, type: 3}
+    scale: 0
   - itemId: kitchenCabinetUpperDouble
     model: {fileID: 919132149155446097, guid: fc90e8007ea9ca440bdfa2ffe5070f11, type: 3}
+    scale: 0
   - itemId: kitchenCabinetUpperLow
     model: {fileID: 919132149155446097, guid: b2866ea0c084d934986e3ecd11beed7b, type: 3}
+    scale: 0
   - itemId: kitchenCoffeeMachine
     model: {fileID: 919132149155446097, guid: 9cb17d0a71fa90747be0f8d13f01ce2a, type: 3}
+    scale: 0
   - itemId: kitchenFridge
     model: {fileID: 919132149155446097, guid: 0fb016826a475fa4e93a9c16d100ae1e, type: 3}
+    scale: 0
   - itemId: kitchenFridgeBuiltIn
     model: {fileID: 919132149155446097, guid: 3fac129b602aa9b4ba2100ee9d7dde82, type: 3}
+    scale: 0
   - itemId: kitchenFridgeLarge
     model: {fileID: 919132149155446097, guid: c991aea696c46b64496edcb3baaa5d27, type: 3}
+    scale: 0
   - itemId: kitchenFridgeSmall
     model: {fileID: 919132149155446097, guid: 00fd79042b3bca449b01a6c5d0f73587, type: 3}
+    scale: 0
   - itemId: kitchenMicrowave
     model: {fileID: 919132149155446097, guid: 99b707a1d31194248bbcc45f09009a71, type: 3}
+    scale: 0
   - itemId: kitchenSink
     model: {fileID: 919132149155446097, guid: a78cde5526bc7ba47a82671e0e9c2da1, type: 3}
+    scale: 0
   - itemId: kitchenStove
     model: {fileID: 919132149155446097, guid: a4840ab18c308494a931461063effa6c, type: 3}
+    scale: 0
   - itemId: kitchenStoveElectric
     model: {fileID: 919132149155446097, guid: 1dadab43d1e68964787891e7d4435a8a, type: 3}
+    scale: 0
   - itemId: lampRoundFloor
     model: {fileID: 919132149155446097, guid: 587c1815f3e22794a8e0f067842b0f72, type: 3}
+    scale: 0
   - itemId: lampRoundTable
     model: {fileID: 919132149155446097, guid: ca98991f878b72f4c810263c2a4df03b, type: 3}
+    scale: 0
   - itemId: lampSquareCeiling
     model: {fileID: 919132149155446097, guid: 2b54bf60d67fb664383e186628d23385, type: 3}
+    scale: 0
   - itemId: lampSquareFloor
     model: {fileID: 919132149155446097, guid: dcebdd9b093db7e45a58018333fb6b1a, type: 3}
+    scale: 0
   - itemId: lampSquareTable
     model: {fileID: 919132149155446097, guid: bae70266a89d91444adfe0fbb7a624d5, type: 3}
+    scale: 0
   - itemId: lampWall
     model: {fileID: 919132149155446097, guid: 56490302e706faa4fb12e441b1ed92b6, type: 3}
+    scale: 0
   - itemId: laptop
     model: {fileID: 919132149155446097, guid: 110ce9e9715fd5f4f9d50ce2aeb49812, type: 3}
+    scale: 0
   - itemId: loungeChair
     model: {fileID: 919132149155446097, guid: 6492a0c382a47a7428446db6c045841a, type: 3}
+    scale: 0
   - itemId: loungeChairRelax
     model: {fileID: 919132149155446097, guid: 1c05aa4d9b8f94d4984e5d8dc0a5fd75, type: 3}
+    scale: 0
   - itemId: loungeDesignChair
     model: {fileID: 919132149155446097, guid: 727cecef6cd974043a22636f7263bb83, type: 3}
+    scale: 0
   - itemId: loungeDesignSofa
     model: {fileID: 919132149155446097, guid: cb78cba120a22ed4eb2903dc65395d82, type: 3}
+    scale: 0
   - itemId: loungeDesignSofaCorner
     model: {fileID: 919132149155446097, guid: 11f2894ca65d80c4ea0daed42540b1a2, type: 3}
+    scale: 0
   - itemId: loungeSofa
     model: {fileID: 919132149155446097, guid: fa01872bae88e394c8fb060cc7a78496, type: 3}
+    scale: 0
   - itemId: loungeSofaCorner
     model: {fileID: 919132149155446097, guid: bbaaf07dfbb31e2459a929475f2b4d71, type: 3}
+    scale: 0
   - itemId: loungeSofaLong
     model: {fileID: 919132149155446097, guid: ce94e5bf930d79145b877e157425c117, type: 3}
+    scale: 0
   - itemId: loungeSofaOttoman
     model: {fileID: 919132149155446097, guid: 9939abf70f1863649a9939d0e2ec5cc0, type: 3}
+    scale: 0
   - itemId: paneling
     model: {fileID: 919132149155446097, guid: 5325b3336daa789469ee2e668f97f213, type: 3}
+    scale: 0
   - itemId: pillow
     model: {fileID: 919132149155446097, guid: 0755625e31e6be84e81a939fe67f2991, type: 3}
+    scale: 0
   - itemId: pillowBlue
     model: {fileID: 919132149155446097, guid: f67b312bd2a124d458e89a97f02f4e92, type: 3}
+    scale: 0
   - itemId: pillowBlueLong
     model: {fileID: 919132149155446097, guid: 2f4de3e28aa8be84782e5a1aa4506bb4, type: 3}
+    scale: 0
   - itemId: pillowLong
     model: {fileID: 919132149155446097, guid: 4e26b6a2f1b72584d8091962476b0e6c, type: 3}
+    scale: 0
   - itemId: plantSmall1
     model: {fileID: 919132149155446097, guid: a5640ac0976186d46a93c4e92ee8fef4, type: 3}
+    scale: 0
   - itemId: plantSmall2
     model: {fileID: 919132149155446097, guid: fd72c0d8831a20949a5d5d1d13093a7d, type: 3}
+    scale: 0
   - itemId: plantSmall3
     model: {fileID: 919132149155446097, guid: 08a75ea21de9b784c888ec50ecb97d70, type: 3}
+    scale: 0
   - itemId: pottedPlant
     model: {fileID: 919132149155446097, guid: 3568030713d445f43a30acf2f1775769, type: 3}
+    scale: 0
   - itemId: radio
     model: {fileID: 919132149155446097, guid: c83ab5f39155d3a44b0f09fe259d3c4c, type: 3}
+    scale: 0
   - itemId: rugDoormat
     model: {fileID: 919132149155446097, guid: 0f1e554949105b449bfe71feb9cfc6ef, type: 3}
+    scale: 0
   - itemId: rugRectangle
     model: {fileID: 919132149155446097, guid: 86a01b3659a79534b86eac9c63eaf433, type: 3}
+    scale: 0
   - itemId: rugRound
     model: {fileID: 919132149155446097, guid: b75989a2fee9b11478e8321b022cf155, type: 3}
+    scale: 0
   - itemId: rugRounded
     model: {fileID: 919132149155446097, guid: 2ea2644e56ddf5a4098a4b0975fc1712, type: 3}
+    scale: 0
   - itemId: rugSquare
     model: {fileID: 919132149155446097, guid: 11c0cc4e51ed16a4b87384dd0a83fbcf, type: 3}
+    scale: 0
   - itemId: shower
     model: {fileID: 919132149155446097, guid: dde3a100f785d9846a380cc40eb9a8ee, type: 3}
+    scale: 0
   - itemId: showerRound
     model: {fileID: 919132149155446097, guid: 9819af9551c7595468ce03292cdd0a51, type: 3}
+    scale: 0
   - itemId: sideTable
     model: {fileID: 919132149155446097, guid: 0a5f453688128de439d43ad9eac73c3e, type: 3}
+    scale: 0
   - itemId: sideTableDrawers
     model: {fileID: 919132149155446097, guid: 737ac143d3dd4204585d7e972cb349ae, type: 3}
+    scale: 0
   - itemId: speaker
     model: {fileID: 919132149155446097, guid: ad3108d54e301b541919701f6f7a29ca, type: 3}
+    scale: 0
   - itemId: speakerSmall
     model: {fileID: 919132149155446097, guid: cb075584fc14f08428e791d16b8be721, type: 3}
+    scale: 0
   - itemId: stairs
     model: {fileID: 919132149155446097, guid: ec794c4a6bae9914cb96c930d055c952, type: 3}
+    scale: 0
   - itemId: stairsCorner
     model: {fileID: 919132149155446097, guid: 7dbf083dac0881a41ae485d9c2644c8b, type: 3}
+    scale: 0
   - itemId: stairsOpen
     model: {fileID: 919132149155446097, guid: 968699c180ec24d4d9461fc862c8176f, type: 3}
+    scale: 0
   - itemId: stairsOpenSingle
     model: {fileID: 919132149155446097, guid: 742a0c8ce410adb44b9aa52171801214, type: 3}
+    scale: 0
   - itemId: stoolBar
     model: {fileID: 919132149155446097, guid: 307cdb76fe22f4746a76917651267692, type: 3}
+    scale: 0
   - itemId: stoolBarSquare
     model: {fileID: 919132149155446097, guid: 1575719bc25509d43b6109566865508a, type: 3}
+    scale: 0
   - itemId: table
     model: {fileID: 919132149155446097, guid: c8f63f2d4a499af44a30a84134716b83, type: 3}
+    scale: 0
   - itemId: tableCloth
     model: {fileID: 919132149155446097, guid: d707fade3aaa77946b6f2ed057834bfa, type: 3}
+    scale: 0
   - itemId: tableCoffee
     model: {fileID: 919132149155446097, guid: 8efd79d5a500c8c42bc8760cde5d43ee, type: 3}
+    scale: 0
   - itemId: tableCoffeeGlass
     model: {fileID: 919132149155446097, guid: 5e6198f70937ff24b924081c76833904, type: 3}
+    scale: 0
   - itemId: tableCoffeeGlassSquare
     model: {fileID: 919132149155446097, guid: fe89497421fea5b449267e7ea778d394, type: 3}
+    scale: 0
   - itemId: tableCoffeeSquare
     model: {fileID: 919132149155446097, guid: c5ab3eef5f0431d448f18e161b13a0ca, type: 3}
+    scale: 0
   - itemId: tableCross
     model: {fileID: 919132149155446097, guid: cc557a14a8803ca4cb15990a0ec17281, type: 3}
+    scale: 0
   - itemId: tableCrossCloth
     model: {fileID: 919132149155446097, guid: 001ce192d19141140963cab19f7638bf, type: 3}
+    scale: 0
   - itemId: tableGlass
     model: {fileID: 919132149155446097, guid: 4d076dbd01c37c1418e68ac88a92c14c, type: 3}
+    scale: 0
   - itemId: tableRound
     model: {fileID: 919132149155446097, guid: d88a7fdc74dc15e45b44aa2b4d5e0a57, type: 3}
+    scale: 0
   - itemId: televisionAntenna
     model: {fileID: 919132149155446097, guid: 4f35be89913067546b40313b108f0838, type: 3}
+    scale: 0
   - itemId: televisionModern
     model: {fileID: 919132149155446097, guid: 23f390486cd36fc48961b4dd7f118146, type: 3}
+    scale: 0
   - itemId: televisionVintage
     model: {fileID: 919132149155446097, guid: fc0e96539ba190c498c1b640207fa118, type: 3}
+    scale: 0
   - itemId: toaster
     model: {fileID: 919132149155446097, guid: 4e1d73ffeece34b418d09b4867f0ed23, type: 3}
+    scale: 0
   - itemId: toilet
     model: {fileID: 919132149155446097, guid: f13a4fc73dc457e4bb8e7e3dc33fdac2, type: 3}
+    scale: 0
   - itemId: toiletSquare
     model: {fileID: 919132149155446097, guid: e20257c4a12a0434a9a896c3b822ad1b, type: 3}
+    scale: 0
   - itemId: trashcan
     model: {fileID: 919132149155446097, guid: 98409a78b70a18a4cb53721aafb9c956, type: 3}
+    scale: 0
   - itemId: wall
     model: {fileID: 919132149155446097, guid: 44bda9482ca12b74c96fac631c5f63c5, type: 3}
+    scale: 0
   - itemId: wallCorner
     model: {fileID: 919132149155446097, guid: 19c9db8d0259eb7459d68fa7218fb5b1, type: 3}
+    scale: 0
   - itemId: wallCornerRond
     model: {fileID: 919132149155446097, guid: c4d3348f336be654695c9416efbb8ac6, type: 3}
+    scale: 0
   - itemId: wallDoorway
     model: {fileID: 919132149155446097, guid: 3ff5a980f6384be499a7adab236b7a0e, type: 3}
+    scale: 0
   - itemId: wallDoorwayWide
     model: {fileID: 919132149155446097, guid: ffb9427c3b6ab294a86e643ebc08b7fc, type: 3}
+    scale: 0
   - itemId: wallHalf
     model: {fileID: 919132149155446097, guid: 8c373c5c415ffb44bbb9e2ee6c06bc1c, type: 3}
+    scale: 0
   - itemId: wallWindow
     model: {fileID: 919132149155446097, guid: 372b43f8f43cdb14e96a493ff52d8485, type: 3}
+    scale: 0
   - itemId: wallWindowSlide
     model: {fileID: 919132149155446097, guid: bad6655a688e6ac4a9f096e3c609f967, type: 3}
+    scale: 0
   - itemId: washer
     model: {fileID: 919132149155446097, guid: d689defe2b44038488d1fa8340540dfc, type: 3}
+    scale: 0
   - itemId: washerDryerStacked
     model: {fileID: 919132149155446097, guid: 6ced3d5ec148e8b48bc9626a69514596, type: 3}
+    scale: 0
+  - itemId: ph-bar_chair_round_01
+    model: {fileID: -3548539386462537285, guid: f77bfbae39798d84592f8dc48f1b4074, type: 3}
+    scale: 1
+  - itemId: ph-ceramic_vase_01
+    model: {fileID: 3846568447194651512, guid: 7293f1a1cc7f64948b1b244530bfba3e, type: 3}
+    scale: 1
+  - itemId: ph-coffee_table_round_01
+    model: {fileID: -6831534129546790398, guid: 74cd990480edbec4dbeb2970de4c96cd, type: 3}
+    scale: 1
+  - itemId: ph-dining_chair_02
+    model: {fileID: 7979168729728466460, guid: b2b84c0fc40298f498a2dfb14ccdc5fb, type: 3}
+    scale: 1
+  - itemId: ph-marble_bust_01
+    model: {fileID: 851007600454473606, guid: fbc65ffa581ce50468fcb426bd507f85, type: 3}
+    scale: 1
+  - itemId: ph-mid_century_lounge_chair
+    model: {fileID: 7216191201510177953, guid: eeffa4a2f2f8d944fb4762247daaef70, type: 3}
+    scale: 1
+  - itemId: ph-modern_arm_chair_01
+    model: {fileID: -6716258032573464376, guid: 351935d249f7329429573d8fe97dc9bc, type: 3}
+    scale: 1
+  - itemId: ph-modern_ceiling_lamp_01
+    model: {fileID: 6931845082293638876, guid: c423acb3b9dd8d847aa23d569557ad3d, type: 3}
+    scale: 1
+  - itemId: ph-modern_coffee_table_01
+    model: {fileID: -8971402639452374730, guid: 3537c85f435a6034f855465cdc646c72, type: 3}
+    scale: 1
+  - itemId: ph-Ottoman_01
+    model: {fileID: 1343387698442568313, guid: 660e85c0a83cc3a41b4ffd5c7a8f748f, type: 3}
+    scale: 1
+  - itemId: ph-pachira_aquatica_01
+    model: {fileID: 8771091787928289351, guid: 06f637b5d755c05449390218feefcae7, type: 3}
+    scale: 1
+  - itemId: ph-potted_plant_02
+    model: {fileID: 8771091787928289351, guid: f76f0c1c3b77a2847b87811d7be836d1, type: 3}
+    scale: 1
+  - itemId: ph-potted_plant_04
+    model: {fileID: 8771091787928289351, guid: d5ced7d90f0976a468f0f612f615ae9b, type: 3}
+    scale: 1
+  - itemId: ph-round_wooden_table_01
+    model: {fileID: 8771091787928289351, guid: 4e42c1287b2f9d642ba3fc266e127409, type: 3}
+    scale: 1
+  - itemId: ph-side_table_01
+    model: {fileID: -5053868829779351764, guid: a17bd5db0251344458fefb7f134eeaba, type: 3}
+    scale: 1
+  - itemId: ph-side_table_tall_01
+    model: {fileID: -4719394315553244875, guid: 511add7d3b7602b4eb6e88b26a5b0e27, type: 3}
+    scale: 1
+  - itemId: ph-sofa_02
+    model: {fileID: 8771091787928289351, guid: c5a84157ef2c53544a3addae22e0593a, type: 3}
+    scale: 1
+  - itemId: ph-sofa_03
+    model: {fileID: -2213540379110418307, guid: f4dc6a138e0980943a2f49a0ad022fd2, type: 3}
+    scale: 1
+  - itemId: ph-tea_set_01
+    model: {fileID: 8771091787928289351, guid: e8aa6590f8620e6418041ccde23ffd31, type: 3}
+    scale: 1
+  - itemId: ph-throw_pillows_01
+    model: {fileID: 8771091787928289351, guid: 024aa26386f6da74c8ba97fcc20991fb, type: 3}
+    scale: 1

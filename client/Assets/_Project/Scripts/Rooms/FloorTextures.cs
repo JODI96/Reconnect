@@ -4,7 +4,7 @@ namespace Reconnect.Client.Rooms
 {
     /// <summary>
     /// Generates floor textures at runtime (no image assets needed): wooden planks, parquet,
-    /// checkered tiles, marble and concrete. One texture covers <see cref="MetersPerTexture"/> metres
+    /// checkered tiles, marble, concrete and terrazzo. One texture covers <see cref="MetersPerTexture"/> metres
     /// and is tiled across the room floor.
     /// </summary>
     public static class FloorTextures
@@ -26,6 +26,7 @@ namespace Reconnect.Client.Rooms
                     FloorPattern.Parquet => Parquet(u, v, a, b),
                     FloorPattern.Checker => Checker(u, v, a, b),
                     FloorPattern.Marble => Marble(u, v, a, b),
+                    FloorPattern.Terrazzo => Terrazzo(u, v, a, b),
                     _ => Concrete(u, v, a, b),
                 };
             }
@@ -111,6 +112,35 @@ namespace Reconnect.Client.Rooms
             if (lu < 0.006f || lv < 0.006f)
             {
                 color *= 0.8f;   // slab joints
+            }
+            return color;
+        }
+
+        /// <summary>Polished dark terrazzo: stone chips in three sizes, 1 m slabs with fine joints.</summary>
+        private static Color Terrazzo(float u, float v, Color a, Color b)
+        {
+            var color = Color.Lerp(a, b, Mathf.PerlinNoise(u * 5f, v * 5f) * 0.6f);
+            foreach (var (cells, size, tint) in new[] { (90, 0.28f, 0.55f), (45, 0.22f, 0.35f), (160, 0.3f, 0.75f) })
+            {
+                var cx = Mathf.FloorToInt(u * cells);
+                var cy = Mathf.FloorToInt(v * cells);
+                var seed = Hash(cx * 73 + cy * 151 + cells);
+                if (seed > 0.55f)
+                {
+                    continue;   // not every cell has a chip
+                }
+                var centre = new Vector2(Hash(cx * 11 + cy * 7 + cells), Hash(cx * 5 + cy * 13 + cells)) * 0.6f + new Vector2(0.2f, 0.2f);
+                var local = new Vector2(u * cells - cx, v * cells - cy);
+                if ((local - centre).sqrMagnitude < size * size * (0.5f + seed))
+                {
+                    var shade = Hash(cx * 29 + cy * 83 + cells * 3);
+                    var chip = seed < 0.06f ? new Color(0.3f, 0.66f, 0.64f) : Color.Lerp(new Color(0.22f, 0.22f, 0.24f), new Color(0.97f, 0.96f, 0.94f), shade);
+                    color = Color.Lerp(color, chip, tint);
+                }
+            }
+            if (Mathf.Repeat(u * 2f, 1f) < 0.003f || Mathf.Repeat(v * 2f, 1f) < 0.003f)
+            {
+                color *= 0.7f;
             }
             return color;
         }

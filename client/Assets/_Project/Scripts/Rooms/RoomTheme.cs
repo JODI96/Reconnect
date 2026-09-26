@@ -9,13 +9,27 @@ namespace Reconnect.Client.Rooms
         Checker,
         Marble,
         Concrete,
+        Terrazzo,
+    }
+
+    /// <summary>What surrounds the floor.</summary>
+    public enum Enclosure
+    {
+        /// <summary>Habbo-style back walls (north + east) with windows and a door.</summary>
+        Walls,
+
+        /// <summary>Open roof terrace: glass railing on all sides, sky and city around it.</summary>
+        Railing,
+
+        /// <summary>Glass box on top of a tower: floor-to-ceiling glass facade, luminous ceiling, city around it.</summary>
+        GlassFacade,
     }
 
     /// <summary>Look of a room theme (ids must match the backend's RoomThemes).</summary>
     public readonly struct RoomTheme
     {
         public RoomTheme(FloorPattern floor, Color floorA, Color floorB, Color wall, Color wallTrim, Color light,
-            float lightIntensity, bool outdoor = false)
+            float lightIntensity, Enclosure enclosure = Enclosure.Walls)
         {
             Floor = floor;
             FloorA = floorA;
@@ -24,7 +38,7 @@ namespace Reconnect.Client.Rooms
             WallTrim = wallTrim;
             Light = light;
             LightIntensity = lightIntensity;
-            Outdoor = outdoor;
+            Enclosure = enclosure;
         }
 
         public FloorPattern Floor { get; }
@@ -34,13 +48,15 @@ namespace Reconnect.Client.Rooms
         public Color WallTrim { get; }
         public Color Light { get; }
         public float LightIntensity { get; }
+        public Enclosure Enclosure { get; }
 
-        /// <summary>Open-air room (roof terrace): no walls, glass railing, sky and city around it.</summary>
-        public bool Outdoor { get; }
+        /// <summary>The room stands on its real building in the 3D city (terrace or glass top floor).</summary>
+        public bool Outdoor => Enclosure != Enclosure.Walls;
 
         public static RoomTheme For(string id) => id switch
         {
-            "rooftop" => new RoomTheme(FloorPattern.Planks, Hex(0xA87450), Hex(0x8C5E3E), Hex(0xE8E4DC), Hex(0xFF5C8A), Hex(0xFFC98A), 1.6f, outdoor: true),
+            "skylounge" => new RoomTheme(FloorPattern.Terrazzo, Hex(0xCFC9BE), Hex(0xBDB6AA), Hex(0x9FD8CF), Hex(0x5CE1FF), Hex(0xFFE2C0), 1.4f, Enclosure.GlassFacade),
+            "rooftop" => new RoomTheme(FloorPattern.Planks, Hex(0xA87450), Hex(0x8C5E3E), Hex(0xE8E4DC), Hex(0xFF5C8A), Hex(0xFFC98A), 1.6f, Enclosure.Railing),
             "cafe" => new RoomTheme(FloorPattern.Checker, Hex(0xF1EBDD), Hex(0x2B2B30), Hex(0xE9D3B0), Hex(0x7A4A2E), Hex(0xFFD9A0), 2.0f),
             "atelier" => new RoomTheme(FloorPattern.Concrete, Hex(0xBFC3C8), Hex(0xA9AEB5), Hex(0xF5F5F2), Hex(0x2F80ED), Hex(0xF0F5FF), 1.8f),
             "opera" => new RoomTheme(FloorPattern.Marble, Hex(0xF0E8DA), Hex(0xC9B99E), Hex(0x7A1627), Hex(0xD4AF37), Hex(0xFFD27A), 2.4f),

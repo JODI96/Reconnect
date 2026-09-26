@@ -12,12 +12,14 @@ namespace Reconnect.Client.Rooms
 
         private readonly Material _litBase;
         private readonly Material _water;
+        private readonly Material _glass;
         private readonly RoomTheme _theme;
 
-        public CustomItems(Material litBase, Material water, RoomTheme theme)
+        public CustomItems(Material litBase, Material water, Material glass, RoomTheme theme)
         {
             _litBase = litBase;
             _water = water;
+            _glass = glass;
             _theme = theme;
         }
 
@@ -35,6 +37,17 @@ namespace Reconnect.Client.Rooms
                 case "custom-column": Column(pivot); return true;
                 case "custom-easel": Easel(pivot); return true;
                 case "custom-lightstring": LightString(pivot); blocksTiles = false; return true;
+                case "custom-skybar": SkyBar(pivot); return true;
+                case "custom-backbar": BackBar(pivot); return true;
+                case "custom-openkitchen": OpenKitchen(pivot); return true;
+                case "custom-hologram": Hologram(pivot); return true;
+                case "custom-djbooth": DjBooth(pivot); return true;
+                case "custom-telescope": Telescope(pivot); return true;
+                case "custom-divider": Divider(pivot); return true;
+                case "custom-pendant": Pendant(pivot); blocksTiles = false; return true;
+                case "custom-ledstrip": LedStrip(pivot); blocksTiles = false; return true;
+                case "custom-rug": Rug(pivot, round: false); blocksTiles = false; return true;
+                case "custom-ruground": Rug(pivot, round: true); blocksTiles = false; return true;
                 default: return false;
             }
         }
@@ -164,6 +177,230 @@ namespace Reconnect.Client.Rooms
             AddLight(pivot, new Vector3(0f, 2f, 0f), new Color(1f, 0.82f, 0.55f), 1.2f, 4.5f);
         }
 
+        // ---------- Sky lounge (Prime Tower top floor, futuristic) ----------
+
+        /// <summary>5 m bar counter: backlit onyx front, black stone top, steel foot rail, LED line on the floor.</summary>
+        private void SkyBar(Transform pivot)
+        {
+            const float length = 5f, depth = 0.75f, height = 1.08f;
+            var body = Lit(new Color(0.08f, 0.08f, 0.1f), 0.6f);
+            Box(pivot, body, new Vector3(0f, height / 2f, 0.05f), new Vector3(length, height, depth - 0.1f));
+            // Backlit front: warm onyx panels with thin seams.
+            var onyx = Glow(new Color(1f, 0.86f, 0.62f), 1.4f);
+            for (var i = 0; i < 5; i++)
+            {
+                Box(pivot, onyx, new Vector3(-length / 2f + 0.5f + i * 1f, 0.55f, -depth / 2f + 0.04f), new Vector3(0.96f, 0.82f, 0.02f));
+            }
+            Box(pivot, Lit(new Color(0.03f, 0.03f, 0.035f), 0.9f), new Vector3(0f, height + 0.03f, -0.02f), new Vector3(length + 0.1f, 0.06f, depth + 0.1f));
+            var steel = Lit(new Color(0.78f, 0.8f, 0.84f), 0.85f);
+            Box(pivot, steel, new Vector3(0f, 0.2f, -depth / 2f - 0.14f), new Vector3(length - 0.2f, 0.04f, 0.04f));
+            Box(pivot, Glow(_theme.WallTrim, 2.5f), new Vector3(0f, 0.012f, -depth / 2f - 0.02f), new Vector3(length, 0.02f, 0.04f));
+            // Glasses on the counter.
+            var glass = Tinted(_glass, new Color(0.85f, 0.95f, 1f, 0.45f));
+            for (var i = 0; i < 6; i++)
+            {
+                Cylinder(pivot, glass, new Vector3(-2f + i * 0.8f, height + 0.13f, 0.05f), new Vector3(0.07f, 0.07f, 0.07f));
+            }
+            AddLight(pivot, new Vector3(0f, 1.8f, -0.6f), new Color(1f, 0.85f, 0.65f), 1.6f, 4.5f);
+        }
+
+        /// <summary>Back bar: mirrored wall with three glowing glass shelves full of bottles.</summary>
+        private void BackBar(Transform pivot)
+        {
+            const float length = 5f, height = 2.6f;
+            var frame = Lit(new Color(0.07f, 0.07f, 0.08f), 0.5f);
+            Box(pivot, frame, new Vector3(0f, 0.45f, 0f), new Vector3(length, 0.9f, 0.5f));   // cabinets
+            Box(pivot, Lit(new Color(0.55f, 0.6f, 0.65f), 0.95f), new Vector3(0f, 1.75f, 0.2f), new Vector3(length - 0.1f, 1.7f, 0.03f));   // mirror
+            Box(pivot, frame, new Vector3(-length / 2f, height / 2f, 0.05f), new Vector3(0.08f, height, 0.4f));
+            Box(pivot, frame, new Vector3(length / 2f, height / 2f, 0.05f), new Vector3(0.08f, height, 0.4f));
+            Box(pivot, frame, new Vector3(0f, height, 0.05f), new Vector3(length + 0.08f, 0.08f, 0.4f));
+
+            var shelf = Glow(new Color(0.75f, 0.95f, 1f), 1.2f);
+            var colors = new[]
+            {
+                new Color(0.2f, 0.55f, 0.25f), new Color(0.75f, 0.45f, 0.12f), new Color(0.9f, 0.9f, 0.95f),
+                new Color(0.55f, 0.1f, 0.18f), new Color(0.2f, 0.35f, 0.7f), new Color(0.85f, 0.7f, 0.2f),
+            };
+            var bottles = new Material[colors.Length];
+            for (var c = 0; c < colors.Length; c++)
+            {
+                bottles[c] = Tinted(_glass, new Color(colors[c].r, colors[c].g, colors[c].b, 0.8f));
+            }
+            var random = new System.Random(7);
+            for (var level = 0; level < 3; level++)
+            {
+                var y = 1.1f + level * 0.5f;
+                Box(pivot, shelf, new Vector3(0f, y, 0.08f), new Vector3(length - 0.2f, 0.03f, 0.3f));
+                for (var x = -length / 2f + 0.25f; x < length / 2f - 0.2f; x += 0.19f + (float)random.NextDouble() * 0.1f)
+                {
+                    var bottle = bottles[random.Next(bottles.Length)];
+                    var h = 0.24f + (float)random.NextDouble() * 0.1f;
+                    Cylinder(pivot, bottle, new Vector3(x, y + 0.015f + h / 2f, 0.08f), new Vector3(0.08f, h / 2f, 0.08f));
+                    Cylinder(pivot, bottle, new Vector3(x, y + 0.015f + h + 0.05f, 0.08f), new Vector3(0.03f, 0.05f, 0.03f));
+                }
+            }
+        }
+
+        /// <summary>Open kitchen: steel counter, black induction top, pass with heat lamps and a floating hood.</summary>
+        private void OpenKitchen(Transform pivot)
+        {
+            const float length = 4f, depth = 1f;
+            var steel = Lit(new Color(0.72f, 0.74f, 0.78f), 0.8f);
+            Box(pivot, steel, new Vector3(0f, 0.45f, 0f), new Vector3(length, 0.9f, depth));
+            Box(pivot, Lit(new Color(0.05f, 0.05f, 0.06f), 0.9f), new Vector3(-0.8f, 0.915f, 0.05f), new Vector3(1.6f, 0.03f, 0.7f));
+            var ring = Glow(new Color(1f, 0.35f, 0.1f), 1.5f);
+            foreach (var x in new[] { -1.3f, -0.3f })
+            {
+                Cylinder(pivot, ring, new Vector3(x, 0.93f, 0.05f), new Vector3(0.28f, 0.005f, 0.28f));
+            }
+            // Chopping board and a bowl.
+            Box(pivot, Lit(new Color(0.6f, 0.42f, 0.25f)), new Vector3(0.9f, 0.92f, 0.1f), new Vector3(0.5f, 0.03f, 0.32f));
+            Sphere(pivot, Lit(new Color(0.95f, 0.95f, 0.93f), 0.8f), new Vector3(1.5f, 0.95f, 0.1f), new Vector3(0.22f, 0.1f, 0.22f));
+            // Pass shelf with heat lamps on the guest side.
+            Box(pivot, steel, new Vector3(0f, 1.35f, -0.35f), new Vector3(length, 0.04f, 0.35f));
+            foreach (var x in new[] { -1.4f, 0f, 1.4f })
+            {
+                Cylinder(pivot, steel, new Vector3(x, 1.12f, -0.35f), new Vector3(0.03f, 0.22f, 0.03f));
+                Cylinder(pivot, Glow(new Color(1f, 0.5f, 0.2f), 2f), new Vector3(x, 1.33f, -0.35f), new Vector3(0.12f, 0.01f, 0.12f));
+            }
+            // Floating hood.
+            Box(pivot, steel, new Vector3(-0.8f, 2.6f, 0.05f), new Vector3(1.8f, 0.35f, 0.8f));
+            Box(pivot, Glow(new Color(1f, 0.95f, 0.85f), 1.2f), new Vector3(-0.8f, 2.42f, 0.05f), new Vector3(1.6f, 0.01f, 0.6f));
+            AddLight(pivot, new Vector3(0f, 1.9f, -0.6f), new Color(1f, 0.8f, 0.6f), 1.2f, 4f);
+        }
+
+        /// <summary>Pedestal with a slowly turning hologram of the Prime Tower and scan rings.</summary>
+        private void Hologram(Transform pivot)
+        {
+            var dark = Lit(new Color(0.06f, 0.06f, 0.08f), 0.8f);
+            Cylinder(pivot, dark, new Vector3(0f, 0.35f, 0f), new Vector3(0.9f, 0.35f, 0.9f));
+            Cylinder(pivot, Glow(_theme.WallTrim, 3f), new Vector3(0f, 0.71f, 0f), new Vector3(0.8f, 0.01f, 0.8f));
+
+            var holo = new GameObject("Hologram").transform;
+            holo.SetParent(pivot, false);
+            holo.localPosition = new Vector3(0f, 0.75f, 0f);
+            holo.localScale = Vector3.one * 1.5f;
+            holo.gameObject.AddComponent<Spinner>().degreesPerSecond = 18f;
+            var beam = HologramMaterial(_theme.WallTrim, 0.3f);
+            var solid = HologramMaterial(_theme.WallTrim, 0.6f);
+            // Prime Tower: stacked, slightly twisted floors that widen towards the top.
+            for (var i = 0; i < 12; i++)
+            {
+                var widen = 1f + i * 0.012f;
+                var floor = Box(holo, i % 3 == 0 ? solid : beam, new Vector3(0f, 0.1f + i * 0.09f, 0f), new Vector3(0.34f * widen, 0.07f, 0.24f * widen));
+                floor.transform.localRotation = Quaternion.Euler(0f, i * 1.5f, 0f);
+            }
+            Box(holo, solid, new Vector3(0.03f, 1.2f, 0f), new Vector3(0.3f, 0.04f, 0.2f));
+            foreach (var height in new[] { 0.3f, 0.75f })
+            {
+                var ring = Cylinder(holo, beam, new Vector3(0f, height, 0f), new Vector3(0.62f, 0.004f, 0.62f));
+                ring.AddComponent<Bobbing>().amplitude = 0.35f;
+            }
+            AddLight(pivot, new Vector3(0f, 1.4f, 0f), _theme.WallTrim, 1.4f, 3.5f);
+        }
+
+        /// <summary>DJ booth with a glowing front and an animated equalizer.</summary>
+        private void DjBooth(Transform pivot)
+        {
+            const float length = 2.2f;
+            Box(pivot, Lit(new Color(0.06f, 0.06f, 0.07f), 0.7f), new Vector3(0f, 0.5f, 0f), new Vector3(length, 1f, 0.8f));
+            Box(pivot, Lit(new Color(0.02f, 0.02f, 0.025f), 0.9f), new Vector3(0f, 1.02f, 0f), new Vector3(length + 0.05f, 0.04f, 0.85f));
+            var decks = Lit(new Color(0.12f, 0.12f, 0.14f), 0.6f);
+            foreach (var x in new[] { -0.6f, 0.6f })
+            {
+                Cylinder(pivot, decks, new Vector3(x, 1.06f, 0.05f), new Vector3(0.36f, 0.02f, 0.36f));
+                Cylinder(pivot, Glow(_theme.WallTrim, 2f), new Vector3(x, 1.075f, 0.05f), new Vector3(0.08f, 0.01f, 0.08f));
+            }
+            Box(pivot, decks, new Vector3(0f, 1.07f, 0.05f), new Vector3(0.4f, 0.04f, 0.3f));
+            // Equalizer bars on the front (facing the guests).
+            var colors = new[] { Glow(_theme.WallTrim, 2.5f), Glow(new Color(0.7f, 0.35f, 1f), 2.5f), Glow(new Color(1f, 0.3f, 0.6f), 2.5f) };
+            for (var i = 0; i < 14; i++)
+            {
+                var bar = Box(pivot, colors[i % 3], new Vector3(-length / 2f + 0.2f + i * 0.13f, 0.5f, -0.41f), new Vector3(0.08f, 0.6f, 0.01f));
+                bar.AddComponent<EqualizerBar>().phase = i * 0.7f;
+            }
+        }
+
+        /// <summary>Panorama viewer at the window, like on observation decks, with a glowing lens.</summary>
+        private void Telescope(Transform pivot)
+        {
+            var metal = Lit(new Color(0.18f, 0.19f, 0.22f), 0.75f);
+            Cylinder(pivot, metal, new Vector3(0f, 0.04f, 0f), new Vector3(0.45f, 0.04f, 0.45f));
+            Cylinder(pivot, metal, new Vector3(0f, 0.6f, 0f), new Vector3(0.1f, 0.55f, 0.1f));
+            var head = Box(pivot, Lit(new Color(0.85f, 0.87f, 0.9f), 0.85f), new Vector3(0f, 1.25f, 0.05f), new Vector3(0.34f, 0.24f, 0.5f));
+            head.transform.localRotation = Quaternion.Euler(-10f, 0f, 0f);
+            foreach (var x in new[] { -0.08f, 0.08f })
+            {
+                Cylinder(pivot, metal, new Vector3(x, 1.27f, -0.23f), new Vector3(0.07f, 0.03f, 0.07f)).transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            }
+            Cylinder(pivot, Glow(_theme.WallTrim, 2.5f), new Vector3(0f, 1.3f, 0.31f), new Vector3(0.18f, 0.01f, 0.18f)).transform.localRotation = Quaternion.Euler(80f, 0f, 0f);
+        }
+
+        /// <summary>3 m frosted glass partition with glowing edges (Prive, smokers lounge).</summary>
+        private void Divider(Transform pivot)
+        {
+            const float length = 3f, height = 2.3f;
+            Box(pivot, Tinted(_glass, new Color(0.85f, 0.95f, 0.95f, 0.35f)), new Vector3(0f, height / 2f, 0f), new Vector3(length, height, 0.04f));
+            var edge = Glow(_theme.WallTrim, 2.2f);
+            Box(pivot, edge, new Vector3(0f, 0.02f, 0f), new Vector3(length, 0.04f, 0.08f));
+            Box(pivot, edge, new Vector3(0f, height, 0f), new Vector3(length, 0.03f, 0.06f));
+            var metal = Lit(new Color(0.12f, 0.12f, 0.14f), 0.7f);
+            Box(pivot, metal, new Vector3(-length / 2f, height / 2f, 0f), new Vector3(0.05f, height, 0.08f));
+            Box(pivot, metal, new Vector3(length / 2f, height / 2f, 0f), new Vector3(0.05f, height, 0.08f));
+        }
+
+        /// <summary>
+        /// Cluster of hand-blown glass orbs (Murano style) that float and breathe above tables – the room has
+        /// no visible ceiling (camera from above), so they levitate instead of hanging on cables.
+        /// </summary>
+        private void Pendant(Transform pivot)
+        {
+            var shades = new[] { Glow(new Color(1f, 0.78f, 0.45f), 1.4f), Glow(new Color(1f, 0.64f, 0.42f), 1.4f), Glow(new Color(0.98f, 0.86f, 0.62f), 1.4f) };
+            var offsets = new[] { new Vector3(0f, 2.55f, 0f), new Vector3(0.2f, 2.35f, 0.12f), new Vector3(-0.18f, 2.45f, 0.14f), new Vector3(0.06f, 2.25f, -0.2f), new Vector3(-0.14f, 2.65f, -0.12f) };
+            for (var i = 0; i < offsets.Length; i++)
+            {
+                var orb = Sphere(pivot, shades[i % 3], offsets[i], Vector3.one * (0.16f + 0.04f * (i % 2)));
+                var bob = orb.AddComponent<Bobbing>();
+                bob.amplitude = 0.06f;
+                bob.speed = 0.6f + 0.15f * i;
+            }
+            AddLight(pivot, new Vector3(0f, 2.2f, 0f), new Color(1f, 0.8f, 0.55f), 1.4f, 3.5f);
+        }
+
+        /// <summary>4 m LED line set into the floor.</summary>
+        private void LedStrip(Transform pivot) =>
+            Box(pivot, Glow(_theme.WallTrim, 1.3f), new Vector3(0f, 0.004f, 0f), new Vector3(4f, 0.008f, 0.05f));
+
+        /// <summary>Wool rug in deep teal with a light border: 3.6 × 2.6 m, or 3 m round.</summary>
+        private void Rug(Transform pivot, bool round)
+        {
+            var border = Lit(new Color(0.86f, 0.83f, 0.77f), 0.05f);
+            var wool = Lit(new Color(0.16f, 0.32f, 0.34f), 0.05f);
+            if (round)
+            {
+                Cylinder(pivot, border, new Vector3(0f, 0.005f, 0f), new Vector3(3f, 0.005f, 3f));
+                Cylinder(pivot, wool, new Vector3(0f, 0.008f, 0f), new Vector3(2.7f, 0.005f, 2.7f));
+                return;
+            }
+            Box(pivot, border, new Vector3(0f, 0.005f, 0f), new Vector3(3.6f, 0.01f, 2.6f));
+            Box(pivot, wool, new Vector3(0f, 0.008f, 0f), new Vector3(3.3f, 0.01f, 2.3f));
+        }
+
+        private static Material Tinted(Material source, Color color)
+        {
+            var material = new Material(source);
+            material.SetColor("_BaseColor", color);
+            return material;
+        }
+
+        private Material HologramMaterial(Color color, float alpha)
+        {
+            var material = Tinted(_water, new Color(color.r, color.g, color.b, alpha));
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", color * 0.7f);   // stays cyan instead of blooming to white
+            return material;
+        }
+
         private Material Lit(Color color, float smoothness = 0.35f)
         {
             var material = new Material(_litBase);
@@ -211,6 +448,53 @@ namespace Reconnect.Client.Rooms
             light.range = range;
             light.shadows = LightShadows.None;
             return light;
+        }
+    }
+
+    /// <summary>Turns an object around its Y axis (holograms).</summary>
+    public sealed class Spinner : MonoBehaviour
+    {
+        public float degreesPerSecond = 20f;
+
+        private void Update() => transform.Rotate(0f, degreesPerSecond * Time.deltaTime, 0f, Space.Self);
+    }
+
+    /// <summary>Moves an object up and down above its start height (hologram scan rings).</summary>
+    public sealed class Bobbing : MonoBehaviour
+    {
+        public float amplitude = 0.3f;
+        public float speed = 0.8f;
+        private Vector3 _start;
+        private float _seed;
+
+        private void Awake()
+        {
+            _start = transform.localPosition;
+            _seed = UnityEngine.Random.value * 10f;
+        }
+
+        private void Update() =>
+            transform.localPosition = _start + Vector3.up * (amplitude * (0.5f + 0.5f * Mathf.Sin((Time.time + _seed) * speed)));
+    }
+
+    /// <summary>Equalizer bar that pumps to an imaginary beat (DJ booth); grows from its bottom edge.</summary>
+    public sealed class EqualizerBar : MonoBehaviour
+    {
+        public float phase;
+        private Vector3 _scale;
+        private Vector3 _position;
+
+        private void Awake()
+        {
+            _scale = transform.localScale;
+            _position = transform.localPosition;
+        }
+
+        private void Update()
+        {
+            var level = 0.25f + 0.75f * Mathf.Abs(Mathf.Sin(Time.time * 2.1f + phase)) * Mathf.PerlinNoise(phase, Time.time * 1.5f);
+            transform.localScale = new Vector3(_scale.x, _scale.y * level, _scale.z);
+            transform.localPosition = _position + Vector3.down * (_scale.y * (1f - level) / 2f);
         }
     }
 

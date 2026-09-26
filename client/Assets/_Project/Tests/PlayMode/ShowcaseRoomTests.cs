@@ -74,6 +74,7 @@ namespace Reconnect.Client.PlayModeTests
                 }
 
                 Assert.Greater(detail.Result.Value.Layout.Count, 25, "room is richly furnished");
+                CollectionAssert.IsEmpty(view.MissingItems, room.Name + ": every item id has a model");
                 number++;
                 Save(view.Camera, $"showcase-{number}-avatar.png", room.Name);   // start view, zoomed on me
                 view.FrameWholeRoom();

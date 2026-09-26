@@ -129,13 +129,23 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
 - **Welt-Koordinaten:** Unity-Ursprung = Zürich HB auf Bodenhöhe (`CitySettings`, Höhe 408 m – swisstopo-3D
   nutzt Höhen über Meer). X = Ost, Y = oben, Z = Nord, 1 Einheit = 1 m. Nur über `CityView.ToUnity/ToGeo`
   umrechnen. Höhen von Dächern/Gelände: `Cesium3DTileset.SampleHeightMostDetailed` oder `CityView.SurfaceHeightAt`.
-- **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney`. Möbel-ItemId =
+- **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney` (Low-Poly), dazu
+  realistische **Poly-Haven-Modelle** (CC0, kommerziell frei, keine Namensnennung nötig) in `Assets/ThirdParty/PolyHaven`
+  als glTF (Import über `com.unity.cloud.gltfast`, 1k-Texturen für Mobile). Neue Poly-Haven-Modelle: Namen in
+  `tools/fetch_polyhaven.py` eintragen, Skript ausführen, dann Setup Project. ItemId = `ph-<name>` (echte Meter, Scale 1;
+  im Backend über `Ph(...)` platzieren – die Modelle schauen nach +Z, `Ph` dreht sie passend). Kenney-Möbel-ItemId =
   Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen, `custom-*` baut der Client (Pool, Säule …),
   Kleinteile (Laptop, Lampe, Kaffeemaschine) werden automatisch auf Möbel gestapelt.
   Massstab: Möbel ×0.2 ≈ echte Grösse (Tisch 65 cm, Tür 2 m), Figuren ×1.8 (≈ 1.4 m). 1 Rasterfeld = 1 m.
-- **Räume:** eigene Grösse (6–40 m), Themes mit prozeduralem Boden (FloorTextures), Wände aus Kenney-Teilen
-  mit Fenstern/Tür. Outdoor-Themes (rooftop) stehen auf dem echten Gebäudedach in der 3D-Stadt
-  (`CityView.RoofAnchorAsync`), mit Glasgeländer und Stadt als Kulisse.
+- **Räume:** eigene Grösse (6–40 m), Themes mit prozeduralem Boden (FloorTextures) und einer `Enclosure`:
+  `Walls` (Kenney-Wände mit Fenstern/Tür), `Railing` (Dachterrasse, Glasgeländer) oder `GlassFacade` (verglastes
+  Obergeschoss mit LED-Kante). `Railing`/`GlassFacade` stehen auf dem echten Gebäudedach in der 3D-Stadt
+  (`CityView.RoofAnchorAsync`). Die **Rooftop Lounge** (Theme `skylounge`) bildet das echte „Clouds“ im 35. Stock des
+  Prime Towers nach (Bar, offene Küche, Bistro, Restaurant, Lounge, Privé) mit futuristischen Custom-Items
+  (Hologramm, schwebende Murano-Orbs, DJ-Pult mit Equalizer, Panorama-Fernrohre). Unbekannte ItemIds landen in
+  `RoomView.MissingItems` – der Showcase-Test verlangt, dass die Liste leer ist.
+- **Gebäude in der Stadt:** swissBUILDINGS3D kommt ohne Textur mit Rohfarben (rote Dächer, gelbe Wände). Das Tileset
+  nutzt deshalb `Materials/Buildings.mat` (helles „Architekturmodell“); Gelände behält Cesiums Material (Overlays).
 - **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
   Vor dem Launch Daten selbst hosten (Fair-Use der geo.admin.ch-Dienste) und Nutzungsbedingungen prüfen.
 - **Screens über der 3D-Welt** sind transparent (`screen--transparent`); Container, die Touches
