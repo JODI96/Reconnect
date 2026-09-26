@@ -17,7 +17,7 @@ using UnityEngine.TestTools;
 namespace Reconnect.Client.PlayModeTests
 {
     /// <summary>
-    /// Loads the five showcase rooms from the running local backend (as the dev admin) and renders
+    /// Loads the four showcase rooms from the running local backend (as the dev admin) and renders
     /// each into client/Logs/showcase-&lt;n&gt;.png. Skipped if the backend is not running.
     /// </summary>
     [Category("Integration")]
@@ -48,7 +48,7 @@ namespace Reconnect.Client.PlayModeTests
             var list = api.GetAsync<PagedResponse<RoomSummaryDto>>(ApiRoutes.Rooms.Group + "?pageSize=50");
             yield return Wait(list);
             var showcase = list.Result.Value.Items.Where(r => r.OwnerDisplayName == "Admin" && r.Name != "Test").OrderBy(r => r.Name).ToList();
-            Assert.AreEqual(5, showcase.Count, "five showcase rooms");
+            Assert.AreEqual(4, showcase.Count, "four showcase rooms (the sky lounge moved into the Prime Tower as Clouds)");
 
             var view = UnityEngine.Object.FindFirstObjectByType<RoomView>();
             // Render into a portrait phone target from the start, so the camera frames the room for it.

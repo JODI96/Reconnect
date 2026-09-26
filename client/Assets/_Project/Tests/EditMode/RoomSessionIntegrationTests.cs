@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -24,6 +25,35 @@ namespace Reconnect.Client.Tests
     {
         private const string BaseUrl = "http://localhost:5191";
         private static readonly Guid KunsthausId = Guid.Parse("0199a000-0000-7000-8000-000000000007");
+        private static readonly Guid PrimeTowerId = Guid.Parse("0199a000-0000-7000-8000-000000000003");
+
+        [UnityTest]
+        public IEnumerator Lift_takes_a_player_from_the_lobby_to_clouds()
+        {
+            var anna = Player();
+            var register = Register(anna, "Anna");
+            yield return Wait(register);
+            if (register.Result.StatusCode == 0)
+            {
+                Assert.Ignore("Backend not running on " + BaseUrl + ".");
+            }
+
+            var tower = anna.Api.GetAsync<TowerDto>(ApiRoutes.Rooms.Tower(PrimeTowerId));
+            yield return Wait(tower);
+            var lobby = tower.Result.Value.Floors.First(f => f.Floor == 0);
+            var clouds = tower.Result.Value.Floors.First(f => f.Floor == 35);
+
+            var join = anna.Session.JoinAsync(lobby.RoomId, CancellationToken.None);
+            yield return Wait(join);
+            Assert.AreEqual(0, join.Result.Room.Floor);
+
+            var ride = anna.Session.RideElevatorAsync(clouds.RoomId);
+            yield return Wait(ride);
+            Assert.AreEqual(ElevatorStatus.Arrived, ride.Result.Status);
+            Assert.AreEqual(35, ride.Result.Snapshot.Room.Floor);
+            Assert.AreEqual("Clouds", ride.Result.Snapshot.Room.Name);
+            anna.Session.Dispose();
+        }
 
         [UnityTest]
         public IEnumerator Two_players_see_each_other_walk_and_talk()

@@ -4,6 +4,7 @@
     <ui:VisualElement class="city-layout pass-through">
         <ui:VisualElement class="toolbar toolbar--floating">
             <ui:Label text="Zürich" class="heading heading--on-map pass-through" />
+            <ui:Label name="balance" class="balance-chip pass-through" />
             <ui:Button name="layer" text="Karte" class="button button--small" />
             <ui:Button name="rooms" text="Räume" class="button button--small" />
             <ui:Button name="logout" text="Abmelden" class="button button--small" />
@@ -20,6 +21,11 @@
                 <ui:Button name="sheet-close" text="×" class="button button--small" />
             </ui:VisualElement>
             <ui:Label name="sheet-status" class="status" />
+            <!-- Towers (Prime Tower): enter through the lobby, buy an office. -->
+            <ui:VisualElement name="tower-actions" class="sheet__actions" style="display: none;">
+                <ui:Button name="tower-enter" class="button button--primary" />
+                <ui:Button name="tower-offices" text="Büros kaufen" class="button" />
+            </ui:VisualElement>
             <ui:ScrollView name="sheet-scroll" class="sheet__rooms">
                 <ui:VisualElement name="sheet-rooms" />
             </ui:ScrollView>

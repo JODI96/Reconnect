@@ -137,6 +137,17 @@ public sealed class TowerElevatorTests(ReconnectApiFactory factory)
         await Assert.ThrowsAsync<HubException>(() => hub.RideElevatorAsync(other.Id));
     }
 
+    [Fact]
+    public async Task Rooms_cannot_be_created_in_a_tower()
+    {
+        var user = await factory.RegisterAsync();
+
+        var response = await user.Client.PostAsync(ApiRoutes.Rooms.Group,
+            System.Net.Http.Json.JsonContent.Create(new CreateRoomRequest(ZurichBuildings.PrimeTowerId, "Mein Loft", true), options: TestUsers.Json));
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private static TowerFloorDto Floor(TowerDto tower, int storey) => tower.Floors.Single(f => f.Floor == storey && f.IsPublic);
 
     private static async Task<TowerDto> GetTowerAsync(TestUser user) =>

@@ -258,11 +258,18 @@ namespace Reconnect.Client.City
         /// <summary>Ground/roof height under a Unity position, from the loaded physics meshes (null if not loaded).</summary>
         public float? SurfaceHeightAt(Vector3 position)
         {
+            // Markers stand on the roofs: look through them to the ground/roof below.
             var from = new Vector3(position.x, position.y + 3000f, position.z);
-            return Physics.Raycast(from, Vector3.down, out var hit, 6000f, ~0, QueryTriggerInteraction.Ignore)
-                   && hit.collider.GetComponentInParent<CityMarker>() == null
-                ? hit.point.y
-                : null;
+            var hits = Physics.RaycastAll(from, Vector3.down, 6000f, ~0, QueryTriggerInteraction.Ignore);
+            Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
+            {
+                if (hit.collider.GetComponentInParent<CityMarker>() == null)
+                {
+                    return hit.point.y;
+                }
+            }
+            return null;
         }
 
         private async System.Threading.Tasks.Task PlaceOnRoofsAsync(int generation)

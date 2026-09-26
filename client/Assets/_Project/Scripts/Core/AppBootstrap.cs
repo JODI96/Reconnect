@@ -1,6 +1,7 @@
 using System;
 using Reconnect.Client.Auth;
 using Reconnect.Client.City;
+using Reconnect.Client.Economy;
 using Reconnect.Client.Networking;
 using Reconnect.Client.Rooms;
 using Reconnect.Client.UI;
@@ -29,6 +30,9 @@ namespace Reconnect.Client.Core
         private RoomService _rooms;
         private BuildingService _buildings;
         private MapService _maps;
+        private TowerService _tower;
+        private WalletService _wallet;
+        private RealEstateService _realEstate;
         private IRoomSession _roomSession;
 
         private async void Start()
@@ -39,6 +43,9 @@ namespace Reconnect.Client.Core
             _rooms = new RoomService(api);
             _buildings = new BuildingService(api);
             _maps = new MapService(api);
+            _tower = new TowerService(api);
+            _wallet = new WalletService(api);
+            _realEstate = new RealEstateService(api);
             _roomSession = new SignalRRoomSession(apiSettings.BaseUrl, _auth);
             city.Initialize(citySettings);
 
@@ -85,8 +92,11 @@ namespace Reconnect.Client.Core
 
         private void ShowRegister() => _navigator.Show(new RegisterScreen(ui.register, _auth, ShowLogin));
 
-        private void ShowCity() => _navigator.Show(new CityScreen(ui.city, city, citySettings, _buildings, _maps, _rooms, _auth,
-            openRoomList: ShowRooms, openRoom: id => ShowRoom(id, back: ShowCity)));
+        private void ShowCity() => _navigator.Show(new CityScreen(ui.city, city, citySettings, _buildings, _maps, _tower, _wallet, _rooms, _auth,
+            openRoomList: ShowRooms, openRoom: id => ShowRoom(id, back: ShowCity), enterRoom: EnterRoom, openOffices: ShowOffices));
+
+        private void ShowOffices(Guid buildingId) =>
+            _navigator.Show(new OfficesScreen(ui.offices, _realEstate, _wallet, buildingId, back: ShowCity));
 
         private void ShowRooms() => _navigator.Show(new RoomListScreen(ui.roomList, ui.roomListItem, _rooms, _auth,
             openRoom: id => ShowRoom(id, back: ShowRooms), openMap: ShowCity));
@@ -95,6 +105,6 @@ namespace Reconnect.Client.Core
             _navigator.Show(new RoomDetailScreen(ui.roomDetail, _rooms, roomId, back, enter: EnterRoom));
 
         private void EnterRoom(Guid roomId) =>
-            _navigator.Show(new RoomScreen(ui.room, room, city, _roomSession, roomId, _auth.UserId!.Value, leave: ShowCity));
+            _navigator.Show(new RoomScreen(ui.room, room, city, _roomSession, _tower, roomId, _auth.UserId!.Value, leave: ShowCity));
     }
 }

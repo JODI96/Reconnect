@@ -28,6 +28,8 @@ namespace Reconnect.Client.Rooms
         public event Action<EmoteDto> EmoteReceived;
         public event Action<TicTacToeStateDto> TicTacToeUpdated;
         public event Action<QuizStateDto> QuizUpdated;
+        public event Action<QueueStatusDto> QueueUpdated;
+        public event Action<RoomSnapshotDto> ElevatorArrived;
         public event Action<string> Disconnected;
 
         public async Task<RoomSnapshotDto> JoinAsync(Guid roomId, CancellationToken ct)
@@ -54,6 +56,17 @@ namespace Reconnect.Client.Rooms
         public Task<QuizStateDto> QuizAnswerAsync(int answerIndex) => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizAnswer, answerIndex);
 
         public Task<QuizStateDto> QuizNextAsync() => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizNext);
+
+        public Task<ElevatorResultDto> RideElevatorAsync(Guid targetRoomId) =>
+            _connection.InvokeAsync<ElevatorResultDto>(RoomHubContract.Server.RideElevator, targetRoomId);
+
+        public async Task LeaveQueueAsync()
+        {
+            if (_connection?.IsConnected == true)
+            {
+                await _connection.InvokeAsync(RoomHubContract.Server.LeaveQueue);
+            }
+        }
 
         public async Task LeaveAsync()
         {
@@ -91,6 +104,8 @@ namespace Reconnect.Client.Rooms
             connection.On<EmoteDto>(RoomHubContract.Client.PlayerEmote, e => EmoteReceived?.Invoke(e));
             connection.On<TicTacToeStateDto>(RoomHubContract.Client.TicTacToeUpdated, t => TicTacToeUpdated?.Invoke(t));
             connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => QuizUpdated?.Invoke(q));
+            connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdated?.Invoke(q));
+            connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => ElevatorArrived?.Invoke(s));
             connection.Closed += reason =>
             {
                 if (_connection == connection)

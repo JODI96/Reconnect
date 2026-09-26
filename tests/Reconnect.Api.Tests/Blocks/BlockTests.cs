@@ -60,14 +60,14 @@ public sealed class BlockTests(ReconnectApiFactory factory)
         var anna = await factory.RegisterAsync();
         var ben = await factory.RegisterAsync();
         var room = await (await ben.Client.PostAsJsonAsync(ApiRoutes.Rooms.Group,
-            new CreateRoomRequest(ZurichBuildings.PrimeTowerId, "Ben's Lounge", IsPublic: true), TestUsers.Json)).ReadAsync<RoomDto>();
+            new CreateRoomRequest(ZurichBuildings.LandesmuseumId, "Ben's Lounge", IsPublic: true), TestUsers.Json)).ReadAsync<RoomDto>();
 
         Assert.Equal(HttpStatusCode.OK, (await anna.Client.GetAsync(ApiRoutes.Rooms.ById(room.Id))).StatusCode);
 
         await anna.Client.PostAsync(ApiRoutes.Blocks.ForUser(ben.Id), null);
 
         Assert.Equal(HttpStatusCode.NotFound, (await anna.Client.GetAsync(ApiRoutes.Rooms.ById(room.Id))).StatusCode);
-        var listResponse = await anna.Client.GetAsync($"{ApiRoutes.Rooms.Group}?buildingId={ZurichBuildings.PrimeTowerId}&pageSize=100");
+        var listResponse = await anna.Client.GetAsync($"{ApiRoutes.Rooms.Group}?buildingId={ZurichBuildings.LandesmuseumId}&pageSize=100");
         Assert.True(listResponse.IsSuccessStatusCode, await listResponse.Content.ReadAsStringAsync());
         var list = await listResponse.ReadAsync<PagedResponse<RoomSummaryDto>>();
         Assert.DoesNotContain(list.Items, r => r.Id == room.Id);

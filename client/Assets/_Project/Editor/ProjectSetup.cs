@@ -104,6 +104,7 @@ namespace Reconnect.Client.Editor
             catalog.roomDetail = Load<VisualTreeAsset>(UiDir + "/RoomDetail.uxml");
             catalog.city = Load<VisualTreeAsset>(UiDir + "/City.uxml");
             catalog.room = Load<VisualTreeAsset>(UiDir + "/Room.uxml");
+            catalog.offices = Load<VisualTreeAsset>(UiDir + "/Offices.uxml");
             EditorUtility.SetDirty(catalog);
         }
 

@@ -73,6 +73,11 @@ internal static class RoomEndpoints
         {
             return Validation.Problem(nameof(request.BuildingId), "Building does not exist.");
         }
+        if (await db.Rooms.AnyAsync(r => r.BuildingId == request.BuildingId && r.Floor != null, ct))
+        {
+            // Towers have floors and offices for sale instead of free rooms.
+            return Validation.Problem(nameof(request.BuildingId), "In diesem Gebäude kann man Büros kaufen, aber keine Räume anlegen.");
+        }
 
         var room = Room.Create(principal.GetUserId(), request.BuildingId, request.Name, request.IsPublic, request.Theme);
         db.Rooms.Add(room);

@@ -75,7 +75,7 @@ namespace Reconnect.Client.PlayModeTests
             // Rooftop Lounge on the real roof (heights from swisstopo, Google lowered by the geoid height).
             var list = api.GetAsync<PagedResponse<RoomSummaryDto>>(ApiRoutes.Rooms.Group + "?pageSize=50");
             yield return Wait(list);
-            var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(list.Result.Value.Items.Single(r => r.Name == "Rooftop Lounge").Id));
+            var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(list.Result.Value.Items.Single(r => r.Name == "Clouds").Id));
             yield return Wait(detail);
             var room = detail.Result.Value;
             for (var i = 0; i < 300 && (city.RoofPosition(PrimeTowerId)?.y ?? 0f) < 50f; i++)

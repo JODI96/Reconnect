@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Reconnect.Client.Auth;
 using Reconnect.Client.City;
+using Reconnect.Client.Economy;
 using Reconnect.Client.Rooms;
 using Reconnect.Contracts.Buildings;
+using Reconnect.Contracts.Rooms;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -21,6 +24,11 @@ namespace Reconnect.Client.UI.Screens
         private readonly CitySettings _settings;
         private readonly BuildingService _buildings;
         private readonly MapService _maps;
+        private readonly TowerService _tower;
+        private readonly WalletService _wallet;
+        private readonly Action<Guid> _enterRoom;
+        private readonly Action<Guid> _openOffices;
+        private Guid _lobbyId;
         private readonly RoomService _rooms;
         private readonly AuthService _auth;
         private readonly Action _openRoomList;
@@ -35,8 +43,13 @@ namespace Reconnect.Client.UI.Screens
         private CancellationTokenSource _selectionLoad;
 
         public CityScreen(VisualTreeAsset template, CityView city, CitySettings settings, BuildingService buildings,
-            MapService maps, RoomService rooms, AuthService auth, Action openRoomList, Action<Guid> openRoom)
+            MapService maps, TowerService tower, WalletService wallet, RoomService rooms, AuthService auth,
+            Action openRoomList, Action<Guid> openRoom, Action<Guid> enterRoom, Action<Guid> openOffices)
         {
+            _tower = tower;
+            _wallet = wallet;
+            _enterRoom = enterRoom;
+            _openOffices = openOffices;
             _maps = maps;
             _template = template;
             _city = city;
@@ -74,6 +87,13 @@ namespace Reconnect.Client.UI.Screens
             Q<Button>("logout").clicked += _auth.Logout;
             Q<Button>("sheet-close").clicked += () => Select(null);
             Q<Button>("create-room").clicked += CreateRoom;
+            Q<Button>("tower-enter").clicked += () => _enterRoom(_lobbyId);
+            Q<Button>("tower-offices").clicked += () => _openOffices(_selected.Id);
+            RunAsync(async () =>
+            {
+                var wallet = await _wallet.GetAsync(Lifetime);
+                Q<Label>("balance").text = wallet.IsSuccess ? Money.Format(wallet.Value.Balance) : "";
+            });
 
             _city.CameraController.IsPointerOverUi = IsPointerOverUi;
             _city.BuildingTapped += Select;
@@ -221,6 +241,17 @@ namespace Reconnect.Client.UI.Screens
             {
                 list.Clear();
                 SetStatus(sheetStatus, "Lade Räume …", isError: false);
+
+                // A tower (floors with a lobby) is entered through its lobby; offices are bought, not created.
+                var tower = await _tower.GetAsync(building.Id, ct);
+                var lobby = tower.IsSuccess ? tower.Value.Floors.FirstOrDefault(f => f.Floor == 0 && f.IsPublic) : null;
+                ShowTowerActions(lobby, tower.IsSuccess ? tower.Value.Floors.Sum(f => f.Occupancy) : 0);
+                if (lobby != null)
+                {
+                    SetStatus(sheetStatus, null);
+                    return;
+                }
+
                 var result = await _rooms.GetRoomsAsync(1, building.Id, ct);
                 if (!result.IsSuccess)
                 {
@@ -277,6 +308,19 @@ namespace Reconnect.Client.UI.Screens
             }
             var panelPosition = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screenPosition.x, Screen.height - screenPosition.y));
             return panel.Pick(panelPosition) != null;
+        }
+
+        private void ShowTowerActions(TowerFloorDto lobby, int peopleInside)
+        {
+            var isTower = lobby != null;
+            _lobbyId = lobby?.RoomId ?? Guid.Empty;
+            Q<VisualElement>("tower-actions").style.display = isTower ? DisplayStyle.Flex : DisplayStyle.None;
+            Q<VisualElement>("sheet-scroll").style.display = isTower ? DisplayStyle.None : DisplayStyle.Flex;
+            Q<VisualElement>("new-room-name").parent.style.display = isTower ? DisplayStyle.None : DisplayStyle.Flex;
+            if (isTower)
+            {
+                Q<Button>("tower-enter").text = $"Betreten · Lobby ({peopleInside} im Tower)";
+            }
         }
 
         /// <summary>The button offers the other layer.</summary>

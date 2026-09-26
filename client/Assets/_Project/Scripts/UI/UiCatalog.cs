@@ -15,5 +15,6 @@ namespace Reconnect.Client.UI
         public VisualTreeAsset roomDetail;
         public VisualTreeAsset city;
         public VisualTreeAsset room;
+        public VisualTreeAsset offices;
     }
 }

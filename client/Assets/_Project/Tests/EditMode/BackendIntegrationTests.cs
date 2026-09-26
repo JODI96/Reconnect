@@ -21,7 +21,7 @@ namespace Reconnect.Client.Tests
     public sealed class BackendIntegrationTests
     {
         private const string BaseUrl = "http://localhost:5191";
-        private static readonly Guid PrimeTowerId = Guid.Parse("0199a000-0000-7000-8000-000000000003");
+        private static readonly Guid KunsthausId = Guid.Parse("0199a000-0000-7000-8000-000000000007");
 
         [UnityTest]
         public IEnumerator Register_create_room_and_see_it_in_room_list()
@@ -41,7 +41,7 @@ namespace Reconnect.Client.Tests
             Assert.IsTrue(register.Result.IsSuccess, register.Result.Error?.ToDisplayString());
             Assert.IsTrue(auth.IsLoggedIn);
 
-            var create = api.PostAsync<RoomDto>(ApiRoutes.Rooms.Group, new CreateRoomRequest(PrimeTowerId, "Unity Lounge", true));
+            var create = api.PostAsync<RoomDto>(ApiRoutes.Rooms.Group, new CreateRoomRequest(KunsthausId, "Unity Lounge", true));
             yield return Wait(create);
             Assert.IsTrue(create.Result.IsSuccess, create.Result.Error?.ToDisplayString());
 

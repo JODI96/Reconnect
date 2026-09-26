@@ -7,10 +7,29 @@
                 <ui:Label name="room-name" text="Raum" class="heading heading--on-map pass-through" />
                 <ui:Label name="room-owner" class="muted pass-through" />
             </ui:VisualElement>
+            <ui:Button name="lift" text="Lift" class="button button--small" style="display: none;" />
             <ui:Button name="leave" text="Verlassen" class="button button--small" />
         </ui:VisualElement>
         <ui:Label name="status" class="status status--floating" />
+        <!-- Waiting in the lift queue for a full floor. -->
+        <ui:VisualElement name="queue-banner" class="queue-banner" style="display: none;">
+            <ui:Label name="queue-text" class="queue-banner__text" />
+            <ui:Button name="queue-leave" text="Aussteigen" class="button button--small" />
+        </ui:VisualElement>
         <ui:VisualElement class="pass-through" style="flex-grow: 1;" />
+
+        <!-- Lift panel: opened by tapping the lift bank or the "Lift" button. -->
+        <ui:VisualElement name="lift-panel" class="game-panel lift-panel" style="display: none;">
+            <ui:VisualElement class="sheet__header">
+                <ui:VisualElement style="flex-grow: 1;">
+                    <ui:Label name="lift-title" text="Lift" class="sheet__title" />
+                    <ui:Label name="lift-subtitle" class="muted" />
+                </ui:VisualElement>
+                <ui:Button name="lift-close" text="×" class="button button--small" />
+            </ui:VisualElement>
+            <ui:ScrollView name="lift-floors" class="lift-floors" />
+            <ui:Label name="lift-status" class="status" />
+        </ui:VisualElement>
 
         <!-- Minigames: opened by tapping the tic-tac-toe table or the quiz TV. -->
         <ui:VisualElement name="game-panel" class="game-panel" style="display: none;">
@@ -62,6 +81,16 @@
         <ui:VisualElement class="chat-bar">
             <ui:TextField name="chat-input" class="field chat-bar__input" />
             <ui:Button name="send" text="Senden" class="button button--primary button--small" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <!-- Lift ride: doors close, the floor indicator counts, the new floor is built behind the doors. -->
+    <ui:VisualElement name="lift-ride" class="lift-ride" picking-mode="Ignore" style="display: none;">
+        <ui:VisualElement name="lift-door-left" class="lift-door lift-door--left" picking-mode="Ignore" />
+        <ui:VisualElement name="lift-door-right" class="lift-door lift-door--right" picking-mode="Ignore" />
+        <ui:VisualElement name="lift-display" class="lift-display" picking-mode="Ignore">
+            <ui:Label name="lift-arrow" class="lift-display__arrow" picking-mode="Ignore" />
+            <ui:Label name="lift-floor" class="lift-display__floor" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

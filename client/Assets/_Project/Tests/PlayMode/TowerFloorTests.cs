@@ -4,13 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
-using Reconnect.Client.City;
 using Reconnect.Client.Networking;
 using Reconnect.Client.Rooms;
 using Reconnect.Contracts;
 using Reconnect.Contracts.Auth;
-using Reconnect.Contracts.Buildings;
-using Reconnect.Contracts.Common;
 using Reconnect.Contracts.Rooms;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -19,11 +16,11 @@ using UnityEngine.TestTools;
 namespace Reconnect.Client.PlayModeTests
 {
     /// <summary>
-    /// Puts the Rooftop Lounge on the real Prime Tower roof in the streamed 3D city and renders
-    /// client/Logs/rooftop-city.png. Needs the local backend and internet.
+    /// Renders every public floor of the Prime Tower (lobby, coworking, sky office, conference, Clouds) into
+    /// client/Logs/tower-&lt;floor&gt;.png and checks that every item has a model. Needs the local backend.
     /// </summary>
     [Category("Integration")]
-    public sealed class RooftopCityTests
+    public sealed class TowerFloorTests
     {
         private const string BaseUrl = "http://localhost:5191";
         private static readonly Guid PrimeTowerId = Guid.Parse("0199a000-0000-7000-8000-000000000003");
@@ -32,11 +29,15 @@ namespace Reconnect.Client.PlayModeTests
         public IEnumerator LoadMainScene()
         {
             yield return SceneManager.LoadSceneAsync("Main", LoadSceneMode.Single);
-            yield return null;
+            var end = Time.realtimeSinceStartup + 3f;
+            while (Time.realtimeSinceStartup < end)
+            {
+                yield return null;
+            }
         }
 
         [UnityTest]
-        public IEnumerator Rooftop_stands_on_the_prime_tower_with_the_city_around()
+        public IEnumerator Every_tower_floor_renders_with_a_lift_and_all_models()
         {
             var api = new ApiClient(new UnityWebRequestTransport(10), BaseUrl);
             var login = api.PostAsync<AuthResponse>(ApiRoutes.Auth.Login, new LoginRequest("Admin", "Admin"));
@@ -46,53 +47,36 @@ namespace Reconnect.Client.PlayModeTests
                 Assert.Ignore("Backend with dev admin not running on " + BaseUrl + ".");
             }
             api.Tokens = new StaticToken(login.Result.Value.AccessToken);
-            var list = api.GetAsync<PagedResponse<RoomSummaryDto>>(ApiRoutes.Rooms.Group + "?pageSize=50");
-            yield return Wait(list);
-            var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(list.Result.Value.Items.Single(r => r.Name == "Clouds").Id));
-            yield return Wait(detail);
-            var room = detail.Result.Value;
+            var tower = api.GetAsync<TowerDto>(ApiRoutes.Rooms.Tower(PrimeTowerId));
+            yield return Wait(tower);
+            var floors = tower.Result.Value.Floors.Where(f => f.IsPublic).ToList();
+            Assert.AreEqual(5, floors.Count, "five public floors");
 
-            var city = UnityEngine.Object.FindFirstObjectByType<CityView>();
             var view = UnityEngine.Object.FindFirstObjectByType<RoomView>();
             var target = new RenderTexture(1080, 1920, 24);
             view.Camera.targetTexture = target;
-
-            // The city places a marker on the real Prime Tower roof (height sampled from swissBUILDINGS3D).
-            city.ShowBuildings(new[] { new BuildingDto(PrimeTowerId, "Prime Tower", "Hardstrasse 201", 47.38622, 8.51733, null) });
-            city.SetVisible(true);
-            for (var i = 0; i < 300 && (city.RoofPosition(PrimeTowerId)?.y ?? 0f) < 50f; i++)
+            foreach (var floor in floors)
             {
+                var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(floor.RoomId));
+                yield return Wait(detail);
+                var room = detail.Result.Value;
+                var players = Enumerable.Range(0, 4)
+                    .Select(i => new RoomPlayerDto(Guid.NewGuid(), "Gast " + i, new TilePosition(room.Width / 2 - 2 + i, 2 + i % 2)))
+                    .ToArray();
+                view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, players), players[0].UserId);
+                for (var frame = 0; frame < 30; frame++)
+                {
+                    yield return null;
+                }
+
+                CollectionAssert.IsEmpty(view.MissingItems, room.Name + ": every item id has a model");
+                Assert.IsTrue(view.Stations.Any(s => s.GameId == RoomView.ElevatorStation), room.Name + " has a lift");
+                Save(view.Camera, $"tower-{floor.Floor:00}-avatar.png");
+                view.FrameWholeRoom();
                 yield return null;
+                Save(view.Camera, $"tower-{floor.Floor:00}.png");
+                view.Hide();
             }
-            Assert.Greater(city.RoofPosition(PrimeTowerId)?.y ?? 0f, 80f, "roof height sampled (Prime Tower ≈ 126 m)");
-
-            city.ShowAsBackdrop();
-            var anchorTask = city.RoofAnchorAsync(PrimeTowerId, room.Width + 1f, room.Depth + 1f);
-            yield return Wait(anchorTask);
-            var roof = anchorTask.Result;
-            Assert.IsNotNull(roof);
-            var me = Guid.NewGuid();
-            view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, new[]
-            {
-                new RoomPlayerDto(me, "Anna", new TilePosition(9, 6)),
-                new RoomPlayerDto(Guid.NewGuid(), "Ben", new TilePosition(11, 7)),
-            }), me, roof);
-            view.FrameWholeRoom();
-
-            var end = Time.realtimeSinceStartup + 180f;
-            yield return null;
-            while (city.LoadProgress < 99.9f && Time.realtimeSinceStartup < end)
-            {
-                yield return null;
-            }
-            for (var i = 0; i < 10; i++)
-            {
-                yield return null;
-            }
-            Save(view.Camera, "rooftop-city.png");
-            Debug.Log($"[Reconnect] Rooftop on roof at y = {roof.Value.y:0.0} m");
-
-            view.Hide();
             view.Camera.targetTexture = null;
             target.Release();
         }

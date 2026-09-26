@@ -21,6 +21,9 @@ namespace Reconnect.Client.Rooms
         public const string TicTacToeItem = "game-tictactoe";
         public const string QuizItem = "game-quiz";
 
+        /// <summary>GameStation id of the lift bank.</summary>
+        public const string ElevatorStation = "elevator";
+
         private const float WallHeight = 2.57f;          // Kenney wall piece at scale 0.2
         private const float WallPieceWidth = 2f;
         private const float TapMaxMovePixels = 12f;
@@ -548,6 +551,11 @@ namespace Reconnect.Client.Rooms
                     BuildStation(pivot, "quiz", "cabinetTelevision", top => Stack(top, "televisionModern"));
                     continue;
                 }
+                if (item.ItemId == CustomItems.ElevatorItem && _custom.TryBuild(item.ItemId, pivot, out _))
+                {
+                    BuildElevatorStation(pivot);
+                    continue;
+                }
                 if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks))
                 {
                     if (blocks)
@@ -667,6 +675,21 @@ namespace Reconnect.Client.Rooms
             ring.transform.SetParent(pivot, true);
             ring.transform.position = new Vector3(bounds.center.x, transform.position.y + 0.005f, bounds.center.z);
             ring.transform.localScale = new Vector3(2.4f, 0.003f, 2.4f);
+        }
+
+        /// <summary>The lift bank: blocks its tiles, tapping it opens the lift panel; you walk to the doors.</summary>
+        private void BuildElevatorStation(Transform pivot)
+        {
+            var bounds = Bounds(pivot);
+            BlockTiles(bounds);
+            var inFront = pivot.localPosition - pivot.localRotation * Vector3.forward * (CustomItems.ElevatorDepth / 2f + 0.8f);
+            var station = pivot.gameObject.AddComponent<GameStation>();
+            station.Initialize(ElevatorStation, WorldToTile(inFront));
+            var collider = pivot.gameObject.AddComponent<BoxCollider>();
+            collider.center = pivot.InverseTransformPoint(bounds.center);
+            var size = pivot.InverseTransformVector(bounds.size);
+            collider.size = new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z));
+            _stations.Add(station);
         }
 
         private void BuildTicTacToeBoard(Transform table)

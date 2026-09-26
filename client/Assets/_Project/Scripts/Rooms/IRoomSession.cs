@@ -21,6 +21,12 @@ namespace Reconnect.Client.Rooms
         event Action<TicTacToeStateDto> TicTacToeUpdated;
         event Action<QuizStateDto> QuizUpdated;
 
+        /// <summary>My place in the lift queue changed (Position 0 = no longer waiting).</summary>
+        event Action<QueueStatusDto> QueueUpdated;
+
+        /// <summary>It was my turn: the lift brought me to the floor I waited for (I left the previous room).</summary>
+        event Action<RoomSnapshotDto> ElevatorArrived;
+
         /// <summary>Connection lost (argument: reason). The room is left implicitly.</summary>
         event Action<string> Disconnected;
 
@@ -42,6 +48,11 @@ namespace Reconnect.Client.Rooms
         Task<QuizStateDto> QuizStartAsync();
         Task<QuizStateDto> QuizAnswerAsync(int answerIndex);
         Task<QuizStateDto> QuizNextAsync();
+
+        /// <summary>Takes the lift to another floor of the building: arrives (snapshot) or queues when it's full.</summary>
+        Task<ElevatorResultDto> RideElevatorAsync(Guid targetRoomId);
+
+        Task LeaveQueueAsync();
 
         Task LeaveAsync();
     }

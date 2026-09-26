@@ -1,0 +1,10 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement class="toolbar">
+        <ui:Button name="back" text="‹ Zurück" class="button button--small" style="margin-left: 0;" />
+        <ui:Label text="Büros im Prime Tower" class="heading" style="margin-left: 12px; font-size: 24px;" />
+        <ui:Label name="balance" class="balance-chip" />
+    </ui:VisualElement>
+    <ui:Label text="Kaufe ein Büro mit Seesicht oder Blick über Zürich-West. Du erreichst es mit dem Lift; beim Verkaufen bekommst du den Kaufpreis zurück." class="muted" style="white-space: normal; margin-bottom: 8px;" />
+    <ui:Label name="status" class="status" />
+    <ui:ScrollView name="offices" style="flex-grow: 1;" />
+</ui:UXML>
