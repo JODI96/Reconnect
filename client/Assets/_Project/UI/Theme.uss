@@ -1,4 +1,6 @@
-/* Reconnect – shared UI Toolkit theme. Colors as variables so they can be re-themed later. */
+/* Reconnect – shared UI Toolkit theme. Colors as variables so they can be re-themed later.
+   Sizes are points (iOS) / dp (Android): ScreenNavigator scales the panel by the device density, so 17px here is
+   17pt on every phone. Touch targets are at least 44px high; everything must fit 360px wide (Galaxy S, iPhone SE). */
 :root {
     --color-bg: rgb(20, 18, 32);
     --color-surface: rgb(36, 32, 56);
@@ -13,30 +15,34 @@
 
 .app-root { flex-grow: 1; }
 .screen-host { flex-grow: 1; }
-.screen { flex-grow: 1; padding: 24px; background-color: var(--color-bg); }
+/* Opaque screens also paint behind the status bar / home indicator (the safe-area padding of the host). */
+.screen-host--opaque { background-color: var(--color-bg); }
+.screen { flex-grow: 1; padding: 16px 16px 12px 16px; background-color: var(--color-bg); }
 /* Screens over the 3D city: no background, padding handled by their own layout. */
 .screen--transparent { background-color: rgba(0, 0, 0, 0); padding: 0; }
 
-.title { font-size: 44px; -unity-font-style: bold; color: var(--color-primary); -unity-text-align: middle-center; margin-bottom: 4px; }
-.subtitle { font-size: 20px; color: var(--color-text-muted); -unity-text-align: middle-center; margin-bottom: 32px; }
-.heading { font-size: 30px; -unity-font-style: bold; color: var(--color-text); flex-grow: 1; }
-.muted { color: var(--color-text-muted); font-size: 18px; }
+.title { font-size: 36px; -unity-font-style: bold; color: var(--color-primary); -unity-text-align: middle-center; margin-bottom: 4px; }
+.subtitle { font-size: 17px; color: var(--color-text-muted); -unity-text-align: middle-center; white-space: normal; margin-bottom: 28px; }
+.heading { font-size: 24px; -unity-font-style: bold; color: var(--color-text); flex-grow: 1; flex-shrink: 1; min-width: 0; }
+/* One line, cut with "…" when the screen is narrow (long room and floor names). */
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 0; }
+.muted { color: var(--color-text-muted); font-size: 15px; }
 
 .form { width: 100%; max-width: 520px; align-self: center; }
 .centered { flex-grow: 1; justify-content: center; }
 
 /* Text fields */
 .field { margin: 0 0 16px 0; }
-.field > Label { color: var(--color-text-muted); font-size: 16px; min-width: 0; margin-bottom: 4px; }
+.field > Label { color: var(--color-text-muted); font-size: 14px; min-width: 0; margin-bottom: 4px; white-space: normal; }
 .field { flex-direction: column; }
 .field .unity-base-text-field__input {
     background-color: var(--color-surface);
     border-width: 0;
     border-radius: var(--radius);
     color: var(--color-text);
-    font-size: 22px;
-    padding: 14px 16px;
-    min-height: 56px;
+    font-size: 17px;
+    padding: 12px 14px;
+    min-height: 48px;
 }
 
 /* Buttons */
@@ -45,8 +51,8 @@
     color: var(--color-text);
     border-width: 0;
     border-radius: var(--radius);
-    font-size: 20px;
-    min-height: 56px;
+    font-size: 17px;
+    min-height: 50px;
     margin: 6px 0;
     -unity-font-style: bold;
 }
@@ -54,39 +60,41 @@
 .button--primary { background-color: var(--color-primary); color: rgb(255, 255, 255); }
 .button--primary:hover { background-color: var(--color-primary-dark); }
 .button--link { background-color: rgba(0, 0, 0, 0); color: var(--color-text-muted); -unity-font-style: normal; }
-.button--small { min-height: 44px; font-size: 16px; padding: 0 14px; margin: 0 0 0 8px; }
+.button--small { min-height: 44px; min-width: 44px; font-size: 15px; padding: 0 12px; margin: 0 0 0 6px; flex-shrink: 0; }
 .button:disabled { opacity: 0.5; }
 
-.status { color: var(--color-text-muted); font-size: 18px; white-space: normal; margin: 8px 0; -unity-text-align: middle-center; }
+.status { color: var(--color-text-muted); font-size: 15px; white-space: normal; margin: 8px 0; -unity-text-align: middle-center; }
 .status--error { color: var(--color-error); }
 
 /* Room list */
-.toolbar { flex-direction: row; align-items: center; margin-bottom: 16px; }
+.toolbar { flex-direction: row; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
+.spacer { flex-grow: 1; }
 .room-list { flex-grow: 1; }
 .room-item {
     background-color: var(--color-surface);
     border-radius: var(--radius);
-    padding: 14px 18px;
-    margin-bottom: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
     flex-direction: row;
     align-items: center;
 }
 .room-item__text { flex-grow: 1; }
-.room-item__name { color: var(--color-text); font-size: 22px; -unity-font-style: bold; }
-.room-item__owner { color: var(--color-text-muted); font-size: 16px; }
-.room-item__badge { color: var(--color-primary); font-size: 14px; }
+.room-item__name { color: var(--color-text); font-size: 18px; -unity-font-style: bold; }
+.room-item__owner { color: var(--color-text-muted); font-size: 14px; }
+.room-item__badge { color: var(--color-primary); font-size: 13px; margin-left: 8px; }
 .unity-collection-view__item--selected .room-item { background-color: var(--color-surface-hover); }
 .unity-list-view__item { background-color: rgba(0, 0, 0, 0); }
 
 /* City (map) screen */
 .city-labels { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
-.city-layout { flex-grow: 1; padding: 16px; }
+.city-layout { flex-grow: 1; padding: 8px 10px 8px 10px; }
 .toolbar--floating {
     background-color: rgba(20, 18, 32, 0.85);
     border-radius: var(--radius);
-    padding: 8px 8px 8px 16px;
+    padding: 6px 6px 6px 14px;
+    margin-bottom: 8px;
 }
-.heading--on-map { font-size: 26px; }
+.heading--on-map { font-size: 20px; }
 .status--floating { background-color: rgba(20, 18, 32, 0.85); border-radius: var(--radius); padding: 8px 12px; align-self: center; }
 
 .building-label {
@@ -95,8 +103,8 @@
     background-color: rgba(20, 18, 32, 0.85);
     color: var(--color-text);
     border-radius: 10px;
-    padding: 4px 10px;
-    font-size: 18px;
+    padding: 3px 8px;
+    font-size: 14px;
     -unity-font-style: bold;
     border-width: 2px;
     border-color: rgba(0, 0, 0, 0);
@@ -107,20 +115,20 @@
 .sheet {
     background-color: rgba(20, 18, 32, 0.95);
     border-radius: var(--radius);
-    padding: 16px;
-    max-height: 55%;
+    padding: 14px;
+    max-height: 60%;
     margin-bottom: 8px;
 }
 .sheet__header { flex-direction: row; align-items: flex-start; }
-.sheet__title { font-size: 26px; -unity-font-style: bold; color: var(--color-primary); white-space: normal; }
+.sheet__title { font-size: 20px; -unity-font-style: bold; color: var(--color-primary); white-space: normal; }
 .sheet__rooms { flex-shrink: 1; margin: 8px 0; }
-.sheet__room { -unity-text-align: middle-left; padding-left: 16px; -unity-font-style: normal; min-height: 48px; font-size: 18px; }
+.sheet__room { -unity-text-align: middle-left; padding-left: 14px; -unity-font-style: normal; min-height: 44px; font-size: 16px; white-space: normal; }
 .sheet__create { flex-direction: row; align-items: center; }
 .sheet__input { flex-grow: 1; margin: 0; }
-.sheet__input .unity-base-text-field__input { min-height: 44px; font-size: 18px; padding: 8px 12px; }
+.sheet__input .unity-base-text-field__input { min-height: 44px; font-size: 16px; padding: 8px 12px; }
 
-.city-footer { flex-direction: row; justify-content: space-between; }
-.attribution { color: rgb(255, 255, 255); font-size: 13px; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); }
+.city-footer { flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+.attribution { color: rgb(255, 255, 255); font-size: 11px; white-space: normal; margin-right: 6px; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); }
 .map-hint { color: rgb(255, 214, 102); white-space: normal; max-width: 70%; }
 
 /* Room screen */
@@ -129,16 +137,17 @@
     align-items: center;
     background-color: rgba(20, 18, 32, 0.9);
     border-radius: var(--radius);
-    padding: 8px;
+    padding: 6px;
+    margin-top: 4px;
 }
 .chat-bar__input { flex-grow: 1; margin: 0; }
-.chat-bar__input .unity-base-text-field__input { min-height: 48px; font-size: 20px; padding: 8px 14px; }
+.chat-bar__input .unity-base-text-field__input { min-height: 44px; font-size: 17px; padding: 8px 12px; }
 
 .avatar-name {
     position: absolute;
     translate: -50% 0;
     color: rgb(255, 255, 255);
-    font-size: 16px;
+    font-size: 13px;
     -unity-font-style: bold;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
 }
@@ -147,25 +156,26 @@
 .speech-bubble {
     position: absolute;
     translate: -50% -100%;
-    max-width: 420px;
+    max-width: 240px;
     white-space: normal;
     background-color: rgb(255, 255, 255);
     color: rgb(30, 28, 40);
-    border-radius: 16px;
-    padding: 8px 14px;
-    font-size: 18px;
+    border-radius: 14px;
+    padding: 6px 12px;
+    font-size: 15px;
     border-width: 2px;
     border-color: rgba(20, 18, 32, 0.25);
 }
 
 /* Emotes and minigames in rooms */
-.emote-bar { flex-direction: row; justify-content: center; margin-bottom: 6px; }
-.emote { margin: 0 4px; min-height: 40px; padding: 0 12px; background-color: rgba(20, 18, 32, 0.85); }
+/* Wraps into two rows on narrow phones instead of running off screen. */
+.emote-bar { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-bottom: 2px; }
+.emote { margin: 0 2px 4px 2px; padding: 0 8px; background-color: rgba(20, 18, 32, 0.85); }
 
 .game-panel {
     background-color: rgba(20, 18, 32, 0.95);
     border-radius: var(--radius);
-    padding: 14px 16px;
+    padding: 12px 14px;
     margin-bottom: 8px;
     border-width: 2px;
     border-color: rgba(255, 92, 138, 0.35);
@@ -173,11 +183,11 @@
 .button-row { flex-direction: row; justify-content: center; }
 .button-row > .button { margin: 6px 6px 0 6px; padding: 0 18px; }
 
-.ttt-grid { align-self: center; margin: 6px 0; }
-.ttt-row { flex-direction: row; }
+.ttt-grid { align-self: center; margin: 6px 0; flex-shrink: 0; }
+.ttt-row { flex-direction: row; flex-shrink: 0; }
 .ttt-cell {
-    width: 96px; height: 96px; margin: 4px;
-    font-size: 52px; -unity-font-style: bold;
+    width: 76px; height: 76px; margin: 4px; flex-shrink: 0;
+    font-size: 42px; -unity-font-style: bold;
     background-color: var(--color-surface);
     color: var(--color-text);
     border-width: 0; border-radius: 12px;
@@ -187,8 +197,8 @@
 .ttt-cell--x { color: var(--color-primary); }
 .ttt-cell--o { color: rgb(110, 200, 255); }
 
-.quiz-question { color: var(--color-text); font-size: 22px; -unity-font-style: bold; white-space: normal; margin: 4px 0 10px 0; }
-.quiz-answer { min-height: 50px; font-size: 18px; -unity-font-style: normal; white-space: normal; margin: 4px 0; }
+.quiz-question { color: var(--color-text); font-size: 18px; -unity-font-style: bold; white-space: normal; margin: 4px 0 10px 0; }
+.quiz-answer { min-height: 46px; font-size: 16px; -unity-font-style: normal; white-space: normal; margin: 4px 0; }
 .quiz-answer:disabled { opacity: 0.85; }
 .quiz-answer--mine { border-width: 3px; border-color: var(--color-primary); }
 .quiz-answer--correct { background-color: rgb(46, 160, 90); color: rgb(255, 255, 255); }
@@ -206,20 +216,20 @@
     padding: 8px 8px 8px 14px;
     margin-top: 8px;
 }
-.queue-banner__text { color: var(--color-text); font-size: 17px; white-space: normal; flex-shrink: 1; }
-.lift-floors { max-height: 440px; margin: 8px 0; }
+.queue-banner__text { color: var(--color-text); font-size: 15px; white-space: normal; flex-shrink: 1; }
+.lift-floors { max-height: 340px; margin: 8px 0; }
 .lift-floor {
     flex-direction: row;
     align-items: center;
-    min-height: 54px;
-    padding: 0 14px;
+    min-height: 48px;
+    padding: 0 12px;
     margin: 3px 0;
     -unity-text-align: middle-left;
     -unity-font-style: normal;
 }
-.lift-floor__number { width: 56px; font-size: 24px; -unity-font-style: bold; color: rgb(92, 225, 255); }
-.lift-floor__name { flex-grow: 1; font-size: 18px; color: var(--color-text); }
-.lift-floor__info { font-size: 15px; color: var(--color-text-muted); }
+.lift-floor__number { min-width: 64px; flex-shrink: 0; margin-right: 8px; font-size: 20px; -unity-font-style: bold; color: rgb(92, 225, 255); }
+.lift-floor__name { flex-grow: 1; flex-shrink: 1; min-width: 0; font-size: 16px; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lift-floor__info { font-size: 13px; color: var(--color-text-muted); margin-left: 6px; }
 .lift-floor--current { border-width: 2px; border-color: rgb(92, 225, 255); }
 .lift-floor--full .lift-floor__info { color: rgb(255, 196, 102); }
 .lift-floor--mine .lift-floor__name { color: rgb(255, 214, 102); }
@@ -254,17 +264,18 @@
     transition-duration: 0.25s;
 }
 .lift-display--visible { opacity: 1; }
-.lift-display__arrow { color: rgb(92, 225, 255); font-size: 40px; -unity-font-style: bold; margin-right: 14px; }
-.lift-display__floor { color: rgb(255, 242, 217); font-size: 58px; -unity-font-style: bold; min-width: 90px; -unity-text-align: middle-center; }
+.lift-display__arrow { color: rgb(92, 225, 255); font-size: 34px; -unity-font-style: bold; margin-right: 14px; }
+.lift-display__floor { color: rgb(255, 242, 217); font-size: 48px; -unity-font-style: bold; min-width: 76px; -unity-text-align: middle-center; }
 
 /* Money & offices */
 .balance-chip {
     background-color: rgba(20, 18, 32, 0.85);
     border-radius: 22px;
-    padding: 8px 14px;
-    margin-left: 8px;
+    padding: 6px 10px;
+    margin-left: 6px;
     color: rgb(255, 214, 102);
-    font-size: 17px;
+    font-size: 14px;
+    flex-shrink: 0;
     -unity-font-style: bold;
 }
 .office-row {
@@ -272,17 +283,29 @@
     align-items: center;
     background-color: var(--color-surface);
     border-radius: var(--radius);
-    padding: 12px 14px;
+    padding: 10px 12px;
     margin: 4px 0;
 }
 .office-row--mine { border-width: 2px; border-color: rgb(255, 214, 102); }
 .office-row__text { flex-grow: 1; flex-shrink: 1; }
-.office-row__title { color: var(--color-text); font-size: 18px; -unity-font-style: bold; white-space: normal; }
-.office-row__details { color: var(--color-text-muted); font-size: 15px; }
-.office-row__price { color: rgb(255, 214, 102); font-size: 18px; -unity-font-style: bold; margin: 0 10px; }
+.office-row__title { color: var(--color-text); font-size: 16px; -unity-font-style: bold; white-space: normal; }
+.office-row__details { color: var(--color-text-muted); font-size: 13px; white-space: normal; }
+.office-row__price { color: rgb(255, 214, 102); font-size: 15px; -unity-font-style: bold; margin-top: 2px; }
 .office-floor-header { color: rgb(92, 225, 255); font-size: 16px; -unity-font-style: bold; margin: 12px 0 2px 4px; }
 .sheet__actions { flex-direction: column; margin: 8px 0; }
 .sheet__actions > .button { margin: 4px 0; }
 
 /* Notice that real buildings are only used as locations */
-.disclaimer { color: var(--color-text-muted); font-size: 13px; white-space: normal; margin-top: 8px; -unity-text-align: middle-left; }
+.disclaimer { color: var(--color-text-muted); font-size: 11px; white-space: normal; margin-top: 8px; -unity-text-align: middle-left; }
+
+/* City menu (map layer, room list, logout): a dropdown instead of a crowded toolbar on phones. */
+.menu-panel {
+    align-self: flex-end;
+    min-width: 200px;
+    background-color: rgba(20, 18, 32, 0.95);
+    border-radius: var(--radius);
+    padding: 6px;
+    margin-bottom: 8px;
+}
+.menu-panel > .button { margin: 3px 0; min-height: 46px; -unity-text-align: middle-left; padding-left: 14px; }
+.heading--screen { margin: 0 0 8px 0; flex-grow: 0; flex-shrink: 0; }

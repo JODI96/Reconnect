@@ -3,11 +3,14 @@
     <ui:VisualElement name="labels" class="city-labels pass-through" />
     <ui:VisualElement class="city-layout pass-through">
         <ui:VisualElement class="toolbar toolbar--floating">
-            <ui:Label text="Zürich" class="heading heading--on-map pass-through" />
+            <ui:Label text="Zürich" class="heading heading--on-map ellipsis pass-through" />
             <ui:Label name="balance" class="balance-chip pass-through" />
-            <ui:Button name="layer" text="Karte" class="button button--small" />
-            <ui:Button name="rooms" text="Räume" class="button button--small" />
-            <ui:Button name="logout" text="Abmelden" class="button button--small" />
+            <ui:Button name="menu" text="Menü" class="button button--small" />
+        </ui:VisualElement>
+        <ui:VisualElement name="menu-panel" class="menu-panel" style="display: none;">
+            <ui:Button name="rooms" text="Alle Räume" class="button" />
+            <ui:Button name="layer" text="Karte" class="button" />
+            <ui:Button name="logout" text="Abmelden" class="button" />
         </ui:VisualElement>
         <ui:Label name="status" class="status status--floating" />
         <ui:VisualElement class="pass-through" style="flex-grow: 1;" />
@@ -15,7 +18,7 @@
         <ui:VisualElement name="sheet" class="sheet">
             <ui:VisualElement class="sheet__header">
                 <ui:VisualElement style="flex-grow: 1;">
-                    <ui:Label name="sheet-title" class="sheet__title" />
+                    <ui:Label name="sheet-title" class="sheet__title" style="white-space: normal;" />
                     <ui:Label name="sheet-address" class="muted" />
                 </ui:VisualElement>
                 <ui:Button name="sheet-close" text="×" class="button button--small" />

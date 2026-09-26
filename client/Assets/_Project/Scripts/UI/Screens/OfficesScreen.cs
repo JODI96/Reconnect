@@ -91,13 +91,12 @@ namespace Reconnect.Client.UI.Screens
             title.AddToClassList("office-row__title");
             var details = new Label($"{office.Floor}. OG · {office.AreaSquareMeters} m²" + (office.IsMine ? " · im Lift erreichbar" : ""));
             details.AddToClassList("office-row__details");
-            text.Add(title);
-            text.Add(details);
-            row.Add(text);
-
             var price = new Label(Money.Format(office.Price));
             price.AddToClassList("office-row__price");
-            row.Add(price);
+            text.Add(title);
+            text.Add(details);
+            text.Add(price);
+            row.Add(text);
 
             var button = new Button { text = office.IsMine ? "Verkaufen" : _confirming == office.Id ? "Wirklich kaufen?" : "Kaufen" };
             button.AddToClassList("button");

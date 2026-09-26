@@ -25,6 +25,9 @@ namespace Reconnect.Client.Core
         [SerializeField] private CityView city;
         [SerializeField] private RoomView room;
 
+        internal UiCatalog Ui => ui;
+        internal CitySettings CitySettings => citySettings;
+
         private ScreenNavigator _navigator;
         private AuthService _auth;
         private RoomService _rooms;
@@ -49,7 +52,10 @@ namespace Reconnect.Client.Core
             _roomSession = new SignalRRoomSession(apiSettings.BaseUrl, _auth);
             city.Initialize(citySettings);
 
-            _navigator = new ScreenNavigator(GetComponent<UIDocument>().rootVisualElement, ui.theme);
+            // Runtime copy: the navigator scales the panel per device, the asset stays untouched.
+            var document = GetComponent<UIDocument>();
+            document.panelSettings = Instantiate(document.panelSettings);
+            _navigator = new ScreenNavigator(document.rootVisualElement, ui.theme, document.panelSettings);
             _auth.SessionChanged += ShowStartScreen;
 
             Debug.Log($"[Reconnect] API: {apiSettings.BaseUrl}");
@@ -64,7 +70,7 @@ namespace Reconnect.Client.Core
             ShowStartScreen();
         }
 
-        private void Update() => _navigator?.UpdateSafeArea();
+        private void Update() => _navigator?.UpdateLayout();
 
         private void OnDestroy()
         {

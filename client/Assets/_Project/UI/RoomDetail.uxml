@@ -3,8 +3,8 @@
         <ui:Button name="back" text="‹ Zurück" class="button button--small" style="margin-left: 0;" />
     </ui:VisualElement>
     <ui:VisualElement class="centered form">
-        <ui:Label name="name" class="title" />
-        <ui:Label name="owner" class="subtitle" />
+        <ui:Label name="name" class="title" style="white-space: normal;" />
+        <ui:Label name="owner" class="subtitle" style="margin-bottom: 12px;" />
         <ui:Label name="details" class="muted" style="-unity-text-align: middle-center; white-space: normal; margin-bottom: 32px;" />
         <ui:Label name="status" class="status" />
         <ui:Button name="enter" text="Betreten" class="button button--primary" />

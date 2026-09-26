@@ -82,7 +82,9 @@ namespace Reconnect.Client.UI.Screens
             {
                 _city.SetLayer(_city.Layer == MapLayer.Aerial ? MapLayer.Map : MapLayer.Aerial);
                 UpdateLayerButton(layerButton);
+                ShowMenu(false);
             };
+            Q<Button>("menu").clicked += () => ShowMenu(Q<VisualElement>("menu-panel").style.display == DisplayStyle.None);
             Q<Button>("rooms").clicked += _openRoomList;
             Q<Button>("logout").clicked += _auth.Logout;
             Q<Button>("sheet-close").clicked += () => Select(null);
@@ -210,8 +212,22 @@ namespace Reconnect.Client.UI.Screens
             _tileStatus.text = progress < 99.5f ? $"Lade 3D-Stadt … {progress:0}%" : "";
         }
 
-        private void Select(BuildingDto building)
+        /// <summary>Menu with the map layer, the room list and logout; closes the building panel to make room.</summary>
+        internal void ShowMenu(bool open)
         {
+            Q<VisualElement>("menu-panel").style.display = open ? DisplayStyle.Flex : DisplayStyle.None;
+            if (open)
+            {
+                Select(null);
+            }
+        }
+
+        internal void Select(BuildingDto building)
+        {
+            if (building != null)
+            {
+                ShowMenu(false);
+            }
             _selected = building;
             _city.Select(building);
             _selectionLoad?.Cancel();

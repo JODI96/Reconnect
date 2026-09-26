@@ -1,9 +1,12 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <ui:VisualElement class="toolbar">
-        <ui:Label text="Räume" class="heading" />
-        <ui:Button name="map" text="Karte" class="button button--small" />
-        <ui:Button name="refresh" text="Aktualisieren" class="button button--small" />
+        <ui:Button name="map" text="‹ Karte" class="button button--small" style="margin-left: 0;" />
+        <ui:VisualElement class="spacer" />
         <ui:Button name="logout" text="Abmelden" class="button button--small" />
+    </ui:VisualElement>
+    <ui:VisualElement class="toolbar">
+        <ui:Label text="Räume" class="heading" />
+        <ui:Button name="refresh" text="Neu laden" class="button button--small" />
     </ui:VisualElement>
     <ui:Label name="status" class="status" />
     <ui:ListView name="rooms" class="room-list" virtualization-method="DynamicHeight" show-border="false" />

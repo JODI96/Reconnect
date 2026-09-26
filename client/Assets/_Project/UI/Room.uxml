@@ -3,9 +3,9 @@
     <ui:VisualElement name="labels" class="city-labels pass-through" />
     <ui:VisualElement class="city-layout pass-through">
         <ui:VisualElement class="toolbar toolbar--floating">
-            <ui:VisualElement class="pass-through" style="flex-grow: 1;">
-                <ui:Label name="room-name" text="Raum" class="heading heading--on-map pass-through" />
-                <ui:Label name="room-owner" class="muted pass-through" />
+            <ui:VisualElement class="pass-through" style="flex-grow: 1; flex-shrink: 1; min-width: 0;">
+                <ui:Label name="room-name" text="Raum" class="heading heading--on-map ellipsis pass-through" />
+                <ui:Label name="room-owner" class="muted ellipsis pass-through" />
             </ui:VisualElement>
             <ui:Button name="lift" text="Lift" class="button button--small" style="display: none;" />
             <ui:Button name="leave" text="Verlassen" class="button button--small" />
@@ -71,7 +71,7 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <ui:VisualElement class="emote-bar">
+        <ui:VisualElement name="emote-bar" class="emote-bar">
             <ui:Button name="emote-wave" text="Winken" class="button button--small emote" />
             <ui:Button name="emote-yes" text="Ja" class="button button--small emote" />
             <ui:Button name="emote-no" text="Nein" class="button button--small emote" />

@@ -158,8 +158,8 @@ namespace Reconnect.Client.UI.Screens
         {
             _current = snapshot.Room;
             _roomId = snapshot.Room.Id;
-            Q<Label>("room-name").text = snapshot.Room.Floor is { } floor ? $"{FloorLabel(floor)} · {snapshot.Room.Name}" : snapshot.Room.Name;
-            Q<Label>("room-owner").text = "von " + snapshot.Room.OwnerDisplayName;
+            Q<Label>("room-name").text = snapshot.Room.Name;
+            Q<Label>("room-owner").text = (snapshot.Room.Floor is { } floor ? FloorLabel(floor) + " · " : "") + "von " + snapshot.Room.OwnerDisplayName;
             Q<Button>("lift").style.display = snapshot.Room.Floor != null ? DisplayStyle.Flex : DisplayStyle.None;
             Q<Label>("tower-credit").style.display = snapshot.Room.Floor != null ? DisplayStyle.Flex : DisplayStyle.None;
             OpenGame(null);
@@ -210,7 +210,7 @@ namespace Reconnect.Client.UI.Screens
 
         // ---------- Lift ----------
 
-        private void OpenLift()
+        internal void OpenLift()
         {
             if (_current?.Floor == null)
             {
@@ -218,6 +218,7 @@ namespace Reconnect.Client.UI.Screens
             }
             OpenGame(null);
             _liftPanel.style.display = DisplayStyle.Flex;
+            UpdateEmoteBar();
             Q<Label>("lift-subtitle").text = "Du bist: " + FloorLabel(_current.Floor.Value);
             RefreshLift();
             _liftRefresh ??= Root.schedule.Execute(RefreshLift).Every(2000);
@@ -228,6 +229,14 @@ namespace Reconnect.Client.UI.Screens
         {
             _liftPanel.style.display = DisplayStyle.None;
             _liftRefresh?.Pause();
+            UpdateEmoteBar();
+        }
+
+        /// <summary>On a phone there is no room for emotes next to an open lift or game panel.</summary>
+        private void UpdateEmoteBar()
+        {
+            var panelOpen = _liftPanel.style.display == DisplayStyle.Flex || _gamePanel.style.display == DisplayStyle.Flex;
+            Q<VisualElement>("emote-bar").style.display = panelOpen ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         /// <summary>Floors top to bottom, like a real lift panel, with live occupancy.</summary>
@@ -399,7 +408,7 @@ namespace Reconnect.Client.UI.Screens
             OpenGame(station.GameId);
         }
 
-        private void OpenGame(string gameId)
+        internal void OpenGame(string gameId)
         {
             if (gameId != null)
             {
@@ -409,6 +418,7 @@ namespace Reconnect.Client.UI.Screens
             Q<VisualElement>("ttt-panel").style.display = gameId == "tictactoe" ? DisplayStyle.Flex : DisplayStyle.None;
             Q<VisualElement>("quiz-panel").style.display = gameId == "quiz" ? DisplayStyle.Flex : DisplayStyle.None;
             Q<Label>("game-title").text = gameId == "tictactoe" ? "Tic-Tac-Toe" : "Zürich-Quiz";
+            UpdateEmoteBar();
         }
 
         private void PlayEmote(string emote)

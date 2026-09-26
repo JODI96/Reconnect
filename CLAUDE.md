@@ -181,6 +181,14 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   nutzt deshalb `Materials/Buildings.mat` (helles „Architekturmodell“); Gelände behält Cesiums Material (Overlays).
 - **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
   Vor dem Launch Daten selbst hosten (Fair-Use der geo.admin.ch-Dienste) und Nutzungsbedingungen prüfen.
+- **Handy-Layout (nur Hochformat):** USS-Grössen sind Punkte/dp. `ScreenNavigator.UpdateLayout` skaliert das Panel
+  (Laufzeitkopie der PanelSettings, `ConstantPixelSize`) mit `DisplayMetrics.UiScale` = dpi/160 auf Mobilgeräten, Desktop 1:1,
+  und legt die Safe Area (Notch, Dynamic Island, Home-Leiste) als Padding an. Regeln: Tippziele ≥ 44 px, alles muss auf
+  360 px Breite passen (Galaxy/iPhone SE), lange Namen mit Klasse `ellipsis` kürzen, Kopfzeilen `flex-shrink: 0`,
+  Scrollbalken sind auf Handys aus. `DeviceLayoutTests` (PlayMode) prüft alle Screens auf iPhone SE/14/15/15 Pro Max,
+  Galaxy S23 und Pixel 8 (Safe Area, Überlappung, abgeschnittener Text, Tippgrösse) und legt Screenshots in
+  `client/Logs/devices/`. Zum Ansehen im Editor: Window → General → Device Simulator. (Unity Remote 5 funktioniert mit
+  iOS 27 nicht – die App öffnet ihren Port nicht.)
 - **Screens über der 3D-Welt** sind transparent (`screen--transparent`); Container, die Touches
   zur Karte durchlassen sollen, bekommen die Klasse `pass-through`.
 

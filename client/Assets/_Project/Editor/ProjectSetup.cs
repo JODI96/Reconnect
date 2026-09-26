@@ -112,10 +112,9 @@ namespace Reconnect.Client.Editor
         {
             var panel = LoadOrCreate<PanelSettings>(PanelSettingsPath);
             panel.themeStyleSheet = Load<ThemeStyleSheet>(UiDir + "/DefaultRuntimeTheme.tss");
-            panel.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-            panel.referenceResolution = new Vector2Int(1080, 1920);   // portrait phone
-            panel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-            panel.match = 0.5f;
+            // Sizes in USS are points/dp: ScreenNavigator sets the scale per device density at runtime.
+            panel.scaleMode = PanelScaleMode.ConstantPixelSize;
+            panel.scale = 1f;
             EditorUtility.SetDirty(panel);
         }
 
@@ -482,7 +481,12 @@ namespace Reconnect.Client.Editor
             // Local backend runs on plain HTTP; allow it only in development builds.
             PlayerSettings.insecureHttpOption = InsecureHttpOption.DevelopmentOnly;
 
+            // Phones only in portrait: the UI is laid out for it, rotating would break it.
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+            PlayerSettings.allowedAutorotateToPortrait = true;
+            PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+            PlayerSettings.allowedAutorotateToLandscapeLeft = false;
+            PlayerSettings.allowedAutorotateToLandscapeRight = false;
 
             // Store requirements: IL2CPP + 64 bit on Android.
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
