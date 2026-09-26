@@ -138,6 +138,20 @@ public sealed class TowerElevatorTests(ReconnectApiFactory factory)
     }
 
     [Fact]
+    public async Task Prime_tower_comes_with_its_ground_plan()
+    {
+        var user = await factory.RegisterAsync();
+
+        var buildings = await (await user.Client.GetAsync($"{ApiRoutes.Buildings.Nearby}?lat=47.38622&lng=8.51733&radiusMeters=50"))
+            .ReadAsync<List<Reconnect.Contracts.Buildings.BuildingDto>>();
+
+        var tower = buildings.Single(b => b.Id == ZurichBuildings.PrimeTowerId);
+        Assert.NotNull(tower.Footprint);
+        Assert.True(tower.Footprint!.Count >= 8, "octagon-like outline");
+        Assert.All(tower.Footprint, p => Assert.InRange(p.Latitude, 47.385, 47.387));
+    }
+
+    [Fact]
     public async Task Rooms_cannot_be_created_in_a_tower()
     {
         var user = await factory.RegisterAsync();

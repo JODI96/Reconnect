@@ -4,7 +4,8 @@
     "references": [
         "Unity.InputSystem",
         "CesiumForUnity",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.Splines"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

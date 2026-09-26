@@ -33,13 +33,14 @@ namespace Reconnect.Client.Rooms
         private const float StartViewWidthMax = 15f;
         private const int MaxLampLights = 10;
         private const float FacadeHeight = 3.4f;         // glass top floor: floor-to-ceiling glass
+        private const float HallHeight = 10f;            // tower lobby (Prime Tower: 10 m serpentine walls)
 
         private static readonly string[] StackableItems =
         {
             "laptop", "books", "computerScreen", "computerKeyboard", "computerMouse", "kitchenCoffeeMachine",
             "kitchenBlender", "kitchenMicrowave", "toaster", "lampSquareTable", "lampRoundTable", "plantSmall",
             "radio", "televisionModern", "televisionVintage", "speakerSmall", "pillow", "cardboardBox",
-            "ph-tea_set_01", "ph-ceramic_vase_01", "ph-throw_pillows_01", "ph-marble_bust_01",
+            "ph-tea_set_01", "ph-ceramic_vase_01", "ph-throw_pillows_01", "ph-marble_bust_01", "ph-desk_lamp_arm_01",
         };
 
         [SerializeField] private Camera roomCamera;
@@ -65,6 +66,7 @@ namespace Reconnect.Client.Rooms
         private int _width;
         private int _depth;
         private int _lampLights;
+        private int? _storey;
 
         // Camera rig (local room coordinates).
         private Vector3 _focus;
@@ -100,7 +102,8 @@ namespace Reconnect.Client.Rooms
             new(Mathf.FloorToInt(local.x / TileSize), Mathf.FloorToInt(local.z / TileSize));
 
         /// <param name="groundAnchor">World position the room's centre should stand on (e.g. a real roof); null = default place.</param>
-        public void Show(RoomSnapshotDto snapshot, Guid localUserId, Vector3? groundAnchor = null)
+        /// <param name="yaw">Rotation around the anchor, degrees (tower floors follow the tower's orientation).</param>
+        public void Show(RoomSnapshotDto snapshot, Guid localUserId, Vector3? groundAnchor = null, float yaw = 0f)
         {
             Hide();
             _localUserId = localUserId;
@@ -110,6 +113,9 @@ namespace Reconnect.Client.Rooms
             _custom = new CustomItems(wallMaterial, waterMaterial, glassMaterial, _theme);
             _lampLights = 0;
 
+            _storey = snapshot.Room.Floor;
+            // Build axis-aligned (bounds, blocked tiles and stacking use world-space boxes), rotate at the end.
+            transform.rotation = Quaternion.identity;
             transform.position = groundAnchor.HasValue
                 ? groundAnchor.Value - new Vector3(_width / 2f, 0f, _depth / 2f)
                 : new Vector3(0f, -2000f, 0f);   // far away from the city origin when shown on its own
@@ -121,11 +127,17 @@ namespace Reconnect.Client.Rooms
             {
                 case Enclosure.Railing: BuildRailing(); break;
                 case Enclosure.GlassFacade: BuildGlassFacade(); break;
+                case Enclosure.StoneHall: BuildStoneHall(); break;
                 default: BuildWalls(); break;
             }
             BuildFurniture(snapshot.Room.Layout);
             BuildLighting();
             Pathfinder = new RoomPathfinder(_width, _depth, _blocked);
+            if (groundAnchor.HasValue && Mathf.Abs(yaw) > 0.01f)
+            {
+                var rotation = Quaternion.Euler(0f, yaw, 0f);
+                transform.SetPositionAndRotation(groundAnchor.Value - rotation * new Vector3(_width / 2f, 0f, _depth / 2f), rotation);
+            }
 
             foreach (var player in snapshot.Players)
             {
@@ -345,7 +357,8 @@ namespace Reconnect.Client.Rooms
             // A thick base under the floor: a solid block indoors, the building's roof slab outdoors.
             var baseColor = _theme.Outdoor ? new Color(0.55f, 0.56f, 0.58f) : _theme.FloorB * 0.6f;
             var slab = Primitive(PrimitiveType.Cube, "Floor Base", Tinted(wallMaterial, baseColor));
-            var thickness = _theme.Outdoor ? 4f : 0.5f;   // outdoors: a roof structure that meets the building
+            // Roof terraces: a structure that meets the roof. Upper tower storeys stand on the tower's floor plate.
+            var thickness = _theme.Outdoor ? (_storey is > 0 ? 0.3f : 4f) : 0.5f;
             slab.transform.localPosition = new Vector3(_width / 2f, -0.1f - thickness / 2f, _depth / 2f);
             slab.transform.localScale = new Vector3(_width + (_theme.Outdoor ? 0.6f : 0f), thickness, _depth + (_theme.Outdoor ? 0.6f : 0f));
         }
@@ -516,6 +529,60 @@ namespace Reconnect.Client.Rooms
                         rotation, new Vector3(length, 0.04f, 0.04f));
                     cornice.AddComponent<ShimmerPanel>().Initialize(_theme.WallTrim * 1.6f, from.x + from.z);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Tower lobby (Prime Tower): the back wall along the lift core is 10 m of polished green serpentine with a
+        /// brass edge and uplights, the street side is full-height glass with transoms, and the camera sides get a
+        /// low glass parapet so you can look in.
+        /// </summary>
+        private void BuildStoneHall()
+        {
+            var stone = new Material(wallMaterial)
+            {
+                mainTexture = FloorTextures.Create(FloorPattern.Marble, _theme.Wall, Color.Lerp(_theme.Wall, new Color(0.8f, 0.88f, 0.82f), 0.75f)),
+            };
+            stone.SetColor("_BaseColor", Color.white);
+            stone.SetFloat("_Smoothness", 0.82f);
+            stone.mainTextureScale = new Vector2(_width / 3f, HallHeight / 3f);
+            var brass = Tinted(wallMaterial, _theme.WallTrim);
+            brass.SetFloat("_Smoothness", 0.8f);
+            var glass = Tinted(glassMaterial, new Color(0.62f, 0.86f, 0.82f, 0.14f));
+            var frame = Tinted(wallMaterial, new Color(0.1f, 0.11f, 0.13f));
+            var warmLight = Glowing(new Color(1f, 0.85f, 0.6f));
+
+            // North: serpentine wall with brass cap and a line of warm uplights at its foot.
+            Box("Serpentine Wall", stone, new Vector3(_width / 2f, HallHeight / 2f, _depth + 0.2f), new Vector3(_width + 0.4f, HallHeight, 0.4f));
+            Box("Brass Cap", brass, new Vector3(_width / 2f, HallHeight + 0.04f, _depth + 0.2f), new Vector3(_width + 0.5f, 0.08f, 0.5f));
+            Box("Brass Skirting", brass, new Vector3(_width / 2f, 0.05f, _depth - 0.01f), new Vector3(_width, 0.1f, 0.02f));
+            for (var x = 1.5f; x < _width; x += 3f)
+            {
+                Box("Uplight", warmLight, new Vector3(x, 0.03f, _depth - 0.25f), new Vector3(0.5f, 0.02f, 0.12f));
+            }
+
+            // East: street side, full-height glass with a transom every storey.
+            Box("Hall Glass", glass, new Vector3(_width + 0.05f, HallHeight / 2f, _depth / 2f), new Vector3(0.03f, HallHeight, _depth));
+            for (var z = 0f; z <= _depth + 0.01f; z += 1.5f)
+            {
+                Box("Mullion", frame, new Vector3(_width + 0.05f, HallHeight / 2f, z), new Vector3(0.06f, HallHeight, 0.06f));
+            }
+            for (var y = 0.05f; y <= HallHeight + 0.01f; y += HallHeight / 3f)
+            {
+                Box("Transom", frame, new Vector3(_width + 0.05f, y, _depth / 2f), new Vector3(0.08f, 0.08f, _depth));
+            }
+
+            // Camera sides: low glass parapet with an LED line (entrance along the south side).
+            var led = Glowing(_theme.WallTrim);
+            foreach (var (from, to) in new[] { (new Vector3(_width, 0f, 0f), new Vector3(0f, 0f, 0f)), (new Vector3(0f, 0f, 0f), new Vector3(0f, 0f, _depth)) })
+            {
+                var direction = (to - from).normalized;
+                var length = Vector3.Distance(from, to);
+                var rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.up, direction));
+                var middle = (from + to) / 2f;
+                Oriented("Parapet Glass", glass, middle + Vector3.up * 0.525f, rotation, new Vector3(length, 1.05f, 0.03f));
+                Oriented("Parapet Top", frame, middle + Vector3.up * 1.05f, rotation, new Vector3(length + 0.1f, 0.06f, 0.1f));
+                Oriented("Parapet LED", led, middle + Vector3.up * 0.012f + Vector3.Cross(Vector3.up, direction) * 0.12f, rotation, new Vector3(length, 0.02f, 0.03f));
             }
         }
 
@@ -732,11 +799,13 @@ namespace Reconnect.Client.Rooms
             {
                 var light = new GameObject("Room Light").AddComponent<Light>();
                 light.transform.SetParent(_content, false);
-                light.transform.localPosition = new Vector3((ix + 0.5f) * _width / countX, _theme.Enclosure == Enclosure.GlassFacade ? FacadeHeight : 3.2f, (iz + 0.5f) * _depth / countZ);
+                light.transform.localPosition = new Vector3((ix + 0.5f) * _width / countX,
+                    _theme.Enclosure switch { Enclosure.GlassFacade => FacadeHeight, Enclosure.StoneHall => 6f, _ => 3.2f },
+                    (iz + 0.5f) * _depth / countZ);
                 light.type = LightType.Point;
                 light.color = _theme.Light;
                 light.intensity = _theme.LightIntensity;
-                light.range = _theme.Enclosure == Enclosure.GlassFacade ? 8f : 10f;
+                light.range = _theme.Enclosure switch { Enclosure.GlassFacade => 8f, Enclosure.StoneHall => 13f, _ => 10f };
                 light.shadows = LightShadows.None;
             }
         }

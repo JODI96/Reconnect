@@ -132,6 +132,7 @@ namespace Reconnect.Client.UI.Screens
             _room.StationTapped -= OnStationTapped;
             _room.IsPointerOverUi = _ => false;
             _room.Hide();
+            _city.HideTowerCutaway();
             _city.SetVisible(false);
             _ = _session.LeaveQueueAsync();
             _ = _session.LeaveAsync();
@@ -160,6 +161,7 @@ namespace Reconnect.Client.UI.Screens
             Q<Label>("room-name").text = snapshot.Room.Floor is { } floor ? $"{FloorLabel(floor)} · {snapshot.Room.Name}" : snapshot.Room.Name;
             Q<Label>("room-owner").text = "von " + snapshot.Room.OwnerDisplayName;
             Q<Button>("lift").style.display = snapshot.Room.Floor != null ? DisplayStyle.Flex : DisplayStyle.None;
+            Q<Label>("tower-credit").style.display = snapshot.Room.Floor != null ? DisplayStyle.Flex : DisplayStyle.None;
             OpenGame(null);
 
             foreach (var overlay in _overlays.Values)
@@ -169,22 +171,35 @@ namespace Reconnect.Client.UI.Screens
             }
             _overlays.Clear();
 
-            // Roof terraces and glass top floors sit on the real building, with the 3D city around them.
+            // Tower storeys stand at their real height in the cut-away tower, roof terraces on the real roof –
+            // both with the 3D city around them.
             Vector3? anchor = null;
+            var yaw = 0f;
+            _city.HideTowerCutaway();
             if (RoomTheme.For(snapshot.Room.Theme).Outdoor)
             {
                 _city.ShowAsBackdrop();
-                anchor = await _city.RoofAnchorAsync(snapshot.Room.BuildingId, snapshot.Width + 1f, snapshot.Depth + 1f);
+                var tower = snapshot.Room.Floor != null ? await _city.GetTowerAsync(snapshot.Room.BuildingId) : null;
+                if (tower != null)
+                {
+                    anchor = tower.RoomAnchor(snapshot.Room.Floor.Value, snapshot.Width, snapshot.Depth);
+                    yaw = tower.Yaw;
+                    _city.ShowTowerCutaway(tower, snapshot.Room.Floor.Value);
+                }
+                else
+                {
+                    anchor = await _city.RoofAnchorAsync(snapshot.Room.BuildingId, snapshot.Width + 1f, snapshot.Depth + 1f);
+                }
                 if (anchor == null)
                 {
-                    _city.SetVisible(false);   // building unknown: terrace in the sky
+                    _city.SetVisible(false);   // building unknown: room in the sky
                 }
             }
             else
             {
                 _city.SetVisible(false);
             }
-            _room.Show(snapshot, _localUserId, anchor);
+            _room.Show(snapshot, _localUserId, anchor, yaw);
             _ticTacToe.Render(snapshot.TicTacToe);
             _quiz.Render(snapshot.Quiz);
             foreach (var player in snapshot.Players)

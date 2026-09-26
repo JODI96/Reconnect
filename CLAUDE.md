@@ -76,7 +76,8 @@ client/                      Unity-Projekt
     Scenes/Main.unity        Einzige Szene (vorerst)
     Editor/ProjectSetup.cs   Menü "Reconnect → Setup Project": Szene/Assets/PlayerSettings anlegen
     Tests/EditMode/          Unity-Tests (NUnit), schnell, ohne Szene
-    Tests/PlayMode/          Startet Main.unity; City-Test rendert client/Logs/city-preview.png
+      Tests/PlayMode/          Startet Main.unity; rendert u. a. Stadt, Showcase-Räume, Tower-Stockwerke (tower-*.png,
+                             tower-city-*.png) nach client/Logs; GoogleCityTests nur explizit (kostet eine Google-Sitzung)
 ```
 
 ### Module
@@ -84,11 +85,13 @@ client/                      Unity-Projekt
 | Modul    | Verantwortung | Schema | Darf nutzen |
 |----------|---------------|--------|-------------|
 | Identity | Konten, Login, JWT/Refresh, Rollen, Dev-Admin | `identity` | – |
-| City     | Gebäude (PostGIS), später swisstopo-Import | `city` | – |
+| City     | Gebäude (PostGIS, Grundrisse), Kartensitzungen (Google/swisstopo) | `city` | – |
+| Wallet   | CHF-Konten (Rappen, Kontobuch), Startkapital 10'000 CHF | `wallet` | – |
 | Safety   | Blocks, Reports (Moderation) | `safety` | Identity |
 | Profiles | Anzeigename, Alter, Bio, Verifizierung | `profiles` | Identity, Safety |
 | Social   | Likes, Matches, Match-Chat (`/hubs/chat`) | `social` | Profiles, Safety |
-| Rooms    | Räume, Layout (jsonb), Präsenz + Minigames (`/hubs/room`, Redis), Showcase | `rooms` | Identity, Profiles, Safety, City |
+| Rooms    | Räume, Layout (jsonb), Tower-Stockwerke mit Kapazität, Lift + Warteschlange, Präsenz + Minigames (`/hubs/room`, Redis), Showcase | `rooms` | Identity, Profiles, Safety, City |
+| RealEstate | Büros kaufen/verkaufen (vorerst Prime Tower), legt den Raum des Käufers an | `realestate` | Wallet, Rooms, City |
 
 **Regeln (durch `Reconnect.ArchitectureTests` erzwungen):**
 - Andere Module nur über `*.Public` ansprechen: `IUserDirectory`, `IProfileDirectory`, `IBlockQueries`,
@@ -156,6 +159,19 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   **Key:** `dotnet user-secrets set "Parameters:google-maps-api-key" "<key>" --project src/Reconnect.AppHost`
   (nie in Code/Repo). Im Google-Cloud-Konto Key auf Map Tiles API + App-IDs beschränken und Tageslimit setzen.
   Automatische Tests starten nie eine Google-Sitzung.
+- **Prime Tower (Stockwerke):** öffentliche Stockwerke gehören dem Turm (`TowerOwners`, alle Umgebungen, `PrimeTowerFloors`):
+  Lobby EG (80 Personen, Warteschlangen-Ort), Coworking 12. OG, Sky Office 24. OG, Konferenzzentrum 34. OG, Clouds 35. OG.
+  Kapazität wird atomar in Redis geprüft (Lua), der Lift (`RideElevator`) fährt sofort oder stellt in eine FIFO-Warteschlange;
+  wird ein Platz frei, fährt der Nächste automatisch (`ElevatorArrived`). Wer mit dem Lift kommt, steht vor der Liftbank
+  (`custom-elevator`). Büros (RealEstate, 2.–33. OG) kosten CHF, Verkauf zurück an den Turm zum Kaufpreis; in Towers kann man
+  keine freien Räume anlegen. Geld: Wallet (Rappen als Ganzzahl, jede Buchung im Kontobuch; Transaktionen in der
+  Execution Strategy, weil Aspire Retries aktiviert).
+- **Stockwerke in echter Höhe (Schnittansicht):** `TowerInfo` = Grundriss aus `BuildingDto.Footprint` (OpenStreetMap,
+  © OpenStreetMap-Mitwirkende, ODbL – Quellenangabe in Stadt- und Raum-UI; swisstopo modelliert den Prime Tower unvollständig),
+  Boden-/Dachhöhe aus swisstopo. `TowerCutaway` schneidet den echten Turm aus Google-Tiles und Gelände (Cesium-Polygon-Clipping,
+  `materialKey = "Clipping"` setzen!) und baut unser Turmmodell bis zum Stockwerk; der Raum steht an der Fassade
+  (`RoomAnchor`, innerhalb des Grundrisses). swisstopo-Gebäude lassen sich nicht clippen (eigenes Material) und werden im
+  swisstopo-Modus während der Schnittansicht ausgeblendet. Etage = 3,5 m.
 - **Gebäude in der Stadt:** swissBUILDINGS3D kommt ohne Textur mit Rohfarben (rote Dächer, gelbe Wände). Das Tileset
   nutzt deshalb `Materials/Buildings.mat` (helles „Architekturmodell“); Gelände behält Cesiums Material (Overlays).
 - **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.

@@ -76,7 +76,7 @@ namespace Reconnect.Client.PlayModeTests
             Assert.IsFalse(city.IsGoogle);
             Assert.IsFalse(Tileset(city, "googleTiles").gameObject.activeSelf);
             Assert.AreEqual(0, Tileset(city, "buildings").gameObject.layer);
-            Assert.AreNotEqual(0, city.Camera.cullingMask & (1 << dataLayer), "swisstopo drawn again");
+            Assert.AreEqual(0, Tileset(city, "terrain").gameObject.layer, "swisstopo drawn again");
         }
 
         private static Cesium3DTileset Tileset(CityView city, string field) =>

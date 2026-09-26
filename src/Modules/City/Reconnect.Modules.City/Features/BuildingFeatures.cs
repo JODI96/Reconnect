@@ -51,12 +51,13 @@ internal static class BuildingEndpoints
             .Where(b => b.Location.IsWithinDistance(origin, radius))
             .OrderBy(b => b.Location.Distance(origin))
             .Take(MaxResults)
-            .Select(b => new { b.Id, b.Name, b.Address, b.Location, Distance = b.Location.Distance(origin) })
+            .Select(b => new { b.Id, b.Name, b.Address, b.Location, b.Footprint, Distance = b.Location.Distance(origin) })
             .ToListAsync(ct);
 
         // Coordinates are read from the loaded point (ST_X/ST_Y don't accept geography).
         return TypedResults.Ok(rows
-            .Select(b => new BuildingDto(b.Id, b.Name, b.Address, b.Location.Y, b.Location.X, b.Distance))
+            .Select(b => new BuildingDto(b.Id, b.Name, b.Address, b.Location.Y, b.Location.X, b.Distance,
+                b.Footprint?.ExteriorRing.Coordinates.SkipLast(1).Select(c => new GeoPointDto(c.Y, c.X)).ToList()))
             .ToList());
     }
 }

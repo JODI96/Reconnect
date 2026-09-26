@@ -4,6 +4,7 @@
     "references": [
         "Reconnect.Client",
         "CesiumForUnity",
+        "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

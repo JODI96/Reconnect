@@ -39,6 +39,9 @@ namespace Reconnect.Client.City
         private bool _cameraPlaced;
         private int _markerGeneration;
         private MapSessionDto _appliedMap;
+        private readonly Dictionary<Guid, TowerInfo> _towers = new();
+        private TowerCutaway _cutaway;
+        private bool _swisstopoBuildingsHidden;
 
         /// <summary>Layer for data that is loaded but not drawn (swisstopo while Google is shown).</summary>
         public const string DataOnlyLayerName = "CityData";
@@ -77,6 +80,14 @@ namespace Reconnect.Client.City
                 googleTiles.gameObject.SetActive(false);
             }
 
+            // Google's tiles and the terrain use Cesium's material, which supports clipping the real tower out.
+            var lit = Shader.Find("Universal Render Pipeline/Lit");
+            _cutaway = new TowerCutaway(georeference.transform, new[] { googleTiles, terrain }, new Material(lit), new Material(lit));
+            if (DataOnlyLayer >= 0)
+            {
+                Camera.cullingMask &= ~(1 << DataOnlyLayer);   // that layer is loaded but never drawn
+            }
+
             _markerRoot = new GameObject("Markers").transform;
             _markerRoot.SetParent(transform, false);
 
@@ -84,6 +95,71 @@ namespace Reconnect.Client.City
             cameraController.Tapped += OnTapped;
             SetLayer(settings.defaultLayer);
             SetVisible(false);
+        }
+
+        /// <summary>Footprint and height of a tower building with a marker (measured once from swisstopo, then cached).</summary>
+        public async System.Threading.Tasks.Task<TowerInfo> GetTowerAsync(Guid buildingId)
+        {
+            if (_towers.TryGetValue(buildingId, out var known))
+            {
+                return known;
+            }
+            if (RoofPosition(buildingId) is not { } roof)
+            {
+                return null;
+            }
+            (double, double) Geo(Vector3 position)
+            {
+                var geo = ToGeo(position);
+                return (geo.Latitude, geo.Longitude);
+            }
+            // The official/OSM ground plan is best (swisstopo's models of towers can be incomplete); else measure.
+            var footprint = _markers.FirstOrDefault(m => m.Building.Id == buildingId)?.Building.Footprint;
+            var tower = footprint is { Count: >= 3 }
+                ? await TowerInfo.FromOutlineAsync(
+                    footprint.Select(p => { var u = ToUnity(p.Latitude, p.Longitude, _settings.originHeight); return new Vector2(u.x, u.z); }).ToList(),
+                    buildings, terrain, Geo, ToUnity, _settings.originHeight)
+                : await TowerInfo.MeasureAsync(buildings, terrain, Geo, ToUnity, roof, _settings.originHeight);
+            if (tower != null)
+            {
+                _towers[buildingId] = tower;
+                Debug.Log($"[Reconnect] Tower measured: {tower.SizeX:0.0} × {tower.SizeZ:0.0} m, yaw {tower.Yaw:0}°, " +
+                          $"ground {tower.GroundY:0.0}, roof {tower.RoofY:0.0} ({tower.RoofY - tower.GroundY:0} m high)");
+            }
+            return tower;
+        }
+
+        /// <summary>
+        /// Doll's-house view while on a storey of the tower (see <see cref="TowerCutaway"/>). Google's tiles get the
+        /// real tower clipped out; swisstopo's buildings can't be clipped (own material), so in the swisstopo look they
+        /// are hidden meanwhile (terrain and aerial image stay, heights keep coming from the hidden data).
+        /// </summary>
+        public void ShowTowerCutaway(TowerInfo tower, int floor)
+        {
+            _cutaway.Show(tower, floor);
+            if (!IsGoogle)
+            {
+                SetSwisstopoBuildingsHidden(true);
+            }
+        }
+
+        public void HideTowerCutaway()
+        {
+            _cutaway?.Hide();
+            if (!IsGoogle)
+            {
+                SetSwisstopoBuildingsHidden(false);
+            }
+        }
+
+        private void SetSwisstopoBuildingsHidden(bool hidden)
+        {
+            if (hidden == _swisstopoBuildingsHidden || DataOnlyLayer < 0)
+            {
+                return;
+            }
+            _swisstopoBuildingsHidden = hidden;
+            SetLayerRecursively(buildings.gameObject, hidden ? DataOnlyLayer : 0);
         }
 
         /// <summary>Switches between Google Photorealistic 3D Tiles and swisstopo (see class summary).</summary>
@@ -123,9 +199,8 @@ namespace Reconnect.Client.City
                 return;
             }
             SetLayerRecursively(terrain.gameObject, google ? hidden : 0);
-            SetLayerRecursively(buildings.gameObject, google ? hidden : 0);
-            var camera = Camera;
-            camera.cullingMask = google ? camera.cullingMask & ~(1 << hidden) : camera.cullingMask | (1 << hidden);
+            SetLayerRecursively(buildings.gameObject, google || _swisstopoBuildingsHidden ? hidden : 0);
+            Camera.cullingMask &= ~(1 << hidden);
         }
 
         private static void SetLayerRecursively(GameObject root, int layer)
