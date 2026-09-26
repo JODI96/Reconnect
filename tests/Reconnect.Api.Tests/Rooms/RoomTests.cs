@@ -4,7 +4,7 @@ using Reconnect.Api.Tests.Infrastructure;
 using Reconnect.Contracts;
 using Reconnect.Contracts.Buildings;
 using Reconnect.Contracts.Rooms;
-using Reconnect.Infrastructure.Persistence.Seed;
+using Reconnect.Modules.City.Public;
 
 namespace Reconnect.Api.Tests.Rooms;
 

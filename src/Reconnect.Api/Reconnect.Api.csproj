@@ -1,21 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\Reconnect.Infrastructure\Reconnect.Infrastructure.csproj" />
+    <ProjectReference Include="..\Reconnect.SharedKernel\Reconnect.SharedKernel.csproj" />
+    <ProjectReference Include="..\Modules\Identity\Reconnect.Modules.Identity\Reconnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\Modules\Profiles\Reconnect.Modules.Profiles\Reconnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\Modules\Safety\Reconnect.Modules.Safety\Reconnect.Modules.Safety.csproj" />
+    <ProjectReference Include="..\Modules\Social\Reconnect.Modules.Social\Reconnect.Modules.Social.csproj" />
+    <ProjectReference Include="..\Modules\City\Reconnect.Modules.City\Reconnect.Modules.City.csproj" />
+    <ProjectReference Include="..\Modules\Rooms\Reconnect.Modules.Rooms\Reconnect.Modules.Rooms.csproj" />
     <ProjectReference Include="..\Reconnect.Contracts\Reconnect.Contracts.csproj" />
     <ProjectReference Include="..\Reconnect.ServiceDefaults\Reconnect.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
-    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Aspire.StackExchange.Redis" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
   </ItemGroup>
-
-  <PropertyGroup>
-  </PropertyGroup>
 
 </Project>

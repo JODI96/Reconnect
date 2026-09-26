@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Reconnect.SharedKernel\Reconnect.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Identity\Reconnect.Modules.Identity\Reconnect.Modules.Identity.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Safety\Reconnect.Modules.Safety\Reconnect.Modules.Safety.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Profiles\Reconnect.Modules.Profiles\Reconnect.Modules.Profiles.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Social\Reconnect.Modules.Social\Reconnect.Modules.Social.csproj" />
+    <ProjectReference Include="..\..\src\Modules\City\Reconnect.Modules.City\Reconnect.Modules.City.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Rooms\Reconnect.Modules.Rooms\Reconnect.Modules.Rooms.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

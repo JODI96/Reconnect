@@ -3,11 +3,20 @@
     <Project Path="src/Reconnect.Api/Reconnect.Api.csproj" />
     <Project Path="src/Reconnect.AppHost/Reconnect.AppHost.csproj" />
     <Project Path="src/Reconnect.Contracts/Reconnect.Contracts.csproj" />
-    <Project Path="src/Reconnect.Domain/Reconnect.Domain.csproj" />
-    <Project Path="src/Reconnect.Infrastructure/Reconnect.Infrastructure.csproj" />
     <Project Path="src/Reconnect.ServiceDefaults/Reconnect.ServiceDefaults.csproj" />
+    <Project Path="src/Reconnect.SharedKernel/Reconnect.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/City/Reconnect.Modules.City/Reconnect.Modules.City.csproj" />
+    <Project Path="src/Modules/Identity/Reconnect.Modules.Identity/Reconnect.Modules.Identity.csproj" />
+    <Project Path="src/Modules/Profiles/Reconnect.Modules.Profiles/Reconnect.Modules.Profiles.csproj" />
+    <Project Path="src/Modules/Rooms/Reconnect.Modules.Rooms/Reconnect.Modules.Rooms.csproj" />
+    <Project Path="src/Modules/Safety/Reconnect.Modules.Safety/Reconnect.Modules.Safety.csproj" />
+    <Project Path="src/Modules/Social/Reconnect.Modules.Social/Reconnect.Modules.Social.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Reconnect.Api.Tests/Reconnect.Api.Tests.csproj" />
+    <Project Path="tests/Reconnect.ArchitectureTests/Reconnect.ArchitectureTests.csproj" />
+    <Project Path="tests/Reconnect.UnitTests/Reconnect.UnitTests.csproj" />
   </Folder>
 </Solution>

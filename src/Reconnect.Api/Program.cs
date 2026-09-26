@@ -1,20 +1,32 @@
 using System.Text.Json.Serialization;
-using Reconnect.Api.Common;
-using Reconnect.Api.Common.Auth;
-using Reconnect.Api.Common.Endpoints;
-using Reconnect.Api.Common.Errors;
-using Reconnect.Api.Common.OpenApi;
-using Reconnect.Api.Features.Auth;
-using Reconnect.Api.Features.Showcase;
-using Reconnect.Api.Hubs;
-using Reconnect.Contracts.Hubs;
+using Reconnect.Api;
+using Reconnect.Api.OpenApi;
+using Reconnect.Contracts;
+using Reconnect.Modules.City;
+using Reconnect.Modules.Identity;
+using Reconnect.Modules.Profiles;
+using Reconnect.Modules.Rooms;
+using Reconnect.Modules.Safety;
+using Reconnect.Modules.Social;
+using Reconnect.SharedKernel.Modules;
+using Reconnect.SharedKernel.Web;
 using Scalar.AspNetCore;
 
+// The API host only composes: shared infrastructure + modules. Business logic lives in src/Modules.
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddReconnectData();
-builder.AddReconnectAuth();
+builder.AddRedisClient(ResourceNames.Redis);            // room presence + minigame state
+builder.AddAzureBlobServiceClient(ResourceNames.Blobs);  // avatars / room images (later)
+
+// Order matters only for seeding (e.g. the dev admin must exist before the showcase rooms).
+builder.AddModules(
+    new IdentityModule(),
+    new ProfilesModule(),
+    new SafetyModule(),
+    new SocialModule(),
+    new CityModule(),
+    new RoomsModule());
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
@@ -22,6 +34,7 @@ builder.Services.AddOpenApi(o => o.AddDocumentTransformer<BearerSecuritySchemeTr
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddSignalR()
     .AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.AddReconnectRateLimiting();
 
 var app = builder.Build();
 
@@ -29,6 +42,7 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {
@@ -37,11 +51,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapDefaultEndpoints();
-app.MapEndpointModules();
-app.MapHub<ChatHub>(ChatHubContract.Path);
-app.MapHub<RoomHub>(RoomHubContract.Path);
+app.MapGroup(ApiRoutes.Version).MapModules();
 
-await app.MigrateDatabaseIfEnabledAsync();
-await app.SeedDevAdminIfEnabledAsync();
-await app.SeedShowcaseRoomsIfEnabledAsync();
+await app.InitializeModulesAsync();
 await app.RunAsync();

@@ -32,6 +32,9 @@ public sealed class ReconnectApiFactory : WebApplicationFactory<Program>, IAsync
         builder.UseSetting("ConnectionStrings:blobs", "UseDevelopmentStorage=true");
         builder.UseSetting("Jwt:SigningKey", "integration-tests-only-signing-key-0123456789-abcdefghijklmnop");
         builder.UseSetting("Database:MigrateOnStartup", "true");
+        // Many test users share one client IP – the limits themselves are tested separately.
+        builder.UseSetting("RateLimiting:AuthPerMinute", "100000");
+        builder.UseSetting("RateLimiting:WritesPerMinute", "100000");
     }
 }
 

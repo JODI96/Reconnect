@@ -3,7 +3,11 @@ namespace Reconnect.Contracts.Hubs
     /// <summary>SignalR room hub (live presence in a room): path, server methods and client events.</summary>
     public static class RoomHubContract
     {
-        public const string Path = "/hubs/room";
+        /// <summary>Relative to the API version group (backend).</summary>
+        public const string RelativePath = "/hubs/room";
+
+        /// <summary>Full path including the API version (clients).</summary>
+        public const string Path = ApiRoutes.Version + RelativePath;
 
         /// <summary>Server methods the client can invoke.</summary>
         public static class Server

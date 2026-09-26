@@ -3,7 +3,11 @@ namespace Reconnect.Contracts.Hubs
     /// <summary>SignalR chat hub: path, server methods and client events.</summary>
     public static class ChatHubContract
     {
-        public const string Path = "/hubs/chat";
+        /// <summary>Relative to the API version group (backend).</summary>
+        public const string RelativePath = "/hubs/chat";
+
+        /// <summary>Full path including the API version (clients).</summary>
+        public const string Path = ApiRoutes.Version + RelativePath;
 
         /// <summary>Server methods the client can invoke.</summary>
         public static class Server
