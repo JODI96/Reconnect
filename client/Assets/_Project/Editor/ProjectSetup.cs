@@ -54,7 +54,6 @@ namespace Reconnect.Client.Editor
         private const string AvatarControllerPath = AnimationDir + "/Avatar.controller";
         private const string KenneyFurnitureDir = "Assets/ThirdParty/Kenney/Furniture";
         private const string PolyHavenDir = "Assets/ThirdParty/PolyHaven";
-        private const string KenneyCharactersDir = "Assets/ThirdParty/Kenney/Characters";
 
         // swisstopo (OGD, commercial use allowed with attribution "© swisstopo").
         private const string TerrainUrl = "https://3d.geo.admin.ch/ch.swisstopo.terrain.3d/v1/layer.json";
@@ -196,73 +195,8 @@ namespace Reconnect.Client.Editor
             EditorUtility.SetDirty(catalog);
         }
 
-        /// <summary>12 Kenney Mini Characters with one shared animator (all use the same skeleton).</summary>
-        private static void CreateAvatarCatalog()
-        {
-            var characters = AssetDatabase.FindAssets("t:Model", new[] { KenneyCharactersDir })
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(path => Path.GetFileName(path).StartsWith("character-"))
-                .OrderBy(path => path)
-                .ToList();
-
-            var controller = CreateAvatarController(characters[0]);
-            var catalog = LoadOrCreate<AvatarCatalog>(AvatarCatalogPath);
-            catalog.characters = characters.Select(AssetDatabase.LoadAssetAtPath<GameObject>).ToArray();
-            catalog.animator = controller;
-            catalog.scale = 1.8f;        // ≈ 1.4 m chunky figures
-            EditorUtility.SetDirty(catalog);
-        }
-
-        private static AnimatorController CreateAvatarController(string clipSourcePath)
-        {
-            Directory.CreateDirectory(AnimationDir);
-            AssetDatabase.DeleteAsset(AvatarControllerPath);   // rebuilt from scratch every run
-            var clips = AssetDatabase.LoadAllAssetsAtPath(clipSourcePath).OfType<AnimationClip>()
-                .Where(c => !c.name.StartsWith("__preview__"))
-                .ToDictionary(c => c.name);
-
-            var controller = AnimatorController.CreateAnimatorControllerAtPath(AvatarControllerPath);
-            controller.AddParameter("Walking", AnimatorControllerParameterType.Bool);
-            controller.AddParameter("Sitting", AnimatorControllerParameterType.Bool);
-            var machine = controller.layers[0].stateMachine;
-
-            var idle = machine.AddState("Idle");
-            idle.motion = clips["idle"];
-            machine.defaultState = idle;
-            var walk = machine.AddState("Walk");
-            walk.motion = clips["walk"];
-            var sit = machine.AddState("Sit");
-            sit.motion = clips["sit"];
-
-            Connect(idle, walk, AnimatorConditionMode.If, "Walking");
-            Connect(walk, idle, AnimatorConditionMode.IfNot, "Walking");
-            Connect(idle, sit, AnimatorConditionMode.If, "Sitting");
-            Connect(sit, idle, AnimatorConditionMode.IfNot, "Sitting");
-
-            // One-shot emotes (trigger name = emote id), back to idle when done.
-            foreach (var (trigger, clip) in new[] { ("yes", "emote-yes"), ("no", "emote-no"), ("jump", "jump"), ("wave", "interact-right") })
-            {
-                controller.AddParameter(trigger, AnimatorControllerParameterType.Trigger);
-                var state = machine.AddState(trigger);
-                state.motion = clips[clip];
-                var enter = machine.AddAnyStateTransition(state);
-                enter.AddCondition(AnimatorConditionMode.If, 0, trigger);
-                enter.duration = 0.1f;
-                var exit = state.AddTransition(idle);
-                exit.hasExitTime = true;
-                exit.exitTime = 0.95f;
-                exit.duration = 0.15f;
-            }
-            return controller;
-        }
-
-        private static void Connect(AnimatorState from, AnimatorState to, AnimatorConditionMode mode, string parameter)
-        {
-            var transition = from.AddTransition(to);
-            transition.AddCondition(mode, 0, parameter);
-            transition.hasExitTime = false;
-            transition.duration = 0.12f;
-        }
+        /// <summary>Realistic MakeHuman figures with one Humanoid animator (see <see cref="AvatarSetup"/>).</summary>
+        private static void CreateAvatarCatalog() => AvatarSetup.Build(AvatarCatalogPath, AvatarControllerPath);
 
         /// <summary>Warm, slightly punchy grading with soft bloom on lamps and emissive markers.</summary>
         private static void CreatePostProcessing()

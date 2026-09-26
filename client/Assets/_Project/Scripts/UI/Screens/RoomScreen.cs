@@ -494,6 +494,7 @@ namespace Reconnect.Client.UI.Screens
             }
             overlay.Bubble.text = message.Text;
             overlay.Bubble.style.display = DisplayStyle.Flex;
+            _room.Avatar(message.UserId)?.Talk();
             _overlays[message.UserId] = (overlay.Name, overlay.Bubble, DateTime.UtcNow + BubbleDuration);
         }
 

@@ -1,0 +1,8 @@
+Avatar figures generated with MakeHuman / MPFB (http://www.makehumancommunity.org) from the CC0 asset packs
+(makehuman_system_assets, skins01/02, eyebrows01, eyelashes01, hair01, pants01, shirts01, shoes01, skirts01,
+dress01, suits01, bodyparts05, system_clothes_materials01, system_hair_materials01).
+
+Models exported from MakeHuman and the CC0 assets are released under CC0 1.0 Universal (public domain):
+https://creativecommons.org/publicdomain/zero/1.0/ - free for commercial use, no attribution required.
+
+Built by tools/avatars/build_avatars.py.

@@ -6,29 +6,42 @@ using UnityEngine;
 namespace Reconnect.Client.Rooms
 {
     /// <summary>
-    /// A player in the room: placeholder figure (body + head) that walks tile by tile, Habbo style.
-    /// Real avatar models and animations come later; the public API stays the same.
+    /// A player in the room: a realistic Humanoid figure (MakeHuman) that walks tile by tile, Habbo style, sits,
+    /// talks while chatting and plays gestures (wave, nod, head shake) on masked animator layers.
     /// </summary>
     public sealed class AvatarView : MonoBehaviour
     {
-        private const float TilesPerSecond = 2.5f;
+        private const float TilesPerSecond = 1.4f;   // walking pace of an adult (m/s), matches the walk clip
         private const float TurnSpeed = 720f;
 
         private const string WalkingParameter = "Walking";
         private const string SittingParameter = "Sitting";
+        private const string TalkingParameter = "Talking";
+        private const float GestureFade = 6f;   // layer weight per second
+
+        /// <summary>Gesture → animator layer that plays it and how long it lasts (see AvatarSetup).</summary>
+        private static readonly Dictionary<string, (string Layer, float Seconds)> Gestures = new()
+        {
+            ["wave"] = ("Arm Gestures", 1.8f),
+            ["yes"] = ("Head Gestures", 1.3f),
+            ["no"] = ("Head Gestures", 1.3f),
+        };
 
         private readonly Queue<Vector2Int> _path = new();
         private Animator _animator;
         private bool _sitting;
         private Vector3 _stepTarget;
         private bool _walking;
+        private int _gestureLayer = -1;
+        private float _gestureUntil;
+        private float _talkingUntil;
 
         public Guid UserId { get; private set; }
         public string DisplayName { get; private set; }
         public Vector2Int Tile { get; private set; }
 
         /// <summary>World position above the head – anchor for name label and speech bubble.</summary>
-        public Vector3 LabelAnchor => transform.position + Vector3.up * 1.75f;
+        public Vector3 LabelAnchor => transform.position + Vector3.up * 2.0f;
 
         public static AvatarView Create(Transform parent, RoomPlayerDto player, AvatarCatalog catalog, Material fallbackMaterial, bool isLocal)
         {
@@ -79,7 +92,7 @@ namespace Reconnect.Client.Rooms
             return avatar;
         }
 
-        /// <summary>Plays a one-shot emote animation ("yes", "no", "jump") or toggles sitting ("sit").</summary>
+        /// <summary>Plays a gesture ("wave", "yes", "no"), jumps ("jump") or toggles sitting ("sit").</summary>
         public void PlayEmote(string emote)
         {
             if (_animator == null)
@@ -92,7 +105,56 @@ namespace Reconnect.Client.Rooms
                 _animator.SetBool(SittingParameter, _sitting);
                 return;
             }
+            if (Gestures.TryGetValue(emote, out var gesture))
+            {
+                FadeOutGesture();
+                _gestureLayer = _animator.GetLayerIndex(gesture.Layer);
+                _gestureUntil = Time.time + gesture.Seconds;
+            }
             _animator.SetTrigger(emote);
+        }
+
+        /// <summary>Talking body language for a few seconds (someone wrote in the chat).</summary>
+        public void Talk(float seconds = 3f)
+        {
+            _talkingUntil = Time.time + seconds;
+            if (_animator != null && !_sitting)
+            {
+                _animator.SetBool(TalkingParameter, true);
+            }
+        }
+
+        private void FadeOutGesture()
+        {
+            if (_gestureLayer >= 0)
+            {
+                _animator.SetLayerWeight(_gestureLayer, 0f);
+            }
+            _gestureLayer = -1;
+        }
+
+        /// <summary>Fades the gesture layer in while the gesture plays and out afterwards; ends talking.</summary>
+        private void UpdateBodyLanguage()
+        {
+            if (_animator == null)
+            {
+                return;
+            }
+            if (_gestureLayer >= 0)
+            {
+                var target = Time.time < _gestureUntil - 0.2f ? 1f : 0f;
+                var weight = Mathf.MoveTowards(_animator.GetLayerWeight(_gestureLayer), target, GestureFade * Time.deltaTime);
+                _animator.SetLayerWeight(_gestureLayer, weight);
+                if (target == 0f && weight == 0f)
+                {
+                    _gestureLayer = -1;
+                }
+            }
+            if (_talkingUntil > 0f && Time.time > _talkingUntil)
+            {
+                _talkingUntil = 0f;
+                _animator.SetBool(TalkingParameter, false);
+            }
         }
 
         private static void BuildPlaceholderFigure(Transform root, Material baseMaterial, Color color)
@@ -141,6 +203,7 @@ namespace Reconnect.Client.Rooms
 
         private void Update()
         {
+            UpdateBodyLanguage();
             if (!_walking)
             {
                 return;

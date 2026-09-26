@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: AvatarCatalog
   m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.AvatarCatalog
   characters:
-  - {fileID: 919132149155446097, guid: e40d28d8216d31d438a5bc3b89356abb, type: 3}
-  - {fileID: 919132149155446097, guid: c0b965c6e7583094f9ac2d3a25548ce8, type: 3}
-  - {fileID: 919132149155446097, guid: 8fbda8b19d1d0254db7fdfb872eff6d1, type: 3}
-  - {fileID: 919132149155446097, guid: a309e7461b8af0440a3d611c7cb93985, type: 3}
-  - {fileID: 919132149155446097, guid: adb6387375f2331498ecb900e1ee9946, type: 3}
-  - {fileID: 919132149155446097, guid: 22ffa00630842b642b6d5c3798237957, type: 3}
-  - {fileID: 919132149155446097, guid: 93f9e9ad497d00c4d9af66572a7c1c77, type: 3}
-  - {fileID: 919132149155446097, guid: 9d9a9ebeb5addf3478cd130c12dc3b56, type: 3}
-  - {fileID: 919132149155446097, guid: cdccdbdf5eabbde4f8301ed4ca1b103c, type: 3}
-  - {fileID: 919132149155446097, guid: 16402ce1dfe8cd84e9f71b677bc6030f, type: 3}
-  - {fileID: 919132149155446097, guid: 1d8a0a67785bf0f4989e232570bf685d, type: 3}
-  - {fileID: 919132149155446097, guid: bb6beeeebf60c8d4e967c9b35950ea3f, type: 3}
+  - {fileID: 8034804241074461781, guid: 897397f4ff5f0b04d8566428938a1c14, type: 3}
+  - {fileID: 938668733423885611, guid: 88ef3c5c4a684aa479d1531f2a00cb11, type: 3}
+  - {fileID: 8478293088825144869, guid: f26f758c087c1e343ad14530a0fa9b36, type: 3}
+  - {fileID: 4148916453123167290, guid: 38b24d6ae7ed8744ab343ca7aff36282, type: 3}
+  - {fileID: 8131937400877181857, guid: 929c3d8a2fea9b2439ae4f53e0788bec, type: 3}
+  - {fileID: 4190469112755161831, guid: 6ccac2a5f33175346929cc67f35e4511, type: 3}
+  - {fileID: 1102363911538737255, guid: 1b420bd6f74f4a64caf2aba2d8134a69, type: 3}
+  - {fileID: 468906717848076595, guid: 6d865b68ccc81ad488f67be4704e6029, type: 3}
+  - {fileID: 2991199435839964346, guid: fe88bad5d3c4ce84a8200affa05f15e1, type: 3}
+  - {fileID: 2307980452003051476, guid: a7107ac3f6473e549838eeade7c41685, type: 3}
+  - {fileID: 5939209649025701179, guid: e6125e9a324a3454ebe2b97a7e2b0ff8, type: 3}
+  - {fileID: 2679866025697354945, guid: 2445a30b9bb0db84eb3f7d1d84cf0f9a, type: 3}
   animator: {fileID: 9100000, guid: d88f772190c82d14aa321320c2522137, type: 2}
-  scale: 1.8
+  scale: 1
