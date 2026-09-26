@@ -71,6 +71,7 @@ namespace Reconnect.Client.Editor
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath)!);
 
             // 1) Create/update all assets and write them to disk.
+            EnsureLayer(CityView.DataOnlyLayerName);
             LoadOrCreate<ApiSettings>(ApiSettingsPath);
             LoadOrCreate<CitySettings>(CitySettingsPath);
             CreateUiCatalog();
@@ -378,12 +379,20 @@ namespace Reconnect.Client.Editor
             var buildings = CreateTileset(georeference.transform, "Buildings (swissBUILDINGS3D)", BuildingsUrl);
             buildings.opaqueMaterial = Load<Material>(BuildingsMaterialPath);
 
+            // Google Photorealistic 3D Tiles: URL (with the key) comes from the backend per session, so the
+            // tileset starts empty and disabled. Google's terms require its logo and credits on screen.
+            var google = CreateTileset(georeference.transform, "Photorealistic (Google)", "");
+            google.showCreditsOnScreen = true;
+            google.createPhysicsMeshes = false;   // collisions and heights come from swisstopo
+            google.gameObject.SetActive(false);
+
             var cityGo = new GameObject("City");
             var cityView = cityGo.AddComponent<CityView>();
             Assign(cityView,
                 ("georeference", georeference),
                 ("terrain", terrain),
                 ("buildings", buildings),
+                ("googleTiles", google),
                 ("aerialOverlay", aerial),
                 ("mapOverlay", map),
                 ("cameraController", cameraController),
@@ -415,6 +424,28 @@ namespace Reconnect.Client.Editor
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+        }
+
+        /// <summary>Adds a user layer (Project Settings > Tags and Layers) if it doesn't exist yet.</summary>
+        private static void EnsureLayer(string name)
+        {
+            if (LayerMask.NameToLayer(name) >= 0)
+            {
+                return;
+            }
+            var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+            var layers = tagManager.FindProperty("layers");
+            for (var i = 8; i < layers.arraySize; i++)   // 0–7 are Unity's built-in layers
+            {
+                var layer = layers.GetArrayElementAtIndex(i);
+                if (string.IsNullOrEmpty(layer.stringValue))
+                {
+                    layer.stringValue = name;
+                    tagManager.ApplyModifiedPropertiesWithoutUndo();
+                    return;
+                }
+            }
+            throw new InvalidOperationException("No free user layer for " + name);
         }
 
         private static Cesium3DTileset CreateTileset(Transform parent, string name, string url)

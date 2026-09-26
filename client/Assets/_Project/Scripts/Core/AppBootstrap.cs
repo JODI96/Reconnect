@@ -28,6 +28,7 @@ namespace Reconnect.Client.Core
         private AuthService _auth;
         private RoomService _rooms;
         private BuildingService _buildings;
+        private MapService _maps;
         private IRoomSession _roomSession;
 
         private async void Start()
@@ -37,6 +38,7 @@ namespace Reconnect.Client.Core
             api.Tokens = _auth;
             _rooms = new RoomService(api);
             _buildings = new BuildingService(api);
+            _maps = new MapService(api);
             _roomSession = new SignalRRoomSession(apiSettings.BaseUrl, _auth);
             city.Initialize(citySettings);
 
@@ -68,6 +70,7 @@ namespace Reconnect.Client.Core
 
         private void ShowStartScreen()
         {
+            _maps.Reset();   // another user may get another map (Premium)
             if (_auth.IsLoggedIn)
             {
                 ShowCity();
@@ -82,7 +85,7 @@ namespace Reconnect.Client.Core
 
         private void ShowRegister() => _navigator.Show(new RegisterScreen(ui.register, _auth, ShowLogin));
 
-        private void ShowCity() => _navigator.Show(new CityScreen(ui.city, city, citySettings, _buildings, _rooms, _auth,
+        private void ShowCity() => _navigator.Show(new CityScreen(ui.city, city, citySettings, _buildings, _maps, _rooms, _auth,
             openRoomList: ShowRooms, openRoom: id => ShowRoom(id, back: ShowCity)));
 
         private void ShowRooms() => _navigator.Show(new RoomListScreen(ui.roomList, ui.roomListItem, _rooms, _auth,

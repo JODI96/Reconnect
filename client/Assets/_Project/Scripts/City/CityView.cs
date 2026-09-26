@@ -9,9 +9,15 @@ using UnityEngine;
 namespace Reconnect.Client.City
 {
     /// <summary>
-    /// The 3D city in Main.unity, streamed by Cesium for Unity from swisstopo (OGD, © swisstopo):
-    /// terrain (swissALTI3D) with SWISSIMAGE aerial / national map draped on it, and every building
-    /// from swissBUILDINGS3D. Our buildings with rooms get a tappable <see cref="CityMarker"/>.
+    /// The 3D city in Main.unity, streamed by Cesium for Unity. Two looks, chosen per app session by the
+    /// backend (<see cref="ApplyMap"/>):
+    /// <list type="bullet">
+    /// <item>swisstopo (OGD, © swisstopo): terrain with SWISSIMAGE aerial / national map, untextured buildings.</item>
+    /// <item>Google Photorealistic 3D Tiles: photorealistic city. swisstopo keeps streaming invisibly on the
+    /// <see cref="DataOnlyLayer"/> – roof heights for markers and rooms and camera collisions always come from
+    /// swisstopo, never from Google data (Google's terms forbid extracting geodata).</item>
+    /// </list>
+    /// Our buildings with rooms get a tappable <see cref="CityMarker"/>.
     /// Pure presentation – data comes from the CityScreen, which also owns the UI (labels, panel).
     /// </summary>
     public sealed class CityView : MonoBehaviour
@@ -19,6 +25,7 @@ namespace Reconnect.Client.City
         [SerializeField] private CesiumGeoreference georeference;
         [SerializeField] private Cesium3DTileset terrain;
         [SerializeField] private Cesium3DTileset buildings;
+        [SerializeField] private Cesium3DTileset googleTiles;
         [SerializeField] private CesiumRasterOverlay aerialOverlay;
         [SerializeField] private CesiumRasterOverlay mapOverlay;
         [SerializeField] private CityCameraController cameraController;
@@ -32,6 +39,9 @@ namespace Reconnect.Client.City
         private bool _cameraPlaced;
         private int _markerGeneration;
 
+        /// <summary>Layer for data that is loaded but not drawn (swisstopo while Google is shown).</summary>
+        public const string DataOnlyLayerName = "CityData";
+
         public event Action<BuildingDto> BuildingTapped;
 
         public Camera Camera => cameraController.GetComponent<Camera>();
@@ -39,8 +49,16 @@ namespace Reconnect.Client.City
         public IReadOnlyList<CityMarker> Markers => _markers;
         public MapLayer Layer { get; private set; }
 
-        /// <summary>0–100: how much of what the camera needs is loaded (terrain + buildings).</summary>
-        public float LoadProgress => Mathf.Min(terrain.ComputeLoadProgress(), buildings.ComputeLoadProgress());
+        /// <summary><see cref="MapProviders"/> value of what is shown.</summary>
+        public string Provider { get; private set; } = MapProviders.Swisstopo;
+        public bool IsGoogle => Provider == MapProviders.Google;
+
+        /// <summary>0–100: how much of what the camera needs is loaded (visible city + roof-height data).</summary>
+        public float LoadProgress => IsGoogle
+            ? Mathf.Min(googleTiles.ComputeLoadProgress(), buildings.ComputeLoadProgress())
+            : Mathf.Min(terrain.ComputeLoadProgress(), buildings.ComputeLoadProgress());
+
+        private static int DataOnlyLayer => LayerMask.NameToLayer(DataOnlyLayerName);
 
         public void Initialize(CitySettings settings)
         {
@@ -50,6 +68,13 @@ namespace Reconnect.Client.City
             buildings.maximumScreenSpaceError = settings.buildingsScreenSpaceError;
             aerialOverlay.maximumScreenSpaceError = settings.imageryScreenSpaceError;
             mapOverlay.maximumScreenSpaceError = settings.imageryScreenSpaceError;
+            if (googleTiles != null)
+            {
+                googleTiles.maximumScreenSpaceError = settings.googleScreenSpaceError;
+                // Google heights are ellipsoidal, swisstopo's above sea level: lower Google so roofs line up.
+                googleTiles.transform.localPosition = new Vector3(0f, settings.googleHeightOffset, 0f);
+                googleTiles.gameObject.SetActive(false);
+            }
 
             _markerRoot = new GameObject("Markers").transform;
             _markerRoot.SetParent(transform, false);
@@ -58,6 +83,40 @@ namespace Reconnect.Client.City
             cameraController.Tapped += OnTapped;
             SetLayer(settings.defaultLayer);
             SetVisible(false);
+        }
+
+        /// <summary>Switches between Google Photorealistic 3D Tiles and swisstopo (see class summary).</summary>
+        public void ApplyMap(MapSessionDto map)
+        {
+            var google = googleTiles != null && map.Provider == MapProviders.Google && !string.IsNullOrEmpty(map.GoogleTilesetUrl);
+            if (google && googleTiles.url != map.GoogleTilesetUrl)
+            {
+                googleTiles.url = map.GoogleTilesetUrl;   // a new session (the URL carries the key)
+            }
+            Provider = google ? MapProviders.Google : MapProviders.Swisstopo;
+            if (googleTiles != null)
+            {
+                googleTiles.gameObject.SetActive(google);
+            }
+
+            var hidden = DataOnlyLayer;
+            if (hidden < 0)
+            {
+                Debug.LogWarning($"[Reconnect] Layer '{DataOnlyLayerName}' is missing – run Reconnect > Setup Project.");
+                return;
+            }
+            SetLayerRecursively(terrain.gameObject, google ? hidden : 0);
+            SetLayerRecursively(buildings.gameObject, google ? hidden : 0);
+            var camera = Camera;
+            camera.cullingMask = google ? camera.cullingMask & ~(1 << hidden) : camera.cullingMask | (1 << hidden);
+        }
+
+        private static void SetLayerRecursively(GameObject root, int layer)
+        {
+            foreach (var child in root.GetComponentsInChildren<Transform>(includeInactive: true))
+            {
+                child.gameObject.layer = layer;   // new tiles inherit the tileset's layer
+            }
         }
 
         public void SetVisible(bool visible)

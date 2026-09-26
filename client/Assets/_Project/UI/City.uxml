@@ -31,7 +31,8 @@
 
         <ui:VisualElement class="city-footer pass-through">
             <ui:Label name="tile-status" class="attribution pass-through" />
-            <ui:Label text="© swisstopo" class="attribution pass-through" />
+            <ui:Label name="map-hint" class="attribution map-hint pass-through" />
+            <ui:Label name="attribution" text="© swisstopo" class="attribution pass-through" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

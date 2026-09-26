@@ -25,6 +25,11 @@ namespace Reconnect.Client.City
         [Range(1, 16)] public float imageryScreenSpaceError = 1f;
         public MapLayer defaultLayer = MapLayer.Aerial;
 
+        [Header("Google Photorealistic 3D Tiles (when the backend grants a Google session)")]
+        [Tooltip("Google uses heights above the WGS84 ellipsoid, swisstopo heights above sea level. Google tiles are lowered by the geoid height (Zurich: 47.75 m, EGM2008) so both line up.")]
+        public float googleHeightOffset = -47.75f;
+        [Range(1, 64)] public float googleScreenSpaceError = 12f;
+
         [Header("Camera (orbit around a point on the ground)")]
         [Min(5)] public float minDistance = 20f;
         [Min(100)] public float maxDistance = 8000f;

@@ -20,6 +20,7 @@ namespace Reconnect.Client.UI.Screens
         private readonly CityView _city;
         private readonly CitySettings _settings;
         private readonly BuildingService _buildings;
+        private readonly MapService _maps;
         private readonly RoomService _rooms;
         private readonly AuthService _auth;
         private readonly Action _openRoomList;
@@ -34,8 +35,9 @@ namespace Reconnect.Client.UI.Screens
         private CancellationTokenSource _selectionLoad;
 
         public CityScreen(VisualTreeAsset template, CityView city, CitySettings settings, BuildingService buildings,
-            RoomService rooms, AuthService auth, Action openRoomList, Action<Guid> openRoom)
+            MapService maps, RoomService rooms, AuthService auth, Action openRoomList, Action<Guid> openRoom)
         {
+            _maps = maps;
             _template = template;
             _city = city;
             _settings = settings;
@@ -75,10 +77,38 @@ namespace Reconnect.Client.UI.Screens
 
             _city.CameraController.IsPointerOverUi = IsPointerOverUi;
             _city.BuildingTapped += Select;
-            _city.SetVisible(true);
             Root.schedule.Execute(UpdateOverlay).Every(0);
 
-            RunAsync(LoadBuildingsAsync);
+            RunAsync(async () =>
+            {
+                // Which city look this session gets, before anything streams (no swisstopo → Google flash).
+                var map = await _maps.GetAsync(Lifetime);
+                _city.ApplyMap(map);
+                ShowMapInfo(map);
+                _city.SetVisible(true);
+                await LoadBuildingsAsync();
+            });
+        }
+
+        /// <summary>Attribution, map/aerial toggle (swisstopo only) and a hint about the photorealistic city.</summary>
+        private void ShowMapInfo(MapSessionDto map)
+        {
+            var google = _city.IsGoogle;
+            // Google's logo and data credits are drawn by Cesium (showCreditsOnScreen on the Google tileset).
+            Q<Label>("attribution").style.display = google ? DisplayStyle.None : DisplayStyle.Flex;
+            Q<Button>("layer").style.display = google ? DisplayStyle.None : DisplayStyle.Flex;
+
+            var hint = map.FallbackReason switch
+            {
+                MapFallbackReasons.FreeQuotaUsed => "Fotorealistische Stadt: Gratis-Kontingent für diesen Monat aufgebraucht – mit Premium unbegrenzt.",
+                MapFallbackReasons.BudgetExhausted => "Fotorealistische Stadt gerade ausgelastet – mit Premium immer verfügbar.",
+                _ when google && !map.IsPremium && map.FreeGoogleSessionsLeft is { } left =>
+                    $"Fotorealistische Stadt · noch {left} Gratis-Besuche diesen Monat",
+                _ => null,
+            };
+            var label = Q<Label>("map-hint");
+            label.text = hint ?? "";
+            label.style.display = hint == null ? DisplayStyle.None : DisplayStyle.Flex;
         }
 
         protected override void OnHide()

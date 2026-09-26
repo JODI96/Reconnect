@@ -144,6 +144,18 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Prime Towers nach (Bar, offene Küche, Bistro, Restaurant, Lounge, Privé) mit futuristischen Custom-Items
   (Hologramm, schwebende Murano-Orbs, DJ-Pult mit Equalizer, Panorama-Fernrohre). Unbekannte ItemIds landen in
   `RoomView.MissingItems` – der Showcase-Test verlangt, dass die Liste leer ist.
+- **Stadt-Darstellung pro Sitzung (Backend entscheidet, `POST /v1/maps/session`):** Premium (Rolle `Premium`
+  oder `Admin`) bekommt immer **Google Photorealistic 3D Tiles**, Gratis-Nutzer `Maps:FreeGoogleSessionsPerMonth`
+  Sitzungen pro Monat, danach swisstopo; `Maps:MonthlyFreeGoogleSessionBudget` begrenzt die Kosten aller
+  Gratis-Nutzer. Ohne Key bekommt jeder swisstopo. Der Client (`MapService`) merkt sich die Antwort ~3 h
+  (eine Google-Sitzung wird einmal abgerechnet). Im Google-Modus läuft swisstopo **unsichtbar** weiter
+  (Layer `CityData`): Dachhöhen, Marker, Rooftop-Platzierung und Kamera-Kollisionen kommen nie aus Google-Daten
+  (Google-Bedingungen verbieten das Extrahieren). Google-Höhen sind ellipsoidisch, swisstopo über Meer: der
+  Google-Tileset wird um die Geoidhöhe gesenkt (`CitySettings.googleHeightOffset`, Zürich −47.75 m, EGM2008).
+  Google-Logo und -Credits zeigt Cesium an (`showCreditsOnScreen`) – Pflicht laut Google.
+  **Key:** `dotnet user-secrets set "Parameters:google-maps-api-key" "<key>" --project src/Reconnect.AppHost`
+  (nie in Code/Repo). Im Google-Cloud-Konto Key auf Map Tiles API + App-IDs beschränken und Tageslimit setzen.
+  Automatische Tests starten nie eine Google-Sitzung.
 - **Gebäude in der Stadt:** swissBUILDINGS3D kommt ohne Textur mit Rohfarben (rote Dächer, gelbe Wände). Das Tileset
   nutzt deshalb `Materials/Buildings.mat` (helles „Architekturmodell“); Gelände behält Cesiums Material (Overlays).
 - **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.
@@ -185,7 +197,8 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Newtonsoft.Json via `com.unity.nuget.newtonsoft-json`).
 - Paketversionen nur in `Directory.Packages.props` (Central Package Management).
 - **Keine Secrets im Code.** JWT-Signaturschlüssel = Aspire-Parameter `jwt-signing-key`
-  (wird generiert und in den AppHost-User-Secrets gespeichert). Connection Strings kommen
+  (wird generiert und in den AppHost-User-Secrets gespeichert). Google-Maps-Key = optionaler Aspire-Parameter
+  `google-maps-api-key` (User Secrets), der Client bekommt ihn nur über `POST /v1/maps/session`. Connection Strings kommen
   von Aspire.
 - Kleine Commits mit klaren Messages. Vor jedem Commit: `dotnet build` und `dotnet test`.
 
