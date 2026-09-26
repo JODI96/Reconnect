@@ -162,11 +162,21 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   realistische **Poly-Haven-Modelle** (CC0, kommerziell frei, keine Namensnennung nötig) in `Assets/ThirdParty/PolyHaven`
   als glTF (Import über `com.unity.cloud.gltfast`, 1k-Texturen für Mobile). Neue Poly-Haven-Modelle: Namen in
   `tools/fetch_polyhaven.py` eintragen, Skript ausführen, dann `tools/polyhaven_mobile.py` (Blender, Dreiecksbudget),
-  dann Setup Project. ItemId = `ph-<name>` (echte Meter, Scale 1;
-  im Backend über `Ph(...)` platzieren – die Modelle schauen nach +Z, `Ph` dreht sie passend). Kenney-Möbel-ItemId =
-  Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen, `custom-*` baut der Client (Pool, Säule …),
-  Kleinteile (Laptop, Lampe, Kaffeemaschine) werden automatisch auf Möbel gestapelt.
-  Massstab: Möbel ×0.2 ≈ echte Grösse (Tisch 65 cm, Tür 2 m), Figuren 1:1 (1,60–1,85 m). 1 Rasterfeld = 1 m.
+  dann Setup Project. ItemId = `ph-<name>` (echte Meter, Scale 1; schauen bei Rotation 0 nach +Z, Kenney nach -Z).
+  Kenney-Möbel-ItemId = Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen, `custom-*` baut der Client
+  (Pool, Säule …). Massstab: Möbel ×0.2 ≈ echte Grösse (Tisch 65 cm, Tür 2 m) – Ausreisser des Kenney-Kits (Laptop, WC,
+  Dusche …) bekommen in `ProjectSetup.KenneyRealHeights` ihre echte Höhe. Figuren 1:1 (1,60–1,85 m). 1 Laufeld = 1 m.
+- **Baueditor & Bauregeln:** Baufeld = 50 cm (4 pro Laufeld, `BuildGrid`). Jedes Item hat im Katalog
+  (`ItemDefinitions`, generiert von `BuildCatalogGenerator` beim Setup Project aus den echten Modellen →
+  `Contracts/Rooms/ItemCatalogData.cs`, danach `dotnet build`) Grundfläche in Zellen, Höhe, Tischfläche, Art
+  (Boden/Teppich/Deko/Wand/Decke), Kategorie und deutschen Namen. `RoomLayout.Validate` (Server bei jedem Speichern, Client
+  im Editor): Raster + 90°-Schritte, im Raum, keine Überlappung pro Ebene, Deko nur ganz auf einer Tischfläche, Wandobjekte
+  an einer Wand, Eingang und Lift-Ausstieg frei (`RoomZones`), jeder Sitz erreichbar. Begehbare/Wasser-Felder kommen aus
+  `RoomLayout.BlockedTiles/WaterTiles` (Server, Client, Editor gleich). `PUT /rooms/{id}/layout`: Besitzer oder Admin,
+  400 mit Fehler pro `items[i]`, danach `RoomLayoutChanged` an alle im Raum. Im Client: „Bauen“ → `BuildPanel` +
+  `BuildEditor` (reines C#) + `BuildPreview` (Raster, Geist grün/rot). `RoomLayoutFixer` setzt alte Layouts aufs Raster.
+  Geseedete Räume stehen als `Cell(item, x, z, rotation)` (Zellen, linke untere Ecke der Grundfläche) im Code;
+  `SeedRoomLayoutTests` prüft jeden Raum; `SeedRoomExport` (mit `RECONNECT_EXPORT_ROOMS=<Ordner>`) gibt Karten aus.
 - **Räume:** eigene Grösse (6–40 m), Themes mit prozeduralem Boden (FloorTextures) und einer `Enclosure`:
   `Walls` (Kenney-Wände mit Fenstern/Tür), `Railing` (Dachterrasse, Glasgeländer) oder `GlassFacade` (verglastes
   Obergeschoss mit LED-Kante). `Railing`/`GlassFacade` stehen auf dem echten Gebäudedach in der 3D-Stadt
@@ -277,8 +287,7 @@ Lokale Dev-DB zurücksetzen: AppHost stoppen, Container entfernen, Volume `recon
 
 **Showcase-Räume:** In Development legt `Modules/Rooms/.../Infrastructure/Seeding/ShowcaseRooms.cs` 5 eingerichtete Räume an
 (Café Limmat, Kunst-Atelier, Opern-Foyer, ETH Bibliothek, Seebad Utoquai) und aktualisiert sie bei jedem Start. Möbel sind
-überwiegend realistische Poly-Haven-Modelle (`Ph(...)`); Dekoration auf Möbeln (Schachspiel, Vasen, Lampen) steht in
-`RoomView.StackableItems`.
+überwiegend realistische Poly-Haven-Modelle, platziert mit `Cell(...)` nach den Bauregeln (Deko liegt auf Tischflächen).
 
 **Dev-Login:** In Development legt die API das Konto **Admin / Admin** an (Rolle `Admin`,
 `DevAdmin` in `appsettings.Development.json`, Code: `Modules/Identity/.../Features/DevAdminSeeder.cs`).
@@ -298,7 +307,7 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"
 2. **Unity-Client mit Login und Raumliste** – Upgrade auf Unity 6 LTS, Contracts-DLL einbinden
 3. **Multiplayer-Raum** – erledigt lokal über SignalR: Avatare, Laufen (Wegfindung), Sprechblasen, Emotes,
    Minigames (Tic-Tac-Toe, Zürich-Quiz), 5 Showcase-Räume. Offen: Photon/Custom Auth bei Bedarf
-4. **Raum-Editor** (Layout speichern über `PUT /rooms/{id}/layout`)
+4. **Raum-Editor** – erledigt: Baueditor mit 50-cm-Raster, Bauregeln auf Server und Client (offen: Item-Icons im Katalog)
 5. **Likes/Matches/Chat im Client** (SignalR)
 6. **Stadtquartier aus swisstopo-Daten** – Grundlage steht (Cesium + swissBUILDINGS3D); offen: Gebäude-Eingänge, Self-Hosting, Performance auf Geräten
 7. **Face-Tracking**
