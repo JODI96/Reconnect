@@ -2,7 +2,7 @@
 # 1. Start the AppHost, copy the API URL from the Aspire dashboard into @host.
 # 2. Run "register" (or "login"), copy accessToken into @token.
 
-@host = https://localhost:7141
+@host = https://localhost:7141/v1
 @token = paste-access-token-here
 
 ### Register (must be 18+)

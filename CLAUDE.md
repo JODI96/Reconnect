@@ -27,24 +27,35 @@ als Backup unter `C:\Users\Joys9\Reconnect-Unity-Backup-2026-09-25.zip` gesicher
 - **Auth:** ASP.NET Core Identity + JWT (Access Token + rotierender Refresh Token)
 - **Dateien:** Azure Blob Storage (lokal: Azurite)
 - **Lokale Orchestrierung:** Aspire 13
-- **Tests:** xUnit, Integrationstests mit Testcontainers (postgis/postgis)
+- **Tests:** xUnit – Unit-Tests, Architekturtests (NetArchTest), Integrationstests mit Testcontainers
+- **CI:** GitHub Actions (`.github/workflows/backend.yml`): Build, Migrations-Check, alle Tests
 
 ## Architektur
+
+Das Backend ist ein **modularer Monolith**: ein deploybarer Prozess, intern in fachliche Module mit
+harten Grenzen geschnitten. So bleibt es heute einfach und lässt sich später modulweise skalieren oder
+in eigene Services auslagern, ohne alles umzubauen.
 
 ```
 src/
   Reconnect.AppHost          Aspire: startet API, Postgres+PostGIS, Redis, Azurite
   Reconnect.ServiceDefaults  OpenTelemetry, Health Checks, Resilience (Aspire-Standard)
-  Reconnect.Api              Minimal APIs, nach Features geschnitten (Vertical Slices)
-    Common/                  Querschnitt: Endpoint-Discovery, Auth-Helfer, Validierung, Fehler
-    Features/<Feature>/      Endpoints + Mapping + feature-spezifische Logik
-    Hubs/                    SignalR-Hubs
-  Reconnect.Domain           Entities + Geschäftsregeln. Keine Abhängigkeit auf EF/ASP.NET
-                             (einzige Ausnahme: NetTopologySuite für Geometrien)
-  Reconnect.Infrastructure   DbContext, EF-Konfigurationen, Migrations, Seed, Identity-User
-  Reconnect.Contracts        DTOs für API + Unity. netstandard2.1, C# 9, KEINE Pakete
+  Reconnect.Api              Host – komponiert NUR: Module, Redis/Blobs, ProblemDetails, OpenAPI,
+                             Rate Limiting (HostSetup.cs). Keine Fachlogik, keine DbContexts/Hubs.
+  Reconnect.SharedKernel     Modul-Infrastruktur: IModule, Event-Bus, Modul-DbContext, DomainException,
+                             AgePolicy, Web-Helfer (GetUserId, Paging, RateLimitPolicies). Kennt keine Module.
+  Reconnect.Contracts        DTOs + Routen für API und Unity. netstandard2.1, C# 9, KEINE Pakete
+  Modules/<Name>/Reconnect.Modules.<Name>/
+    <Name>Module.cs          Einstieg: Register (DI), MapEndpoints, MigrateAsync, SeedAsync
+    Public/                  EINZIGE Schnittstelle für andere Module (Interfaces, Events, Ids)
+    Domain/                  Entities + Regeln (internal). Kein EF/ASP.NET/Redis
+    Features/                Endpoints, Event-Handler, Abfragen (internal)
+    Infrastructure/          <Name>DbContext, Migrations/, Stores, Seeding (internal)
+    Hubs/                    SignalR-Hubs (internal) + Client-Interface (public, SignalR braucht es)
 tests/
-  Reconnect.Api.Tests        Integrationstests (WebApplicationFactory + Testcontainers)
+  Reconnect.UnitTests          Domänenregeln, Minigames, Event-Bus (schnell, ohne Docker)
+  Reconnect.ArchitectureTests  Erzwingt die Modulgrenzen (siehe unten)
+  Reconnect.Api.Tests          Integrationstests (WebApplicationFactory + Testcontainers)
 client/                      Unity-Projekt
   Assets/Plugins/Reconnect.Contracts/   Contracts-DLL (wird von dotnet build hierher kopiert)
   Assets/_Project/           Alles Eigene (Template-/Store-Assets bleiben ausserhalb)
@@ -68,9 +79,35 @@ client/                      Unity-Projekt
     Tests/PlayMode/          Startet Main.unity; City-Test rendert client/Logs/city-preview.png
 ```
 
-Abhängigkeiten: `Api → Infrastructure → Domain`, `Api → Contracts`, `AppHost → Api`.
-Domain und Contracts kennen sich nicht; das Mapping passiert in der Api (`*Mappings.cs`).
-Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
+### Module
+
+| Modul    | Verantwortung | Schema | Darf nutzen |
+|----------|---------------|--------|-------------|
+| Identity | Konten, Login, JWT/Refresh, Rollen, Dev-Admin | `identity` | – |
+| City     | Gebäude (PostGIS), später swisstopo-Import | `city` | – |
+| Safety   | Blocks, Reports (Moderation) | `safety` | Identity |
+| Profiles | Anzeigename, Alter, Bio, Verifizierung | `profiles` | Identity, Safety |
+| Social   | Likes, Matches, Match-Chat (`/hubs/chat`) | `social` | Profiles, Safety |
+| Rooms    | Räume, Layout (jsonb), Präsenz + Minigames (`/hubs/room`, Redis), Showcase | `rooms` | Identity, Profiles, Safety, City |
+
+**Regeln (durch `Reconnect.ArchitectureTests` erzwungen):**
+- Andere Module nur über `*.Public` ansprechen: `IUserDirectory`, `IProfileDirectory`, `IBlockQueries`,
+  `ICityDirectory`, `ZurichBuildings`. Alles andere ist `internal`.
+- Abhängigkeiten nur gemäss Tabelle, zyklenfrei. Neue Pfeile = bewusste Architekturentscheidung
+  (Tabelle hier + `AllowedDependencies` im Test anpassen).
+- Reagieren statt aufrufen: **Integration Events** (`IEventBus`). `UserRegistered` (Identity → Profiles
+  legt Profil an; wirft der Handler eine DomainException, wird die Registrierung zurückgerollt),
+  `UserBlocked` (Safety → Social löscht Likes/Match). Handler müssen idempotent sein.
+  Der Bus ist heute in-process/synchron; bei Auslagerung eines Moduls wird er durch Broker + Outbox ersetzt.
+- Jedes Modul hat **eigenen DbContext, eigenes Postgres-Schema, eigene Migrationen** (History-Tabelle im
+  Schema). **Keine Fremdschlüssel und keine Joins über Modulgrenzen** – IDs werden als Guid referenziert,
+  Daten anderer Module über deren Public-Interfaces geholt (z. B. Besitzernamen gebündelt pro Seite).
+- Start: erst migrieren alle Module, dann seeden alle Module (Reihenfolge = `AddModules(...)` in Program.cs).
+- Alle Routen liegen unter **`/v1`** (`ApiRoutes.Version`). Breaking Changes → `/v2` parallel betreiben.
+- **Rate Limiting:** `RateLimitPolicies.Auth` (pro IP) für Auth-Endpoints, `RateLimitPolicies.Writes`
+  (pro User) für spambare Schreibaktionen. Grenzen in `RateLimiting:*` konfigurierbar.
+
+Der Unity-Client kennt nur Contracts (DLL), nie Module.
 
 ### Unity-Client: Konventionen
 
@@ -106,14 +143,21 @@ Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
 
 ### Neues Feature hinzufügen
 
-1. Entity in `Reconnect.Domain/<Bereich>/` anlegen (Factory-Methode `Create(...)`, Regeln im Entity).
-2. `DbSet` in `ReconnectDbContext` + `IEntityTypeConfiguration<T>` in
-   `Reconnect.Infrastructure/Persistence/Configurations/`.
-3. Migration erzeugen (siehe unten).
-4. DTOs in `Reconnect.Contracts/<Bereich>/`, Routen in `ApiRoutes`.
-5. `Reconnect.Api/Features/<Bereich>/<Bereich>Endpoints.cs` mit einer Klasse, die
-   `IEndpointModule` implementiert – sie wird automatisch gefunden und gemappt.
+1. Passendes Modul wählen (oder neues Modul, siehe unten).
+2. Entity in `Domain/` (internal, Factory `Create(...)`, Regeln im Entity) + Unit-Test in `tests/Reconnect.UnitTests`.
+3. `DbSet` + Konfiguration im `<Name>DbContext` des Moduls, dann Migration erzeugen (siehe Befehle).
+4. DTOs in `Reconnect.Contracts/<Bereich>/`, Routen in `ApiRoutes` (`Path` relativ, `Group` inkl. `/v1`).
+5. Endpoints in `Features/` (statische `Map(api)` mit `api.MapGroup(ApiRoutes.X.Path)`), in
+   `<Name>Module.MapEndpoints` aufrufen. Braucht es Daten eines anderen Moduls → dessen `Public`-Interface.
 6. Integrationstest in `tests/Reconnect.Api.Tests/<Bereich>/`.
+
+### Neues Modul hinzufügen
+
+1. `src/Modules/<Name>/Reconnect.Modules.<Name>/` – csproj wie die anderen Module (SharedKernel, Contracts,
+   erlaubte Module; `InternalsVisibleTo Reconnect.UnitTests`).
+2. `<Name>Module : IModule`, `<Name>DbContext` mit `HasDefaultSchema("<name>")` + `ModuleDesignTimeFactory`.
+3. In `Program.cs` bei `AddModules(...)` eintragen, Projekt in `Reconnect.slnx`, Api und Testprojekten referenzieren.
+4. In `ModuleBoundaryTests` (`Modules` + `AllowedDependencies`) und in der Modultabelle oben eintragen.
 
 ## Konventionen
 
@@ -123,10 +167,10 @@ Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
 - Geodaten: SRID 4326 (WGS84), Spalten als `geography` → Distanzen in Metern.
   In Contracts nur `Latitude`/`Longitude` als `double`, nie NTS-Typen.
 - Endpoints geben `TypedResults` zurück; Fehler als ProblemDetails / ValidationProblem.
-- Kein Repository-Layer: Endpoints nutzen `ReconnectDbContext` direkt; wiederverwendete
-  Abfragen als Extension-Methoden (z.B. `BlockQueries`).
+- Kein Repository-Layer: Endpoints nutzen den DbContext ihres Moduls direkt; wiederverwendete
+  Abfragen als kleine Klassen im Modul (z. B. `RoomReader`).
 - Sicherheitsregeln (Blocks!) nie im Client verlassen – jede Abfrage auf Nutzer/Räume muss
-  Blocks berücksichtigen.
+  Blocks über `IBlockQueries` berücksichtigen.
 - Contracts: nur C# 9, keine Pakete, keine `System.Text.Json`-Attribute (Unity nutzt
   Newtonsoft.Json via `com.unity.nuget.newtonsoft-json`).
 - Paketversionen nur in `Directory.Packages.props` (Central Package Management).
@@ -139,20 +183,24 @@ Der Unity-Client kennt nur Contracts (DLL), nie Domain/Infrastructure.
 
 ```powershell
 dotnet build                                   # alles bauen
-dotnet test                                    # Tests (Docker muss laufen)
+dotnet test                                    # alle Tests (Docker muss laufen)
 dotnet run --project src/Reconnect.AppHost     # alles lokal starten (Docker muss laufen)
+dotnet tool restore                            # dotnet-ef aus dotnet-tools.json
 
-# Neue Migration
-dotnet ef migrations add <Name> --project src/Reconnect.Infrastructure --output-dir Persistence/Migrations
+# Neue Migration in einem Modul (Beispiel Rooms)
+$p = "src/Modules/Rooms/Reconnect.Modules.Rooms/Reconnect.Modules.Rooms.csproj"
+dotnet ef migrations add <Name> --project $p --startup-project $p --context RoomsDbContext --output-dir Infrastructure/Migrations
+dotnet ef migrations has-pending-model-changes --project $p --startup-project $p   # prüft auch die CI
 ```
 
-Migrationen werden in der Entwicklung beim Start der API automatisch angewendet.
+Migrationen werden in der Entwicklung beim Start der API automatisch angewendet (pro Modul).
+Lokale Dev-DB zurücksetzen: AppHost stoppen, Container entfernen, Volume `reconnect.apphost-*-postgres-data` löschen.
 
-**Showcase-Räume:** In Development legt `Features/Showcase/ShowcaseRooms.cs` 5 eingerichtete Räume an
+**Showcase-Räume:** In Development legt `Modules/Rooms/.../Infrastructure/Seeding/ShowcaseRooms.cs` 5 eingerichtete Räume an
 (Rooftop Lounge, Café Limmat, Kunst-Atelier, Opern-Foyer, ETH Bibliothek) und aktualisiert sie bei jedem Start.
 
 **Dev-Login:** In Development legt die API das Konto **Admin / Admin** an (Rolle `Admin`,
-`DevAdmin` in `appsettings.Development.json`, Code: `Features/Auth/DevAdminSeeder.cs`).
+`DevAdmin` in `appsettings.Development.json`, Code: `Modules/Identity/.../Features/DevAdminSeeder.cs`).
 Es umgeht die Passwortregeln und existiert nur, wenn die Umgebung Development ist –
 nie in anderen Umgebungen aktivieren (ein Test prüft das).
 

@@ -5,8 +5,9 @@ Architektur, Konventionen und Roadmap: siehe [CLAUDE.md](CLAUDE.md).
 
 | Ordner    | Inhalt |
 |-----------|--------|
-| `src/`    | Backend: ASP.NET Core (.NET 10), PostgreSQL/PostGIS, Redis, Azurite, Aspire |
-| `tests/`  | Backend-Integrationstests |
+| `src/`    | Backend: modularer Monolith auf ASP.NET Core (.NET 10), PostgreSQL/PostGIS, Redis, Azurite, Aspire |
+| `src/Modules/` | Fachmodule: Identity, Profiles, Safety, Social, City, Rooms |
+| `tests/`  | Unit-, Architektur- und Integrationstests |
 | `client/` | Unity 6.3 LTS Client (iOS/Android) |
 
 ## Voraussetzungen
@@ -23,7 +24,8 @@ dotnet run --project src/Reconnect.AppHost
 
 Das Aspire-Dashboard öffnet sich (Link in der Konsole). Dort findest du die API (`/scalar` = interaktive
 API-Doku), Postgres/pgAdmin, Redis und Azurite. Beim ersten Start werden die Container geladen, der
-JWT-Schlüssel generiert (User Secrets) und die Migrationen inkl. Zürcher Beispielgebäude angewendet.
+JWT-Schlüssel generiert (User Secrets) und die Migrationen aller Module inkl. Zürcher Beispielgebäude angewendet.
+Alle API-Routen liegen unter `/v1` (z. B. `POST /v1/auth/login`).
 
 ## Client starten
 
@@ -37,6 +39,7 @@ automatisch nach `client/Assets/Plugins/Reconnect.Contracts/` kopiert.
 
 ## Testen
 
-- Backend: `dotnet test` (startet einen eigenen PostGIS-Container)
+- Backend: `dotnet test` (Unit- und Architekturtests ohne Docker; Integrationstests starten eigene PostGIS-/Redis-Container)
+- CI: GitHub Actions führt Build, Migrations-Check und alle Backend-Tests bei jedem Push aus
 - Client: Unity → *Window → General → Test Runner → EditMode → Run All*
 - Manuell: `src/Reconnect.Api/Reconnect.Api.http` oder Scalar
