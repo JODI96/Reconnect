@@ -70,7 +70,7 @@ namespace Reconnect.Client.Editor
         /// <summary>Items whose top is much wider than what stands on the floor (parasol: only the pole).</summary>
         private static readonly Dictionary<string, (int, int)> Footprints = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["custom-parasol"] = (1, 1),
+            ["custom-parasol"] = (2, 2),
         };
 
         /// <summary>Counters whose top is not the highest point (shelves, hoods above them).</summary>
@@ -149,36 +149,31 @@ namespace Reconnect.Client.Editor
             ["kitchenCabinetUpperLow"] = "Hängeschrank flach",
         };
 
-        public static void Generate(ItemCatalog catalog, CustomItems custom)
+        private const string IconsDir = "Assets/_Project/Build/Icons";
+        private const int IconSize = 160;
+        private const int MeasureLayer = 31;
+
+        /// <summary>Measures every item, writes the catalog, renders the pictures; returns the icon catalog entries.</summary>
+        public static List<BuildIconCatalog.Entry> Generate(ItemCatalog catalog, CustomItems custom)
         {
             var root = new GameObject("Build Catalog Measure");
+            root.transform.position = new Vector3(0f, -5000f, 0f);
             var definitions = new List<ItemDefinition>();
+            var ids = new List<string>();
             try
             {
-                foreach (var entry in catalog.items)
+                ids.AddRange(catalog.items
+                    .Where(e => e.model != null && !Excluded.Any(x => e.itemId.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
+                    .Select(e => e.itemId));
+                ids.AddRange(CustomItems.Ids);
+                ids.Add("game-tictactoe");
+                ids.Add("game-quiz");
+                foreach (var id in ids)
                 {
-                    if (entry.model == null || Excluded.Any(e => entry.itemId.StartsWith(e, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        continue;
-                    }
-                    var instance = (GameObject)Object.Instantiate(entry.model, root.transform);
-                    instance.transform.localScale = Vector3.one * catalog.ScaleFor(entry.itemId);
-                    definitions.Add(Define(entry.itemId, Bounds(instance)));
-                    Object.DestroyImmediate(instance);
-                }
-                foreach (var id in CustomItems.Ids)
-                {
-                    var pivot = new GameObject(id).transform;
-                    pivot.SetParent(root.transform, false);
-                    if (custom.TryBuild(id, pivot, out _))
-                    {
-                        definitions.Add(Define(id, Bounds(pivot.gameObject)));
-                    }
+                    var pivot = Spawn(catalog, custom, root.transform, id);
+                    definitions.Add(Define(id, pivot));
                     Object.DestroyImmediate(pivot.gameObject);
                 }
-                // Game stations stand on the Kenney models the room builds them from.
-                definitions.Add(Define("game-tictactoe", Measure(catalog, root, "table")));
-                definitions.Add(Define("game-quiz", Measure(catalog, root, "cabinetTelevision")));
             }
             finally
             {
@@ -186,19 +181,248 @@ namespace Reconnect.Client.Editor
             }
 
             // Two ready-made pools for the catalog (any size works: custom-pool-<W>x<D>).
-            definitions.Add(new ItemDefinition("custom-pool-6x3", Names["custom-pool-6x3"], "Spezial", ItemKind.Floor, 12, 6, 0.05f));
-            definitions.Add(new ItemDefinition("custom-pool-12x6", Names["custom-pool-12x6"], "Spezial", ItemKind.Floor, 24, 12, 0.05f));
+            var per = BuildGrid.CellsPerTile;
+            definitions.Add(new ItemDefinition("custom-pool-6x3", Names["custom-pool-6x3"], "Spezial", ItemKind.Floor, 6 * per, 3 * per, 0.05f));
+            definitions.Add(new ItemDefinition("custom-pool-12x6", Names["custom-pool-12x6"], "Spezial", ItemKind.Floor, 12 * per, 6 * per, 0.05f));
+            ids.Add("custom-pool-6x3");
+            ids.Add("custom-pool-12x6");
             Write(definitions.OrderBy(d => d.Category).ThenBy(d => d.Name).ToList());
             Debug.Log($"[Reconnect] Build catalog: {definitions.Count} items → {OutputPath}");
+            return RenderIcons(catalog, custom, ids);
         }
 
-        private static Bounds Measure(ItemCatalog catalog, GameObject root, string itemId)
+        /// <summary>The model of any buildable item under a new pivot (as the room builds it).</summary>
+        private static Transform Spawn(ItemCatalog catalog, CustomItems custom, Transform parent, string id)
         {
-            var instance = (GameObject)Object.Instantiate(catalog.Find(itemId), root.transform);
-            instance.transform.localScale = Vector3.one * catalog.ScaleFor(itemId);
-            var bounds = Bounds(instance);
-            Object.DestroyImmediate(instance);
-            return bounds;
+            var pivot = new GameObject(id).transform;
+            pivot.SetParent(parent, false);
+            if (custom.TryBuild(id, pivot, out _))
+            {
+                return pivot;
+            }
+            // Game stations stand on the Kenney models the room builds them from.
+            var modelId = id switch { "game-tictactoe" => "table", "game-quiz" => "cabinetTelevision", _ => id };
+            var instance = (GameObject)Object.Instantiate(catalog.Find(modelId), pivot);
+            instance.transform.localScale = Vector3.one * catalog.ScaleFor(modelId);
+            if (id == "game-quiz")
+            {
+                var top = Bounds(instance);
+                var tv = (GameObject)Object.Instantiate(catalog.Find("televisionModern"), pivot);
+                tv.transform.localScale = Vector3.one * catalog.ScaleFor("televisionModern");
+                var tvBounds = Bounds(tv);
+                tv.transform.position += new Vector3(top.center.x - tvBounds.center.x, top.max.y - tvBounds.min.y, top.center.z - tvBounds.center.z);
+            }
+            return pivot;
+        }
+
+        /// <summary>
+        /// The flat top of a table, shelf or counter: rays from above on a fine grid; the top is the highest height that
+        /// covers a good part of the middle, its area the biggest rectangle around the centre where every ray hits that
+        /// height (a round table gets the square inside its top). Heights are above the model's lowest point, as it stands.
+        /// </summary>
+        private static bool MeasureSurface(Transform pivot, Bounds bounds, out float height, out float width, out float depth)
+        {
+            height = width = depth = 0f;
+            var colliders = new List<MeshCollider>();
+            foreach (var filter in pivot.GetComponentsInChildren<MeshFilter>())
+            {
+                if (filter.sharedMesh != null)
+                {
+                    filter.gameObject.layer = MeasureLayer;
+                    var collider = filter.gameObject.AddComponent<MeshCollider>();
+                    collider.sharedMesh = filter.sharedMesh;
+                    colliders.Add(collider);
+                }
+            }
+            try
+            {
+                Physics.SyncTransforms();
+                const int n = 32;
+                var hits = new float?[n, n];
+                for (var i = 0; i < n; i++)
+                {
+                    for (var j = 0; j < n; j++)
+                    {
+                        var x = Mathf.Lerp(bounds.min.x, bounds.max.x, (i + 0.5f) / n);
+                        var z = Mathf.Lerp(bounds.min.z, bounds.max.z, (j + 0.5f) / n);
+                        if (Physics.Raycast(new Vector3(x, bounds.max.y + 1f, z), Vector3.down, out var hit, bounds.size.y + 2f, 1 << MeasureLayer))
+                        {
+                            hits[i, j] = hit.point.y;
+                        }
+                    }
+                }
+                // Top: the highest 2 cm band that at least 12 % of the middle half hits.
+                var middle = new List<float>();
+                for (var i = n / 4; i < n * 3 / 4; i++)
+                {
+                    for (var j = n / 4; j < n * 3 / 4; j++)
+                    {
+                        if (hits[i, j] is { } y)
+                        {
+                            middle.Add(y);
+                        }
+                    }
+                }
+                if (middle.Count == 0)
+                {
+                    return false;
+                }
+                // Candidate tops: 2 cm height bands that at least 12 % of the middle hits, highest first. The first one with a
+                // usable flat rectangle around the centre wins (a lamp or shelf above a counter doesn't count).
+                var bands = middle
+                    .GroupBy(y => Mathf.Round(y / 0.02f))
+                    .Where(g => g.Count() >= middle.Count * 0.12f)
+                    .Select(g => g.Max())
+                    .OrderByDescending(y => y)
+                    .ToList();
+                var best = (Area: 0f, W: 0, D: 0);
+                var top = 0f;
+                foreach (var band in bands)
+                {
+                    bool Flat(int i, int j) => hits[i, j] is { } y && Mathf.Abs(y - band) < 0.03f;
+                    best = (0f, 0, 0);
+                    for (var w = 1; w <= n / 2; w++)
+                    {
+                        for (var d = 1; d <= n / 2; d++)
+                        {
+                            // A few taps or handles on a counter are fine (4 % of the samples).
+                            var bumps = 0;
+                            for (var i = n / 2 - w; i < n / 2 + w; i++)
+                            {
+                                for (var j = n / 2 - d; j < n / 2 + d; j++)
+                                {
+                                    bumps += Flat(i, j) ? 0 : 1;
+                                }
+                            }
+                            var ok = bumps <= 4 * w * d * 0.04f;
+                            var area = w * bounds.size.x * d * bounds.size.z;
+                            if (ok && area > best.Area)
+                            {
+                                best = (area, w, d);
+                            }
+                        }
+                    }
+                    if (best.W * 2f / n * bounds.size.x >= 0.2f && best.D * 2f / n * bounds.size.z >= 0.2f)
+                    {
+                        top = band;
+                        break;
+                    }
+                }
+                width = best.W * 2f / n * bounds.size.x;
+                depth = best.D * 2f / n * bounds.size.z;
+                height = top - bounds.min.y;
+                return width >= 0.2f && depth >= 0.2f;
+            }
+            finally
+            {
+                foreach (var collider in colliders)
+                {
+                    Object.DestroyImmediate(collider);
+                }
+            }
+        }
+
+        /// <summary>
+        /// One picture per item from the game's camera angle (looking north-east from above), on the catalog card colour,
+        /// saved as PNG in the project and collected in the icon catalog.
+        /// </summary>
+        private static List<BuildIconCatalog.Entry> RenderIcons(ItemCatalog catalog, CustomItems custom, List<string> ids)
+        {
+            Directory.CreateDirectory(IconsDir);
+            var stage = new GameObject("Build Icon Stage");
+            stage.transform.position = new Vector3(0f, -5000f, 0f);
+            var camera = new GameObject("Icon Camera").AddComponent<Camera>();
+            camera.transform.SetParent(stage.transform, false);
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color32(48, 43, 74, 255);
+            camera.cullingMask = 1 << MeasureLayer;
+            camera.fieldOfView = 22f;
+            camera.nearClipPlane = 0.05f;
+            camera.farClipPlane = 200f;
+            var key = new GameObject("Key Light").AddComponent<Light>();
+            key.transform.SetParent(stage.transform, false);
+            key.type = LightType.Directional;
+            key.intensity = 1.4f;
+            key.cullingMask = 1 << MeasureLayer;
+            key.transform.rotation = Quaternion.Euler(50f, 20f, 0f);
+            var fill = new GameObject("Fill Light").AddComponent<Light>();
+            fill.transform.SetParent(stage.transform, false);
+            fill.type = LightType.Directional;
+            fill.intensity = 0.7f;
+            fill.cullingMask = 1 << MeasureLayer;
+            fill.transform.rotation = Quaternion.Euler(30f, 200f, 0f);
+
+            var target = new RenderTexture(IconSize, IconSize, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            camera.targetTexture = target;
+            var read = new Texture2D(IconSize, IconSize, TextureFormat.RGBA32, false);
+            var paths = new List<(string Id, string Path)>();
+            try
+            {
+                foreach (var id in ids)
+                {
+                    var pivot = Spawn(catalog, custom, stage.transform, id);
+                    if (id.StartsWith("ph-", StringComparison.Ordinal))
+                    {
+                        pivot.localRotation = Quaternion.Euler(0f, 180f, 0f);   // Poly Haven models face +Z: show their front
+                    }
+                    foreach (var child in pivot.GetComponentsInChildren<Transform>(true))
+                    {
+                        child.gameObject.layer = MeasureLayer;
+                    }
+                    foreach (var light in pivot.GetComponentsInChildren<Light>(true))
+                    {
+                        light.enabled = false;   // the lamps' own lights would blow out the picture
+                    }
+                    var bounds = Bounds(pivot.gameObject);
+                    var radius = Mathf.Max(0.12f, bounds.extents.magnitude);
+                    var rotation = Quaternion.Euler(32f, 45f, 0f);
+                    var distance = radius / Mathf.Sin(camera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 1.02f;
+                    camera.transform.SetPositionAndRotation(bounds.center - rotation * Vector3.forward * distance, rotation);
+
+                    var request = new UnityEngine.Rendering.RenderPipeline.StandardRequest { destination = target };
+                    if (UnityEngine.Rendering.RenderPipeline.SupportsRenderRequest(camera, request))
+                    {
+                        UnityEngine.Rendering.RenderPipeline.SubmitRenderRequest(camera, request);
+                    }
+                    else
+                    {
+                        camera.Render();
+                    }
+                    var previous = RenderTexture.active;
+                    RenderTexture.active = target;
+                    read.ReadPixels(new Rect(0, 0, IconSize, IconSize), 0, 0);
+                    read.Apply();
+                    RenderTexture.active = previous;
+
+                    var path = $"{IconsDir}/{id}.png";
+                    File.WriteAllBytes(path, read.EncodeToPNG());
+                    paths.Add((id, path));
+                    Object.DestroyImmediate(pivot.gameObject);
+                }
+            }
+            finally
+            {
+                camera.targetTexture = null;
+                Object.DestroyImmediate(target);
+                Object.DestroyImmediate(read);
+                Object.DestroyImmediate(stage);
+            }
+
+            AssetDatabase.Refresh();
+            var entries = new List<BuildIconCatalog.Entry>();
+            foreach (var (id, path) in paths)
+            {
+                if (AssetImporter.GetAtPath(path) is TextureImporter importer)
+                {
+                    importer.textureType = TextureImporterType.Default;
+                    importer.mipmapEnabled = false;
+                    importer.maxTextureSize = 256;
+                    importer.SaveAndReimport();
+                }
+                entries.Add(new BuildIconCatalog.Entry { itemId = id, icon = AssetDatabase.LoadAssetAtPath<Texture2D>(path) });
+            }
+            Debug.Log($"[Reconnect] Build icons: {entries.Count} pictures in {IconsDir}");
+            return entries;
         }
 
         /// <summary>World bounds of all renderers of an instance (models are measured at the origin).</summary>
@@ -217,30 +441,37 @@ namespace Reconnect.Client.Editor
             return bounds;
         }
 
-        private static ItemDefinition Define(string id, Bounds bounds)
+        private static ItemDefinition Define(string id, Transform pivot)
         {
+            var bounds = Bounds(pivot.gameObject);
             var kind = KindOf(id);
             var height = bounds.size.y;
-            // Up to 10 cm may overhang on each side (splayed legs, cushions), otherwise a 60 cm chair would take a whole metre.
-            int Cells(float metres) => Math.Max(1, Mathf.CeilToInt((metres - 0.2f) / BuildGrid.CellSize));
+            // Up to 5 cm may overhang on each side (splayed legs, cushions).
+            int Cells(float metres) => Math.Max(1, Mathf.CeilToInt((metres - 0.1f) / BuildGrid.CellSize));
             var width = Cells(bounds.size.x);
             var depth = kind == ItemKind.Wall ? 1 : Cells(bounds.size.z);
             if (Footprints.TryGetValue(id, out var footprint))
             {
                 (width, depth) = footprint;
             }
-            var surface = SurfaceOverrides.TryGetValue(id, out var counter) ? counter
-                : kind == ItemKind.Floor && !RoomSeats.IsSeat(id) && !id.StartsWith("chair", StringComparison.OrdinalIgnoreCase)
-                  && SurfaceWords.Any(w => id.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0)
-                    ? Mathf.Round(height * 100f) / 100f
-                    : 0f;
+            var surface = 0f;
+            var surfaceWidth = 0f;
+            var surfaceDepth = 0f;
+            var isSurface = kind == ItemKind.Floor && !RoomSeats.IsSeat(id) && !id.StartsWith("chair", StringComparison.OrdinalIgnoreCase)
+                && (SurfaceOverrides.ContainsKey(id) || SurfaceWords.Any(w => id.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0));
+            if (isSurface && MeasureSurface(pivot, bounds, out var top, out surfaceWidth, out surfaceDepth))
+            {
+                surface = SurfaceOverrides.TryGetValue(id, out var counter) ? counter : Mathf.Round(top * 100f) / 100f;
+            }
             var mount = kind switch
             {
                 ItemKind.Wall => Wall[id],
                 ItemKind.Ceiling => Mathf.Max(1.9f, 2.5f - height),
                 _ => 0f,
             };
-            return new ItemDefinition(id, NameOf(id), CategoryOf(id, kind), kind, width, depth, Mathf.Round(height * 100f) / 100f, surface, mount);
+            float Cm(float metres) => Mathf.Round(metres * 100f) / 100f;
+            return new ItemDefinition(id, NameOf(id), CategoryOf(id, kind), kind, width, depth, Cm(height), surface, mount,
+                Cm(bounds.size.x), Cm(bounds.size.z), Cm(surfaceWidth), Cm(surfaceDepth));
         }
 
         private static ItemKind KindOf(string id)
@@ -332,7 +563,8 @@ namespace Reconnect.Client.Editor
             foreach (var d in definitions)
             {
                 code.AppendLine($"            new ItemDefinition({S(d.Id)}, {S(d.Name)}, {S(d.Category)}, ItemKind.{d.Kind}, {d.Width}, {d.Depth}, " +
-                                $"{F(d.Height)}, {F(d.SurfaceHeight)}, {F(d.MountHeight)}),");
+                                $"{F(d.Height)}, {F(d.SurfaceHeight)}, {F(d.MountHeight)}, {F(d.SizeX)}, {F(d.SizeZ)}, " +
+                                $"{F(d.SurfaceWidth)}, {F(d.SurfaceDepth)}),");
             }
             code.AppendLine("        };");
             code.AppendLine("    }");

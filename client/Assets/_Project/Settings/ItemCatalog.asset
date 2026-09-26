@@ -447,7 +447,7 @@ MonoBehaviour:
     model: {fileID: 8771091787928289351, guid: b175cb2563835234f89aa0250cd0f7cd, type: 3}
     scale: 1
   - itemId: ph-brass_candleholders
-    model: {fileID: 8771091787928289351, guid: 9c959a871d241c0458c5bb071268b1b1, type: 3}
+    model: {fileID: -1769072821072317196, guid: 9c959a871d241c0458c5bb071268b1b1, type: 3}
     scale: 1
   - itemId: ph-bronze_ray_statue
     model: {fileID: -6368511876999098823, guid: 735fb1d4957a4514cba61da1a27500dd, type: 3}

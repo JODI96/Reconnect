@@ -43,6 +43,7 @@ namespace Reconnect.Client.Rooms
         [SerializeField] private Material glassMaterial;
         [SerializeField] private Material waterMaterial;
         [SerializeField] private ItemCatalog itemCatalog;
+        [SerializeField] private BuildIconCatalog buildIcons;
         [SerializeField] private AvatarCatalog avatarCatalog;
 
         private readonly Dictionary<Guid, AvatarView> _avatars = new();
@@ -52,7 +53,7 @@ namespace Reconnect.Client.Rooms
         private readonly HashSet<Vector2Int> _water = new();
         private readonly Dictionary<SeatDto, Guid> _occupied = new();
         private readonly HashSet<Vector2Int> _blocked = new();
-        private readonly List<Bounds> _surfaces = new();
+        private readonly List<(Area Top, float Height)> _tops = new();   // table tops small things stand on
         private readonly List<Bounds> _obstacles = new();   // everything that blocks tiles (counters for stools)
         private readonly List<string> _missingItems = new();
         private Transform _content;
@@ -71,6 +72,10 @@ namespace Reconnect.Client.Rooms
 
         // Camera rig (local room coordinates).
         private Vector3 _focus;
+        private float _yaw;          // current view direction around the room (0 = looking north-east)
+        private float _targetYaw;    // turns smoothly towards this
+        private float _lastTwistAngle = float.NaN;
+        private readonly List<(GameObject Part, WallSides Side)> _wallParts = new();
         private float _viewWidth;
         private bool _follow = true;
 
@@ -98,6 +103,9 @@ namespace Reconnect.Client.Rooms
 
         public int Width => _width;
 
+        /// <summary>Pictures of the buildable items for the build catalog.</summary>
+        public BuildIconCatalog BuildIcons => buildIcons;
+
         /// <summary>See-through material (glass) for build helpers.</summary>
         public Material TransparentMaterial => glassMaterial;
 
@@ -118,6 +126,9 @@ namespace Reconnect.Client.Rooms
         public Func<BuildPointerPhase, Vector3, bool> BuildPointer { get; set; }
 
         public Func<Vector2, bool> IsPointerOverUi { get; set; } = _ => false;
+
+        /// <summary>True while a text field has the keyboard (Q/E then type letters instead of turning the view).</summary>
+        public Func<bool> IsTyping { get; set; } = () => false;
         public Camera Camera => roomCamera;
         public IReadOnlyCollection<AvatarView> Avatars => _avatars.Values;
         public IReadOnlyList<GameStation> Stations => _stations;
@@ -154,6 +165,7 @@ namespace Reconnect.Client.Rooms
             _content = new GameObject("Room " + snapshot.Room.Name).transform;
             _content.SetParent(transform, false);
 
+            var before = _content.childCount;
             switch (_theme.Enclosure)
             {
                 case Enclosure.Railing: BuildRailing(); break;
@@ -161,6 +173,7 @@ namespace Reconnect.Client.Rooms
                 case Enclosure.StoneHall: BuildStoneHall(); break;
                 default: BuildWalls(); break;
             }
+            RememberWalls(before);
             BuildLighting();
             BuildLayout(snapshot.Room.Layout);
             if (groundAnchor.HasValue && Mathf.Abs(yaw) > 0.01f)
@@ -256,15 +269,56 @@ namespace Reconnect.Client.Rooms
             _pools.Clear();
             _water.Clear();
             _blocked.Clear();
-            _surfaces.Clear();
+            _tops.Clear();
             _obstacles.Clear();
             _missingItems.Clear();
             _lampLights = 0;
         }
 
+        /// <summary>
+        /// Solid walls (north/east pieces, the lobby's stone wall) by side, so they can fade out when the camera is turned
+        /// to look at them from behind.
+        /// </summary>
+        private void RememberWalls(int firstChild)
+        {
+            _wallParts.Clear();
+            if (_theme.Enclosure is not (Enclosure.Walls or Enclosure.StoneHall))
+            {
+                return;
+            }
+            for (var i = firstChild; i < _content.childCount; i++)
+            {
+                var part = _content.GetChild(i);
+                var p = part.localPosition;
+                if (part.GetComponentInChildren<Renderer>() == null || part.GetComponentInChildren<Light>() != null)
+                {
+                    continue;
+                }
+                if (p.z >= _depth - 0.3f)
+                {
+                    _wallParts.Add((part.gameObject, WallSides.North));
+                }
+                else if (p.x >= _width - 0.3f)
+                {
+                    _wallParts.Add((part.gameObject, WallSides.East));
+                }
+            }
+        }
+
+        /// <summary>Turns the view a quarter around the room (+1 clockwise, -1 counter-clockwise); smooth.</summary>
+        public void RotateView(int direction)
+        {
+            _targetYaw = Mathf.Round((_targetYaw + 90f * Math.Sign(direction)) / 90f) * 90f;
+        }
+
+        /// <summary>Current view direction in degrees (0 = the classic view looking north-east).</summary>
+        public float ViewYaw => _targetYaw;
+
         public void Hide()
         {
             ClearLayout();
+            _wallParts.Clear();
+            _yaw = _targetYaw = 0f;
             if (_content != null)
             {
                 Destroy(_content.gameObject);
@@ -368,6 +422,26 @@ namespace Reconnect.Client.Rooms
 
         public Seat SeatFor(int item) => _seats.TryGetValue(item, out var seat) ? seat : null;
 
+        /// <summary>The seat whose furniture covers a floor point (a little generous) and its nearest place.</summary>
+        public (Seat Seat, int Place)? SeatAt(Vector3 localPoint)
+        {
+            foreach (var (index, seat) in _seats)
+            {
+                if (index >= _layout.Count || ItemDefinitions.Find(_layout[index].ItemId) is not { } definition)
+                {
+                    continue;
+                }
+                var cells = RoomLayout.Footprint(_layout[index], definition);
+                const float margin = 0.15f;
+                if (localPoint.x >= cells.X * BuildGrid.CellSize - margin && localPoint.x <= cells.XMax * BuildGrid.CellSize + margin
+                    && localPoint.z >= cells.Z * BuildGrid.CellSize - margin && localPoint.z <= cells.ZMax * BuildGrid.CellSize + margin)
+                {
+                    return (seat, seat.NearestPlace(localPoint));
+                }
+            }
+            return null;
+        }
+
         public bool IsFree(SeatDto seat, Guid exceptUser = default) =>
             !_occupied.TryGetValue(seat, out var user) || user == exceptUser;
 
@@ -470,6 +544,18 @@ namespace Reconnect.Client.Rooms
             HandlePinch();
             HandlePointer();
 
+            if (Keyboard.current != null && !IsTyping())
+            {
+                if (Keyboard.current.qKey.wasPressedThisFrame)
+                {
+                    RotateView(-1);
+                }
+                else if (Keyboard.current.eKey.wasPressedThisFrame)
+                {
+                    RotateView(1);
+                }
+            }
+
             var scroll = Mouse.current?.scroll.ReadValue().y ?? 0f;
             if (Mathf.Abs(scroll) > 0.01f && !IsPointerOverUi(Mouse.current.position.ReadValue()))
             {
@@ -479,6 +565,10 @@ namespace Reconnect.Client.Rooms
 
         private void LateUpdate()
         {
+            if (Mathf.Abs(Mathf.DeltaAngle(_yaw, _targetYaw)) > 0.01f)
+            {
+                _yaw = Mathf.LerpAngle(_yaw, _targetYaw, 1f - Mathf.Exp(-10f * Time.deltaTime));
+            }
             if (_follow && Avatar(_localUserId) is { } me)
             {
                 var target = me.transform.localPosition;
@@ -569,6 +659,10 @@ namespace Reconnect.Client.Rooms
             {
                 SeatTapped?.Invoke(seat, seat.NearestPlace(_content.InverseTransformPoint(hit.point)));
             }
+            else if (TryFloorPoint(position, out var floorPoint) && SeatAt(floorPoint) is { } near)
+            {
+                SeatTapped?.Invoke(near.Seat, near.Place);
+            }
             else if (TryTileAt(position, out var tile))
             {
                 TileTapped?.Invoke(tile);
@@ -580,15 +674,31 @@ namespace Reconnect.Client.Rooms
             var touches = Touchscreen.current?.touches;
             if (touches == null || !touches.Value[0].isInProgress || !touches.Value[1].isInProgress)
             {
+                if (!float.IsNaN(_lastTwistAngle))
+                {
+                    _targetYaw = Mathf.Round(_targetYaw / 45f) * 45f;   // settle on a tidy angle
+                }
                 _lastPinchDistance = 0f;
+                _lastTwistAngle = float.NaN;
                 return;
             }
-            var distance = Vector2.Distance(touches.Value[0].position.ReadValue(), touches.Value[1].position.ReadValue());
+            var a = touches.Value[0].position.ReadValue();
+            var b = touches.Value[1].position.ReadValue();
+            var distance = Vector2.Distance(a, b);
             if (_lastPinchDistance > 0f && distance > 0f)
             {
                 Zoom(_lastPinchDistance / distance);
             }
             _lastPinchDistance = distance;
+
+            // Twisting two fingers turns the view.
+            var angle = Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg;
+            if (!float.IsNaN(_lastTwistAngle))
+            {
+                _targetYaw -= Mathf.DeltaAngle(_lastTwistAngle, angle);
+                _yaw = _targetYaw;
+            }
+            _lastTwistAngle = angle;
             _pressed = false;
         }
 
@@ -901,6 +1011,10 @@ namespace Reconnect.Client.Rooms
                 .OrderBy(i => i.Definition?.Kind == ItemKind.Decor ? 1 : 0)
                 .ToList();
             var context = BuildContext(layout);
+            foreach (var (item, _, definition) in items.Where(i => i.Definition is { Kind: ItemKind.Floor, HasSurface: true }))
+            {
+                _tops.Add((RoomLayout.SurfaceArea(item, definition), definition.SurfaceHeight));
+            }
             foreach (var (item, index, definition) in items)
             {
                 var pivot = PlaceItem(_furnitureRoot, item, definition, context);
@@ -929,10 +1043,6 @@ namespace Reconnect.Client.Rooms
                     {
                         _seats[index] = Seat.Build(pivot, _content, Bounds(pivot), index, loungerPlaces);
                     }
-                    if (definition is { HasSurface: true })
-                    {
-                        _surfaces.Add(Bounds(pivot));
-                    }
                     continue;
                 }
 
@@ -945,10 +1055,6 @@ namespace Reconnect.Client.Rooms
                 if (definition?.Kind == ItemKind.Floor)
                 {
                     _obstacles.Add(bounds);
-                    if (definition.HasSurface)
-                    {
-                        _surfaces.Add(bounds);
-                    }
                 }
                 if (IsLamp(item.ItemId) && _lampLights++ < MaxLampLights)
                 {
@@ -966,7 +1072,12 @@ namespace Reconnect.Client.Rooms
             var pivot = new GameObject(item.ItemId).transform;
             pivot.SetParent(parent, false);
             var position = new Vector3(item.Position.X, 0f, item.Position.Z);
-            if (definition != null)
+            if (definition is { Kind: ItemKind.Decor })
+            {
+                // Small things: exactly where they were put (fine grid), on the measured table top.
+                position = new Vector3(item.Position.X, TopAt(item.Position.X, item.Position.Z), item.Position.Z);
+            }
+            else if (definition != null)
             {
                 var (x, z) = RoomLayout.Centre(RoomLayout.Footprint(item, definition));
                 position = new Vector3(x, definition.Kind switch
@@ -977,10 +1088,6 @@ namespace Reconnect.Client.Rooms
             }
             pivot.localPosition = position;
             pivot.localRotation = Quaternion.Euler(0f, item.Rotation, 0f);
-            if (definition?.Kind == ItemKind.Decor)
-            {
-                pivot.localPosition = new Vector3(position.x, SurfaceHeightAt(pivot.position), position.z);
-            }
             return pivot;
         }
 
@@ -1035,18 +1142,18 @@ namespace Reconnect.Client.Rooms
 
         private static bool IsLamp(string itemId) => itemId.StartsWith("lamp") || itemId.Contains("_lamp");
 
-        /// <summary>Local height of the highest furniture top under a world position (0 = floor).</summary>
-        private float SurfaceHeightAt(Vector3 world)
+        /// <summary>Height of the table top under a room point (measured on the models; 0 = floor).</summary>
+        private float TopAt(float x, float z)
         {
-            var top = transform.position.y;
-            foreach (var surface in _surfaces)
+            var height = 0f;
+            foreach (var (top, surface) in _tops)
             {
-                if (world.x >= surface.min.x && world.x <= surface.max.x && world.z >= surface.min.z && world.z <= surface.max.z)
+                if (top.Contains(x, z))
                 {
-                    top = Mathf.Max(top, surface.max.y);
+                    height = Mathf.Max(height, surface);
                 }
             }
-            return top - transform.position.y;
+            return height;
         }
 
         /// <summary>Instantiates a catalog model centred on the pivot; returns its world bounds.</summary>
@@ -1283,9 +1390,21 @@ namespace Reconnect.Client.Rooms
             }
             var halfHorizontalFov = Mathf.Atan(Mathf.Tan(CameraFieldOfView * 0.5f * Mathf.Deg2Rad) * Mathf.Max(0.1f, roomCamera.aspect));
             var distance = _viewWidth / 2f / Mathf.Tan(halfHorizontalFov);
-            var rotation = transform.rotation * Quaternion.Euler(CameraPitch, 45f, 0f);
+            var local = Quaternion.Euler(CameraPitch, 45f + _yaw, 0f);
+            var rotation = transform.rotation * local;
             var focus = transform.TransformPoint(_focus + Vector3.up * 0.8f);
             roomCamera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
+
+            // Walls between the camera and the room are hidden (Habbo style: you always look into the room).
+            var look = local * Vector3.forward;
+            foreach (var (part, side) in _wallParts)
+            {
+                var show = side == WallSides.North ? look.z > -0.2f : look.x > -0.2f;
+                if (part.activeSelf != show)
+                {
+                    part.SetActive(show);
+                }
+            }
         }
 
         /// <summary>The main camera is shared with the city; remember and restore its setup.</summary>

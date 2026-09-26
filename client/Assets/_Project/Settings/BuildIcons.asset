@@ -1,0 +1,421 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a77a8eda91d6a743a594f1cd13782cd, type: 3}
+  m_Name: BuildIcons
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.BuildIconCatalog
+  items:
+  - itemId: bathroomCabinet
+    icon: {fileID: 2800000, guid: cab96771435d7954a8f11ce779b808e6, type: 3}
+  - itemId: bathroomCabinetDrawer
+    icon: {fileID: 2800000, guid: b01f13e05674c6841b41c1f9ed0d60fa, type: 3}
+  - itemId: bathroomMirror
+    icon: {fileID: 2800000, guid: 11aa9c0d61ed9874d9558c871ece7e87, type: 3}
+  - itemId: bathroomSink
+    icon: {fileID: 2800000, guid: 5872d7b11c603474892ba75e30d35b89, type: 3}
+  - itemId: bathroomSinkSquare
+    icon: {fileID: 2800000, guid: 1f51d71996b66aa42b1d8075294f25cb, type: 3}
+  - itemId: bathtub
+    icon: {fileID: 2800000, guid: 2b8e2306cc5db6d439f0b28d946d09ce, type: 3}
+  - itemId: bear
+    icon: {fileID: 2800000, guid: 756fde2210e53ad4ab90f6e5609092ff, type: 3}
+  - itemId: bedBunk
+    icon: {fileID: 2800000, guid: 4ef1508384e519447a2c8508de498a7a, type: 3}
+  - itemId: bedDouble
+    icon: {fileID: 2800000, guid: 0a084638b237fe045b4ad43f3ef000d6, type: 3}
+  - itemId: bedSingle
+    icon: {fileID: 2800000, guid: 9ae9c4a98863a394ca3d632d0687e1be, type: 3}
+  - itemId: bench
+    icon: {fileID: 2800000, guid: e3a72beae5541a745bc3e83ef75348db, type: 3}
+  - itemId: benchCushion
+    icon: {fileID: 2800000, guid: 04e700e8d323eb1408ff38003d0d947d, type: 3}
+  - itemId: benchCushionLow
+    icon: {fileID: 2800000, guid: 13875594d10eb544d916e401154f6f04, type: 3}
+  - itemId: bookcaseClosed
+    icon: {fileID: 2800000, guid: 1c96968cbebe7af4fad72d3e1ecfa322, type: 3}
+  - itemId: bookcaseClosedDoors
+    icon: {fileID: 2800000, guid: adff0a33a82cd4a4fa8c81155e4e36f7, type: 3}
+  - itemId: bookcaseClosedWide
+    icon: {fileID: 2800000, guid: 2a505533dda2502498e9ef4759fa00b2, type: 3}
+  - itemId: bookcaseOpen
+    icon: {fileID: 2800000, guid: 27a69dbfb21671c4eb064897fdf65674, type: 3}
+  - itemId: bookcaseOpenLow
+    icon: {fileID: 2800000, guid: ce77e22d1dca1944691c20af6fe9e904, type: 3}
+  - itemId: books
+    icon: {fileID: 2800000, guid: c2e97a16111fa07429778b20ab07be02, type: 3}
+  - itemId: cabinetBed
+    icon: {fileID: 2800000, guid: 051cceae500226640a2b25d156c04dfc, type: 3}
+  - itemId: cabinetBedDrawer
+    icon: {fileID: 2800000, guid: 468341a93e9cd4f4c840fc419ef13747, type: 3}
+  - itemId: cabinetBedDrawerTable
+    icon: {fileID: 2800000, guid: 5be3d40b332454a47982acd17add8934, type: 3}
+  - itemId: cabinetTelevision
+    icon: {fileID: 2800000, guid: c84fc41a27849c742886cb420fe9e841, type: 3}
+  - itemId: cabinetTelevisionDoors
+    icon: {fileID: 2800000, guid: e36fb92c780308f449730d34585dfb0d, type: 3}
+  - itemId: cardboardBoxClosed
+    icon: {fileID: 2800000, guid: 3fbd06abe3bf176419b43058ec1a79c7, type: 3}
+  - itemId: cardboardBoxOpen
+    icon: {fileID: 2800000, guid: 3a95215d4c57a6b4e8b1fc1a14b12de6, type: 3}
+  - itemId: ceilingFan
+    icon: {fileID: 2800000, guid: 51273ba928440b847b7b36ccd11604e4, type: 3}
+  - itemId: chair
+    icon: {fileID: 2800000, guid: 0c5ce2f7f7745a743b15fbc1fc68edae, type: 3}
+  - itemId: chairCushion
+    icon: {fileID: 2800000, guid: 0bfa9ab12d8200a409084e3194dd68b1, type: 3}
+  - itemId: chairDesk
+    icon: {fileID: 2800000, guid: 1f5dd61f480ded54891cdf8dad29c0f6, type: 3}
+  - itemId: chairModernCushion
+    icon: {fileID: 2800000, guid: 2a208aa06ac1f4d40bd9b2b54251315f, type: 3}
+  - itemId: chairModernFrameCushion
+    icon: {fileID: 2800000, guid: b9713ac06831d1c478d717ee490963f6, type: 3}
+  - itemId: chairRounded
+    icon: {fileID: 2800000, guid: bccb8f5b9b379b942b44f31508fcaf1e, type: 3}
+  - itemId: coatRack
+    icon: {fileID: 2800000, guid: 6f919f382d1e4f14491ebcf875aeff3e, type: 3}
+  - itemId: coatRackStanding
+    icon: {fileID: 2800000, guid: 01c3cb29552081a48a4bf4cc143dd318, type: 3}
+  - itemId: computerKeyboard
+    icon: {fileID: 2800000, guid: 484ca0a8a00a82a4abd38c76f56cab8d, type: 3}
+  - itemId: computerMouse
+    icon: {fileID: 2800000, guid: 2a87c530d53b02844be5c889e57a8f13, type: 3}
+  - itemId: computerScreen
+    icon: {fileID: 2800000, guid: 327203ed0cf963b4cb2793c8b93cfba7, type: 3}
+  - itemId: desk
+    icon: {fileID: 2800000, guid: 1508665610d186a40a9f390ec8b75a65, type: 3}
+  - itemId: deskCorner
+    icon: {fileID: 2800000, guid: f8f903ba56f95734a9cc125db8c71469, type: 3}
+  - itemId: dryer
+    icon: {fileID: 2800000, guid: e1fe59287a9af9d4993a62ab551857d7, type: 3}
+  - itemId: hoodLarge
+    icon: {fileID: 2800000, guid: d805c4ed1839539419d6e7a87af4e169, type: 3}
+  - itemId: hoodModern
+    icon: {fileID: 2800000, guid: 4746cb7738319fb45a502d4d012db18b, type: 3}
+  - itemId: kitchenBar
+    icon: {fileID: 2800000, guid: 02ad38801589b03488ec70a366d96770, type: 3}
+  - itemId: kitchenBarEnd
+    icon: {fileID: 2800000, guid: c26ec084eac99de4babdea8bd3223ebc, type: 3}
+  - itemId: kitchenBlender
+    icon: {fileID: 2800000, guid: e0610d03749e7ac4f8dad6f12fab0322, type: 3}
+  - itemId: kitchenCabinet
+    icon: {fileID: 2800000, guid: e97ab64c26304d346b4dafb4e4dfdbf2, type: 3}
+  - itemId: kitchenCabinetCornerInner
+    icon: {fileID: 2800000, guid: 7ec560744161a5d44b92fe21368d8e92, type: 3}
+  - itemId: kitchenCabinetCornerRound
+    icon: {fileID: 2800000, guid: 94c26cf1287012c458d73d730523202b, type: 3}
+  - itemId: kitchenCabinetDrawer
+    icon: {fileID: 2800000, guid: f5d4d0b8af95f8d41ba73e510cd9a1b1, type: 3}
+  - itemId: kitchenCabinetUpper
+    icon: {fileID: 2800000, guid: 06431d2cc1120604da7055b065e61ecb, type: 3}
+  - itemId: kitchenCabinetUpperCorner
+    icon: {fileID: 2800000, guid: 29600585f3e5adb49a9e4faa61b124ff, type: 3}
+  - itemId: kitchenCabinetUpperDouble
+    icon: {fileID: 2800000, guid: 1404d5c403d49c1488bb23d8701399ee, type: 3}
+  - itemId: kitchenCabinetUpperLow
+    icon: {fileID: 2800000, guid: 7d97ad52c9640a048aa45c293d459f6d, type: 3}
+  - itemId: kitchenCoffeeMachine
+    icon: {fileID: 2800000, guid: 38bc4851140e5e142ad0cdfdd1a446ec, type: 3}
+  - itemId: kitchenFridge
+    icon: {fileID: 2800000, guid: 882eb45d7dd35ce439b27b496b8c531c, type: 3}
+  - itemId: kitchenFridgeBuiltIn
+    icon: {fileID: 2800000, guid: cfd83e7bc02a94e4e93c31048e316dcf, type: 3}
+  - itemId: kitchenFridgeLarge
+    icon: {fileID: 2800000, guid: 0db05b8beef34bf4099017c78228c53f, type: 3}
+  - itemId: kitchenFridgeSmall
+    icon: {fileID: 2800000, guid: ab18d264b2e1c3e43b7ddb544ff31a70, type: 3}
+  - itemId: kitchenMicrowave
+    icon: {fileID: 2800000, guid: e444098132f53964ebc5d1ecf59ff450, type: 3}
+  - itemId: kitchenSink
+    icon: {fileID: 2800000, guid: 2f418898f06039b4b9ef5b62a0171c99, type: 3}
+  - itemId: kitchenStove
+    icon: {fileID: 2800000, guid: 5ca9f35be149fa34195fd02aaa477a2f, type: 3}
+  - itemId: kitchenStoveElectric
+    icon: {fileID: 2800000, guid: a6c8b35d3ef23214195b499bb88da34c, type: 3}
+  - itemId: lampRoundFloor
+    icon: {fileID: 2800000, guid: b50b30a001b614a4591d8f16b6a832f7, type: 3}
+  - itemId: lampRoundTable
+    icon: {fileID: 2800000, guid: d02c5cb03e994404996756c7a048ede3, type: 3}
+  - itemId: lampSquareCeiling
+    icon: {fileID: 2800000, guid: df2c458135606374495f7e4b47d1f5d7, type: 3}
+  - itemId: lampSquareFloor
+    icon: {fileID: 2800000, guid: 0dd46d9f6bf46e4499d576698af72f78, type: 3}
+  - itemId: lampSquareTable
+    icon: {fileID: 2800000, guid: ed18e6bcab61e3e43801ec3e6bfcd48d, type: 3}
+  - itemId: lampWall
+    icon: {fileID: 2800000, guid: 4a8c56210f847ea4bb3da2c7983a1ca0, type: 3}
+  - itemId: laptop
+    icon: {fileID: 2800000, guid: 984d90e428f2d4f49956bd3db8ba319d, type: 3}
+  - itemId: loungeChair
+    icon: {fileID: 2800000, guid: 89682354ce3bbc94d93b8da433bee54e, type: 3}
+  - itemId: loungeChairRelax
+    icon: {fileID: 2800000, guid: b2da2636c1e73454290793ced859c420, type: 3}
+  - itemId: loungeDesignChair
+    icon: {fileID: 2800000, guid: cfed249e27a8c904ba2fd8181f17b71e, type: 3}
+  - itemId: loungeDesignSofa
+    icon: {fileID: 2800000, guid: a24f7468c16dba94492ff3885be42206, type: 3}
+  - itemId: loungeDesignSofaCorner
+    icon: {fileID: 2800000, guid: c23a293b6af3bdb48a1cb7a7f2f2978b, type: 3}
+  - itemId: loungeSofa
+    icon: {fileID: 2800000, guid: f3e906064e2efdb42a7391aa72e3e298, type: 3}
+  - itemId: loungeSofaCorner
+    icon: {fileID: 2800000, guid: f2464d77cabee30458789d2a3163ec09, type: 3}
+  - itemId: loungeSofaLong
+    icon: {fileID: 2800000, guid: f2db985e67e51aa4d868634c5dd47463, type: 3}
+  - itemId: loungeSofaOttoman
+    icon: {fileID: 2800000, guid: c8ed469aa74490a42b7833d83cee631b, type: 3}
+  - itemId: pillow
+    icon: {fileID: 2800000, guid: a940bdb4b95c0f04da11ea2e00807357, type: 3}
+  - itemId: pillowBlue
+    icon: {fileID: 2800000, guid: c0e3e0ccf90958a4db366270f601c0a4, type: 3}
+  - itemId: pillowBlueLong
+    icon: {fileID: 2800000, guid: c7fe0ce72994bcf458741a6c8d87ccb6, type: 3}
+  - itemId: pillowLong
+    icon: {fileID: 2800000, guid: 02f5212697643a546931193ad892058f, type: 3}
+  - itemId: plantSmall1
+    icon: {fileID: 2800000, guid: d8b4d3b3bdcc201408ffba95402b60b0, type: 3}
+  - itemId: plantSmall2
+    icon: {fileID: 2800000, guid: 074839c522aa8ef4d967e1b6b2887375, type: 3}
+  - itemId: plantSmall3
+    icon: {fileID: 2800000, guid: 31542375946ebe442bf7d8be30d67526, type: 3}
+  - itemId: pottedPlant
+    icon: {fileID: 2800000, guid: 75c35251467a9d540bf2b23eb2d29985, type: 3}
+  - itemId: radio
+    icon: {fileID: 2800000, guid: 2f320f2c87eb0fe46861012f3144b7e2, type: 3}
+  - itemId: rugDoormat
+    icon: {fileID: 2800000, guid: 9e762bd8f96786d45be0112284aadba0, type: 3}
+  - itemId: rugRectangle
+    icon: {fileID: 2800000, guid: 2a58b776ce0204b41a941e10bb01ac1d, type: 3}
+  - itemId: rugRound
+    icon: {fileID: 2800000, guid: 700ae607b39708a46aad2d3c3906aaa3, type: 3}
+  - itemId: rugRounded
+    icon: {fileID: 2800000, guid: 7b24184e7afea6d4ca0f9b40ec324be5, type: 3}
+  - itemId: rugSquare
+    icon: {fileID: 2800000, guid: 53c23e48208be2849b8e081761d9d8f8, type: 3}
+  - itemId: shower
+    icon: {fileID: 2800000, guid: 7ec19267ef7d9bb49ab9fdfe6acd9b26, type: 3}
+  - itemId: showerRound
+    icon: {fileID: 2800000, guid: 00ce9c8ad024ce947b3730b1f107ac85, type: 3}
+  - itemId: sideTable
+    icon: {fileID: 2800000, guid: 48fa09d756e0f9646a9148e753dddaf2, type: 3}
+  - itemId: sideTableDrawers
+    icon: {fileID: 2800000, guid: a8285e67f1c51b7468caf21cd0ae2da0, type: 3}
+  - itemId: speaker
+    icon: {fileID: 2800000, guid: 843e3499adc22324f83981d4f91cccee, type: 3}
+  - itemId: speakerSmall
+    icon: {fileID: 2800000, guid: 3d3168fd96343df4a9d5687c9ed1faa7, type: 3}
+  - itemId: stoolBar
+    icon: {fileID: 2800000, guid: b3500737109ce604c9665c8a9132fc57, type: 3}
+  - itemId: stoolBarSquare
+    icon: {fileID: 2800000, guid: 6fc1202a6f0ee5a47b7fb62f885eeb57, type: 3}
+  - itemId: table
+    icon: {fileID: 2800000, guid: 53171a5667a0835438dc8a9a83333a3b, type: 3}
+  - itemId: tableCloth
+    icon: {fileID: 2800000, guid: f8ca981a04c47fa4683b9a5c469c6813, type: 3}
+  - itemId: tableCoffee
+    icon: {fileID: 2800000, guid: bcc2641c845bde64a88ce34e638c7c1b, type: 3}
+  - itemId: tableCoffeeGlass
+    icon: {fileID: 2800000, guid: 14d7757c5e6ea004da4f9db07fad8e8d, type: 3}
+  - itemId: tableCoffeeGlassSquare
+    icon: {fileID: 2800000, guid: a38a166d3ca403646a3b35292b68f0cf, type: 3}
+  - itemId: tableCoffeeSquare
+    icon: {fileID: 2800000, guid: 1f40baf8776ca7b4c834658a4dfe075d, type: 3}
+  - itemId: tableCross
+    icon: {fileID: 2800000, guid: c67ed98d6dbf57d48b88b973910b1fdf, type: 3}
+  - itemId: tableCrossCloth
+    icon: {fileID: 2800000, guid: 02b6d7b677a14cb4d91e32968478c3ec, type: 3}
+  - itemId: tableGlass
+    icon: {fileID: 2800000, guid: 1ad9ad8adaa9b1c4a85f2e8d8b309b9d, type: 3}
+  - itemId: tableRound
+    icon: {fileID: 2800000, guid: 1b8540ff9b2c8d349a47dead9d0c6f03, type: 3}
+  - itemId: televisionAntenna
+    icon: {fileID: 2800000, guid: 8a1a4664a1efee74babe2fa4b6343420, type: 3}
+  - itemId: televisionModern
+    icon: {fileID: 2800000, guid: 8a4c436088325d947abe43ca14f9f46c, type: 3}
+  - itemId: televisionVintage
+    icon: {fileID: 2800000, guid: 8c889f0269d9b3c4ca3f2e862a504f19, type: 3}
+  - itemId: toaster
+    icon: {fileID: 2800000, guid: 4d09628e024791f4b8096cf7733cf8d7, type: 3}
+  - itemId: toilet
+    icon: {fileID: 2800000, guid: cc56c740045d1b641ac91bda41cd4bc0, type: 3}
+  - itemId: toiletSquare
+    icon: {fileID: 2800000, guid: d0e1038eafee4f942829203d44c3f234, type: 3}
+  - itemId: trashcan
+    icon: {fileID: 2800000, guid: d40fd0de9394304479be5beab6ed6aea, type: 3}
+  - itemId: washer
+    icon: {fileID: 2800000, guid: a4ab7a28949bb0148b1c51d9e5f55fcb, type: 3}
+  - itemId: washerDryerStacked
+    icon: {fileID: 2800000, guid: 2b43412abba9f0245ad06fda396795aa, type: 3}
+  - itemId: ph-antique_ceramic_vase_01
+    icon: {fileID: 2800000, guid: 1c0940a1f7b12fe4d87e25da04cc0c36, type: 3}
+  - itemId: ph-ArmChair_01
+    icon: {fileID: 2800000, guid: 76d3b16fbbc8b2d42b284d78ecbb5c6b, type: 3}
+  - itemId: ph-bar_chair_round_01
+    icon: {fileID: 2800000, guid: 5d7cc2e4309dafa4a821019f7b4928dc, type: 3}
+  - itemId: ph-book_encyclopedia_set_01
+    icon: {fileID: 2800000, guid: fdf05e2b8aa2d304b98ee785dd75db05, type: 3}
+  - itemId: ph-brass_candleholders
+    icon: {fileID: 2800000, guid: 7406eccc950750441932cb836634a98c, type: 3}
+  - itemId: ph-bronze_ray_statue
+    icon: {fileID: 2800000, guid: a3c5e24893b4cf942aa86c4fd3810556, type: 3}
+  - itemId: ph-ceramic_vase_01
+    icon: {fileID: 2800000, guid: 5d5655206151e4047a3bb34ee51784c3, type: 3}
+  - itemId: ph-ceramic_vase_03
+    icon: {fileID: 2800000, guid: d4124effb8849da4d879d9fcd43c451f, type: 3}
+  - itemId: ph-Chandelier_01
+    icon: {fileID: 2800000, guid: 377d1850c6007854599074d4478ce5aa, type: 3}
+  - itemId: ph-chess_set
+    icon: {fileID: 2800000, guid: 295c8949d4a97044fb5e4f0c7f272f59, type: 3}
+  - itemId: ph-coffee_table_round_01
+    icon: {fileID: 2800000, guid: ab3c9e401a9584b48b577826ab11db01, type: 3}
+  - itemId: ph-CoffeeCart_01
+    icon: {fileID: 2800000, guid: f5447873ec9698e4895c9983a0b6dc59, type: 3}
+  - itemId: ph-CoffeeTable_01
+    icon: {fileID: 2800000, guid: d366cd5d847008c4ba98583d25bcdbab, type: 3}
+  - itemId: ph-desk_lamp_arm_01
+    icon: {fileID: 2800000, guid: be2f2203554b38f41b8712765449899a, type: 3}
+  - itemId: ph-dining_chair_02
+    icon: {fileID: 2800000, guid: cbd325c12b8d545479c05a1fcafb3872, type: 3}
+  - itemId: ph-dining_table
+    icon: {fileID: 2800000, guid: 93a82445bf3ac5b4fa0f7b15bbc2a345, type: 3}
+  - itemId: ph-gallinera_chair
+    icon: {fileID: 2800000, guid: ec0a41767f79aeb4da14ef608773ddef, type: 3}
+  - itemId: ph-gallinera_table
+    icon: {fileID: 2800000, guid: de3c6148b4317fd43af86b181c58220b, type: 3}
+  - itemId: ph-GreenChair_01
+    icon: {fileID: 2800000, guid: 2b6e59f26e61e37468ca419ee91e026e, type: 3}
+  - itemId: ph-hanging_picture_frame_01
+    icon: {fileID: 2800000, guid: d3d91743f007a2d47a9d67709244c68a, type: 3}
+  - itemId: ph-hanging_picture_frame_02
+    icon: {fileID: 2800000, guid: 0335c8694523d1847bf0a0f807130e2f, type: 3}
+  - itemId: ph-hanging_picture_frame_03
+    icon: {fileID: 2800000, guid: d9fa6d26f63a6c34d909f93b10f24f8a, type: 3}
+  - itemId: ph-mantel_clock_01
+    icon: {fileID: 2800000, guid: 97aefa86c347cfb49b6e862aea086027, type: 3}
+  - itemId: ph-marble_bust_01
+    icon: {fileID: 2800000, guid: 2e8f5bdba11816b4c988b287aadd5a9e, type: 3}
+  - itemId: ph-metal_office_desk
+    icon: {fileID: 2800000, guid: 5a3177713b2396b46aea1e03642f969d, type: 3}
+  - itemId: ph-metal_stool_02
+    icon: {fileID: 2800000, guid: f88f25b011e3e7c48a2324fe78018640, type: 3}
+  - itemId: ph-mid_century_lounge_chair
+    icon: {fileID: 2800000, guid: 458a6874141183443af795d9a2a52fdd, type: 3}
+  - itemId: ph-modern_arm_chair_01
+    icon: {fileID: 2800000, guid: 84d0491437191f940a3baa4bb25fc642, type: 3}
+  - itemId: ph-modern_ceiling_lamp_01
+    icon: {fileID: 2800000, guid: feb062e74dc8c0d44be173c83933fd1d, type: 3}
+  - itemId: ph-modern_coffee_table_01
+    icon: {fileID: 2800000, guid: ffbf5f9b92f72ab48be6d892530e495c, type: 3}
+  - itemId: ph-modern_wooden_cabinet
+    icon: {fileID: 2800000, guid: 71d6182012e820b47a194bb9b2e5893b, type: 3}
+  - itemId: ph-Ottoman_01
+    icon: {fileID: 2800000, guid: ece63002e92b4024981c11da5d9b97fa, type: 3}
+  - itemId: ph-outdoor_table_chair_set_01
+    icon: {fileID: 2800000, guid: f4089e68df8af9d4ab7625b06185bf61, type: 3}
+  - itemId: ph-pachira_aquatica_01
+    icon: {fileID: 2800000, guid: df2566eaf926ff3479693fb44fff67da, type: 3}
+  - itemId: ph-painted_wooden_bench
+    icon: {fileID: 2800000, guid: 75c584971f20c4a459f468e961448a9b, type: 3}
+  - itemId: ph-planter_box_01
+    icon: {fileID: 2800000, guid: c4b0237edb721854c924a1d59b1f901a, type: 3}
+  - itemId: ph-planter_box_02
+    icon: {fileID: 2800000, guid: 5549d80de8747a9478ac1c3b8638f14b, type: 3}
+  - itemId: ph-potted_plant_01
+    icon: {fileID: 2800000, guid: f88e14f3089fd8a4dac30f9b6af1f0a8, type: 3}
+  - itemId: ph-potted_plant_02
+    icon: {fileID: 2800000, guid: f0d7128413ffaa64ab497fe49cb37799, type: 3}
+  - itemId: ph-potted_plant_04
+    icon: {fileID: 2800000, guid: e034b67cadbb90540969fcd7a2a0388c, type: 3}
+  - itemId: ph-round_wooden_table_01
+    icon: {fileID: 2800000, guid: 949bc2dbfa6f7634f9488f9a5c730c63, type: 3}
+  - itemId: ph-Shelf_01
+    icon: {fileID: 2800000, guid: 2b61712bcf9723b4496e3bdc434e5018, type: 3}
+  - itemId: ph-side_table_01
+    icon: {fileID: 2800000, guid: 0413aaf85817d914bbeefe637864607b, type: 3}
+  - itemId: ph-side_table_tall_01
+    icon: {fileID: 2800000, guid: eab9c30a38955d249ba3b8937f7e653e, type: 3}
+  - itemId: ph-Sofa_01
+    icon: {fileID: 2800000, guid: 56b3af05aaf5afe40a078e4c9612e72e, type: 3}
+  - itemId: ph-sofa_02
+    icon: {fileID: 2800000, guid: 87d4f939fd8968d439d8f9f5d84b1770, type: 3}
+  - itemId: ph-sofa_03
+    icon: {fileID: 2800000, guid: 7f3101274101fe04798ef575c9944d90, type: 3}
+  - itemId: ph-standing_chalkboard_01
+    icon: {fileID: 2800000, guid: c48d4bb5753176c4e8f12628f0fad56e, type: 3}
+  - itemId: ph-standing_picture_frame_01
+    icon: {fileID: 2800000, guid: 27d1bf8ac6cff2e4aa780945ea4c483b, type: 3}
+  - itemId: ph-street_lamp_02
+    icon: {fileID: 2800000, guid: 32420c0fe81ce964caf7b9947977542c, type: 3}
+  - itemId: ph-tea_set_01
+    icon: {fileID: 2800000, guid: 8175bac5363bc084d90da16dd4e0017c, type: 3}
+  - itemId: ph-throw_pillows_01
+    icon: {fileID: 2800000, guid: 39ae0421de843e2419e35a374bda0594, type: 3}
+  - itemId: ph-vintage_grandfather_clock_01
+    icon: {fileID: 2800000, guid: 369cf0eff5c359347af48a4c3e69ebf6, type: 3}
+  - itemId: ph-wooden_bookshelf_worn
+    icon: {fileID: 2800000, guid: 6d18b36275eaf5b4287f190b3df6e030, type: 3}
+  - itemId: ph-wooden_display_shelves_01
+    icon: {fileID: 2800000, guid: e2976c119a1f5c640896f3e324c2bcbb, type: 3}
+  - itemId: ph-WoodenTable_01
+    icon: {fileID: 2800000, guid: b05738f712749e94f82a37999f975011, type: 3}
+  - itemId: custom-lounger
+    icon: {fileID: 2800000, guid: 8508b645e53f6ea43b7500ff22ef0739, type: 3}
+  - itemId: custom-parasol
+    icon: {fileID: 2800000, guid: 0841b0919ab574443b95b5b40c77840d, type: 3}
+  - itemId: custom-firepit
+    icon: {fileID: 2800000, guid: 67370d7059c00ef4bacff2d40631026f, type: 3}
+  - itemId: custom-planter
+    icon: {fileID: 2800000, guid: d21709a1786fc7841bcd61d067fdf7fc, type: 3}
+  - itemId: custom-column
+    icon: {fileID: 2800000, guid: f18cd30f35d7e9d49a7c462aa79f027b, type: 3}
+  - itemId: custom-easel
+    icon: {fileID: 2800000, guid: 2d5b0f01eb65f04478a77cf05d28594e, type: 3}
+  - itemId: custom-lightstring
+    icon: {fileID: 2800000, guid: 7e3a215ef1499f04dae3b63ffaa981e4, type: 3}
+  - itemId: custom-skybar
+    icon: {fileID: 2800000, guid: daaf8545ccc8fd24b8b7fb8900723add, type: 3}
+  - itemId: custom-backbar
+    icon: {fileID: 2800000, guid: b9d4f63427c18ae4dac06d9536bbefcc, type: 3}
+  - itemId: custom-openkitchen
+    icon: {fileID: 2800000, guid: 3bdf7371fc1bae9418ca0bb1d4c9c893, type: 3}
+  - itemId: custom-hologram
+    icon: {fileID: 2800000, guid: 501f0c32301bac544a4b9e569acf6262, type: 3}
+  - itemId: custom-djbooth
+    icon: {fileID: 2800000, guid: cd6227a94ba92924e9fbd2d5bb6a69b6, type: 3}
+  - itemId: custom-telescope
+    icon: {fileID: 2800000, guid: 7580bec12b29bb041942729b2d8417c1, type: 3}
+  - itemId: custom-divider
+    icon: {fileID: 2800000, guid: 5189e58396be9cc4087e62120eb39e0e, type: 3}
+  - itemId: custom-pendant
+    icon: {fileID: 2800000, guid: 2a77a7d213583ae40b825b3c7006607b, type: 3}
+  - itemId: custom-ledstrip
+    icon: {fileID: 2800000, guid: f0628ef71e787a74d9c9919eeb108bd0, type: 3}
+  - itemId: custom-elevator
+    icon: {fileID: 2800000, guid: 542800317606afc40910dce39c6197a0, type: 3}
+  - itemId: custom-turnstiles
+    icon: {fileID: 2800000, guid: ee84082dca3983149aea3cb77eea3808, type: 3}
+  - itemId: custom-reception
+    icon: {fileID: 2800000, guid: 36f0d27eb9e48a742a7080866d143fb7, type: 3}
+  - itemId: custom-screenwall
+    icon: {fileID: 2800000, guid: 325aca04ffc5d6543bdf512e89014a82, type: 3}
+  - itemId: custom-queuelane
+    icon: {fileID: 2800000, guid: 4368bf54473504841aada9a995e33d15, type: 3}
+  - itemId: custom-rug
+    icon: {fileID: 2800000, guid: 1002e65b22293914da450bc4eb2f6ca1, type: 3}
+  - itemId: custom-ruground
+    icon: {fileID: 2800000, guid: 4af4138c7737d99408f7e0680ca8a69d, type: 3}
+  - itemId: game-tictactoe
+    icon: {fileID: 2800000, guid: 5efb0b99374abb44898b94051ffedca1, type: 3}
+  - itemId: game-quiz
+    icon: {fileID: 2800000, guid: 9cd8358411d3479479fe8f1e95d1766f, type: 3}
+  - itemId: custom-pool-6x3
+    icon: {fileID: 2800000, guid: 73e7be0f0423b68418fd05d584faeb2c, type: 3}
+  - itemId: custom-pool-12x6
+    icon: {fileID: 2800000, guid: f88a74101195f3349b60e3f78abc34dc, type: 3}

@@ -84,43 +84,42 @@ internal static partial class ShowcaseRooms
     /// </summary>
     private static List<RoomItem> Seebad() =>
     [
-        Cell("custom-pool-12x6", 10, 10, 0),   // Pool gross
-        Cell("custom-skybar", 33, 27, 0),   // Bar
-        Cell("ph-bar_chair_round_01", 35, 26, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 38, 26, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 40, 26, 0),   // Barstuhl
-        Cell("ph-outdoor_table_chair_set_01", 4, 23, 180),   // Gartentisch mit Stühlen
-        Cell("ph-outdoor_table_chair_set_01", 4, 14, 180),   // Gartentisch mit Stühlen
-        Cell("custom-parasol", 4, 20, 0),   // Sonnenschirm
-        Cell("ph-planter_box_01", 0, 30, 180),   // Pflanzkasten
-        Cell("ph-planter_box_02", 8, 30, 180),   // Pflanzkasten gross
-        Cell("ph-planter_box_01", 28, 30, 180),   // Pflanzkasten
-        Cell("ph-planter_box_02", 41, 1, 180),   // Pflanzkasten gross
-        Cell("ph-planter_box_01", 0, 1, 180),   // Pflanzkasten
-        Cell("ph-potted_plant_02", 42, 16, 180),   // Zimmerpflanze
-        Cell("ph-pachira_aquatica_01", 41, 8, 180),   // Glückskastanie
-        Cell("ph-street_lamp_02", 1, 8, 180),   // Laterne
-        Cell("ph-street_lamp_02", 42, 21, 180),   // Laterne
-        Cell("custom-lightstring", 18, 16, 0),   // Lichterkette
-        Cell("game-tictactoe", 4, 6, 0),   // Tic-Tac-Toe-Tisch
-        Cell("chairCushion", 3, 7, 270),   // Polsterstuhl
-        Cell("chairCushion", 8, 7, 90),   // Polsterstuhl
-        // Sun deck: pairs of loungers sharing a parasol, 4 m between the parasols so the shades don't overlap.
-        Cell("custom-lounger", 12, 3, 180),   // Sonnenliege
-        Cell("custom-parasol", 14, 4, 0),   // Sonnenschirm
-        Cell("custom-lounger", 16, 3, 180),   // Sonnenliege
-        Cell("custom-lounger", 20, 3, 180),   // Sonnenliege
-        Cell("custom-parasol", 22, 4, 0),   // Sonnenschirm
-        Cell("custom-lounger", 24, 3, 180),   // Sonnenliege
-        Cell("custom-lounger", 28, 3, 180),   // Sonnenliege
-        Cell("custom-parasol", 30, 4, 0),   // Sonnenschirm
-        Cell("custom-lounger", 32, 3, 180),   // Sonnenliege
-        Cell("custom-lounger", 14, 25, 0),   // Sonnenliege
-        Cell("custom-parasol", 16, 26, 0),   // Sonnenschirm
-        Cell("custom-lounger", 18, 25, 0),   // Sonnenliege
-        Cell("custom-lounger", 24, 25, 0),   // Sonnenliege
-        Cell("custom-parasol", 26, 26, 0),   // Sonnenschirm
-        Cell("custom-lounger", 28, 25, 0),   // Sonnenliege
+        Cell("custom-pool-12x6", 20, 20, 0),   // Pool gross
+        Cell("custom-skybar", 66, 54, 0),   // Bar
+        Cell("ph-bar_chair_round_01", 70, 52, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 76, 52, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 80, 52, 0),   // Barstuhl
+        Cell("ph-outdoor_table_chair_set_01", 8, 46, 180),   // Gartentisch mit Stühlen
+        Cell("ph-outdoor_table_chair_set_01", 8, 28, 180),   // Gartentisch mit Stühlen
+        Cell("custom-parasol", 8, 40, 0),   // Sonnenschirm
+        Cell("ph-planter_box_01", 0, 60, 180),   // Pflanzkasten
+        Cell("ph-planter_box_02", 16, 60, 180),   // Pflanzkasten gross
+        Cell("ph-planter_box_01", 56, 60, 180),   // Pflanzkasten
+        Cell("ph-planter_box_02", 82, 2, 180),   // Pflanzkasten gross
+        Cell("ph-planter_box_01", 0, 2, 180),   // Pflanzkasten
+        Cell("ph-potted_plant_02", 84, 32, 180),   // Zimmerpflanze
+        Cell("ph-pachira_aquatica_01", 82, 16, 180),   // Glückskastanie
+        Cell("ph-street_lamp_02", 2, 16, 180),   // Laterne
+        Cell("ph-street_lamp_02", 84, 42, 180),   // Laterne
+        Cell("custom-lightstring", 36, 32, 0),   // Lichterkette
+        Cell("game-tictactoe", 8, 12, 0),   // Tic-Tac-Toe-Tisch
+        Cell("chairCushion", 6, 14, 270),   // Polsterstuhl
+        Cell("chairCushion", 16, 14, 90),   // Polsterstuhl
+        Cell("custom-lounger", 24, 6, 180),   // Sonnenliege
+        Cell("custom-parasol", 28, 8, 0),   // Sonnenschirm
+        Cell("custom-lounger", 32, 6, 180),   // Sonnenliege
+        Cell("custom-lounger", 40, 6, 180),   // Sonnenliege
+        Cell("custom-parasol", 44, 8, 0),   // Sonnenschirm
+        Cell("custom-lounger", 48, 6, 180),   // Sonnenliege
+        Cell("custom-lounger", 56, 6, 180),   // Sonnenliege
+        Cell("custom-parasol", 60, 8, 0),   // Sonnenschirm
+        Cell("custom-lounger", 64, 6, 180),   // Sonnenliege
+        Cell("custom-lounger", 28, 50, 0),   // Sonnenliege
+        Cell("custom-parasol", 32, 52, 0),   // Sonnenschirm
+        Cell("custom-lounger", 36, 50, 0),   // Sonnenliege
+        Cell("custom-lounger", 48, 50, 0),   // Sonnenliege
+        Cell("custom-parasol", 52, 52, 0),   // Sonnenschirm
+        Cell("custom-lounger", 56, 50, 0),   // Sonnenliege
     ];
 
     /// <summary>
@@ -129,112 +128,112 @@ internal static partial class ShowcaseRooms
     /// </summary>
     private static List<RoomItem> Library() =>
     [
-        Cell("custom-column", 18, 23, 0),   // Säule
-        Cell("custom-column", 18, 16, 0),   // Säule
-        Cell("custom-column", 24, 23, 0),   // Säule
-        Cell("custom-column", 24, 16, 0),   // Säule
-        Cell("custom-rug", 20, 24, 90),   // Teppich
-        Cell("custom-rug", 20, 17, 90),   // Teppich
-        Cell("ph-metal_office_desk", 20, 11, 180),   // Bürotisch
-        Cell("computerScreen", 20, 11, 0),   // Bildschirm
-        Cell("computerKeyboard", 21, 12, 0),   // Tastatur
-        Cell("ph-GreenChair_01", 22, 13, 180),   // Samtstuhl
-        Cell("ph-desk_lamp_arm_01", 23, 11, 180),   // Schreibtischlampe
-        Cell("ph-vintage_grandfather_clock_01", 16, 30, 180),   // Standuhr
-        Cell("game-quiz", 43, 14, 90),   // Quiz-TV
-        Cell("ph-painted_wooden_bench", 39, 14, 90),   // Holzbank bemalt
-        Cell("ph-painted_wooden_bench", 39, 16, 90),   // Holzbank bemalt
-        Cell("custom-rug", 31, 2, 0),   // Teppich
-        Cell("ph-Sofa_01", 33, 2, 0),   // Klassisches Sofa
-        Cell("ph-ArmChair_01", 29, 5, 90),   // Ohrensessel
-        Cell("ph-ArmChair_01", 37, 5, 270),   // Ohrensessel
-        Cell("ph-CoffeeTable_01", 33, 5, 180),   // Couchtisch klassisch
-        Cell("ph-book_encyclopedia_set_01", 34, 5, 180),   // Lexikon
-        Cell("ph-mantel_clock_01", 33, 5, 180),   // Kaminuhr
-        Cell("ph-potted_plant_02", 41, 1, 180),   // Zimmerpflanze
-        Cell("ph-potted_plant_02", 27, 1, 180),   // Zimmerpflanze
-        Cell("ph-potted_plant_01", 1, 30, 180),   // Grosse Pflanze
-        Cell("ph-potted_plant_01", 42, 30, 180),   // Grosse Pflanze
-        Cell("ph-potted_plant_02", 0, 1, 180),   // Zimmerpflanze
-        Cell("ph-wooden_bookshelf_worn", 1, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 4, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 7, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 10, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 12, 30, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 27, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 30, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 33, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 36, 31, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 38, 30, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 43, 27, 270),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 43, 24, 270),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 43, 21, 270),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 43, 8, 270),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 42, 6, 270),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 1, 25, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 4, 25, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 7, 25, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 10, 25, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 12, 24, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 1, 24, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 4, 24, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 7, 24, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 10, 23, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 13, 23, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 1, 19, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 4, 19, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 7, 19, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 10, 19, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 12, 18, 180),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 1, 18, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 4, 18, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 7, 18, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 10, 17, 0),   // Altes Bücherregal
-        Cell("ph-wooden_bookshelf_worn", 13, 17, 0),   // Altes Bücherregal
-        Cell("ph-WoodenTable_01", 28, 23, 180),   // Langer Holztisch
-        Cell("ph-desk_lamp_arm_01", 31, 23, 180),   // Schreibtischlampe
-        Cell("ph-chess_set", 29, 23, 180),   // Schachspiel
-        Cell("books", 30, 23, 0),   // Bücher
-        Cell("ph-dining_chair_02", 29, 25, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 30, 25, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 29, 22, 0),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 30, 22, 0),   // Esszimmerstuhl
-        Cell("ph-WoodenTable_01", 34, 23, 180),   // Langer Holztisch
-        Cell("ph-desk_lamp_arm_01", 37, 23, 180),   // Schreibtischlampe
-        Cell("ph-book_encyclopedia_set_01", 35, 23, 180),   // Lexikon
-        Cell("laptop", 36, 23, 0),   // Laptop
-        Cell("ph-dining_chair_02", 35, 25, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 37, 25, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 35, 22, 0),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 37, 22, 0),   // Esszimmerstuhl
-        Cell("ph-WoodenTable_01", 28, 17, 180),   // Langer Holztisch
-        Cell("ph-desk_lamp_arm_01", 31, 17, 180),   // Schreibtischlampe
-        Cell("ph-chess_set", 29, 17, 180),   // Schachspiel
-        Cell("books", 30, 17, 0),   // Bücher
-        Cell("ph-dining_chair_02", 29, 19, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 30, 19, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 29, 16, 0),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 30, 16, 0),   // Esszimmerstuhl
-        Cell("ph-WoodenTable_01", 34, 17, 180),   // Langer Holztisch
-        Cell("ph-desk_lamp_arm_01", 37, 17, 180),   // Schreibtischlampe
-        Cell("ph-book_encyclopedia_set_01", 35, 17, 180),   // Lexikon
-        Cell("laptop", 36, 17, 0),   // Laptop
-        Cell("ph-dining_chair_02", 35, 19, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 37, 19, 180),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 35, 16, 0),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 37, 16, 0),   // Esszimmerstuhl
-        Cell("ph-metal_office_desk", 2, 9, 180),   // Bürotisch
-        Cell("laptop", 4, 10, 0),   // Laptop
-        Cell("ph-desk_lamp_arm_01", 5, 10, 180),   // Schreibtischlampe
-        Cell("ph-GreenChair_01", 4, 8, 0),   // Samtstuhl
-        Cell("ph-metal_office_desk", 7, 9, 180),   // Bürotisch
-        Cell("laptop", 9, 10, 0),   // Laptop
-        Cell("ph-desk_lamp_arm_01", 10, 10, 180),   // Schreibtischlampe
-        Cell("ph-GreenChair_01", 9, 8, 0),   // Samtstuhl
-        Cell("ph-metal_office_desk", 12, 9, 180),   // Bürotisch
-        Cell("laptop", 14, 10, 0),   // Laptop
-        Cell("ph-desk_lamp_arm_01", 15, 10, 180),   // Schreibtischlampe
-        Cell("ph-GreenChair_01", 14, 8, 0),   // Samtstuhl
+        Cell("custom-column", 36, 46, 0),   // Säule
+        Cell("custom-column", 36, 32, 0),   // Säule
+        Cell("custom-column", 48, 46, 0),   // Säule
+        Cell("custom-column", 48, 32, 0),   // Säule
+        Cell("custom-rug", 40, 48, 90),   // Teppich
+        Cell("custom-rug", 40, 34, 90),   // Teppich
+        Cell("ph-metal_office_desk", 40, 22, 180),   // Bürotisch
+        At("computerScreen", 10.5f, 5.75f, 0),   // Bildschirm
+        At("computerKeyboard", 10.75f, 6.25f, 0),   // Tastatur
+        Cell("ph-GreenChair_01", 44, 26, 180),   // Samtstuhl
+        At("ph-desk_lamp_arm_01", 11.75f, 5.875f, 180),   // Schreibtischlampe
+        Cell("ph-vintage_grandfather_clock_01", 32, 60, 180),   // Standuhr
+        Cell("game-quiz", 86, 28, 90),   // Quiz-TV
+        Cell("ph-painted_wooden_bench", 78, 28, 90),   // Holzbank bemalt
+        Cell("ph-painted_wooden_bench", 78, 33, 90),   // Holzbank bemalt
+        Cell("custom-rug", 62, 4, 0),   // Teppich
+        Cell("ph-Sofa_01", 66, 4, 0),   // Klassisches Sofa
+        Cell("ph-ArmChair_01", 58, 10, 90),   // Ohrensessel
+        Cell("ph-ArmChair_01", 72, 10, 270),   // Ohrensessel
+        Cell("ph-CoffeeTable_01", 66, 10, 180),   // Couchtisch klassisch
+        At("ph-book_encyclopedia_set_01", 17.25f, 2.75f, 180),   // Lexikon
+        At("ph-mantel_clock_01", 16.75f, 2.75f, 180),   // Kaminuhr
+        Cell("ph-potted_plant_02", 82, 2, 180),   // Zimmerpflanze
+        Cell("ph-potted_plant_02", 54, 2, 180),   // Zimmerpflanze
+        Cell("ph-potted_plant_01", 2, 60, 180),   // Grosse Pflanze
+        Cell("ph-potted_plant_01", 84, 60, 180),   // Grosse Pflanze
+        Cell("ph-potted_plant_02", 0, 2, 180),   // Zimmerpflanze
+        Cell("ph-wooden_bookshelf_worn", 4, 62, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 8, 60, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 14, 62, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 20, 62, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 24, 60, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 54, 62, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 60, 62, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 66, 62, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 72, 62, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 76, 60, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 86, 54, 270),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 86, 48, 270),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 86, 42, 270),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 86, 16, 270),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 84, 12, 270),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 2, 50, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 8, 50, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 14, 50, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 20, 50, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 24, 48, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 2, 48, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 8, 48, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 14, 48, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 20, 46, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 26, 46, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 2, 38, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 8, 38, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 14, 38, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 20, 38, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 24, 36, 180),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 2, 36, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 8, 36, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 14, 36, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 20, 34, 0),   // Altes Bücherregal
+        Cell("ph-wooden_bookshelf_worn", 26, 34, 0),   // Altes Bücherregal
+        Cell("ph-WoodenTable_01", 56, 46, 180),   // Langer Holztisch
+        At("ph-desk_lamp_arm_01", 15.625f, 11.875f, 180),   // Schreibtischlampe
+        At("ph-chess_set", 14.75f, 11.875f, 180),   // Schachspiel
+        At("books", 15.25f, 11.75f, 0),   // Bücher
+        Cell("ph-dining_chair_02", 58, 49, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 60, 49, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 58, 44, 0),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 60, 44, 0),   // Esszimmerstuhl
+        Cell("ph-WoodenTable_01", 68, 46, 180),   // Langer Holztisch
+        At("ph-desk_lamp_arm_01", 18.625f, 11.875f, 180),   // Schreibtischlampe
+        At("ph-book_encyclopedia_set_01", 17.75f, 11.75f, 180),   // Lexikon
+        At("laptop", 18.25f, 11.75f, 0),   // Laptop
+        Cell("ph-dining_chair_02", 70, 49, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 74, 49, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 70, 44, 0),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 74, 44, 0),   // Esszimmerstuhl
+        Cell("ph-WoodenTable_01", 56, 34, 180),   // Langer Holztisch
+        At("ph-desk_lamp_arm_01", 15.625f, 8.875f, 180),   // Schreibtischlampe
+        At("ph-chess_set", 14.75f, 8.875f, 180),   // Schachspiel
+        At("books", 15.25f, 8.75f, 0),   // Bücher
+        Cell("ph-dining_chair_02", 58, 37, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 60, 37, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 58, 32, 0),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 60, 32, 0),   // Esszimmerstuhl
+        Cell("ph-WoodenTable_01", 68, 34, 180),   // Langer Holztisch
+        At("ph-desk_lamp_arm_01", 18.625f, 8.875f, 180),   // Schreibtischlampe
+        At("ph-book_encyclopedia_set_01", 17.75f, 8.75f, 180),   // Lexikon
+        At("laptop", 18.25f, 8.75f, 0),   // Laptop
+        Cell("ph-dining_chair_02", 70, 37, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 74, 37, 180),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 70, 32, 0),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 74, 32, 0),   // Esszimmerstuhl
+        Cell("ph-metal_office_desk", 4, 18, 180),   // Bürotisch
+        At("laptop", 2.25f, 5.25f, 0),   // Laptop
+        At("ph-desk_lamp_arm_01", 2.75f, 5.125f, 180),   // Schreibtischlampe
+        Cell("ph-GreenChair_01", 8, 15, 0),   // Samtstuhl
+        Cell("ph-metal_office_desk", 14, 18, 180),   // Bürotisch
+        At("laptop", 4.75f, 5.25f, 0),   // Laptop
+        At("ph-desk_lamp_arm_01", 5.25f, 5.125f, 180),   // Schreibtischlampe
+        Cell("ph-GreenChair_01", 18, 15, 0),   // Samtstuhl
+        Cell("ph-metal_office_desk", 24, 18, 180),   // Bürotisch
+        At("laptop", 7.25f, 5.25f, 0),   // Laptop
+        At("ph-desk_lamp_arm_01", 7.75f, 5.125f, 180),   // Schreibtischlampe
+        Cell("ph-GreenChair_01", 28, 15, 0),   // Samtstuhl
     ];
 
     /// <summary>
@@ -243,190 +242,187 @@ internal static partial class ShowcaseRooms
     /// </summary>
     private static List<RoomItem> OperaFoyer() =>
     [
-        Cell("custom-ruground", 5, 21, 0),   // Runder Teppich
-        Cell("ph-Sofa_01", 6, 26, 180),   // Klassisches Sofa
-        Cell("ph-CoffeeTable_01", 6, 23, 180),   // Couchtisch klassisch
-        Cell("ph-brass_candleholders", 7, 23, 180),   // Kerzenständer
-        Cell("ph-ArmChair_01", 3, 22, 90),   // Ohrensessel
-        Cell("ph-ArmChair_01", 11, 22, 270),   // Ohrensessel
-        Cell("custom-ruground", 32, 11, 90),   // Runder Teppich
-        Cell("ph-Sofa_01", 38, 12, 270),   // Klassisches Sofa
-        Cell("ph-CoffeeTable_01", 35, 12, 270),   // Couchtisch klassisch
-        Cell("ph-antique_ceramic_vase_01", 35, 13, 180),   // Antike Vase
-        Cell("ph-ArmChair_01", 34, 9, 0),   // Ohrensessel
-        Cell("ph-ArmChair_01", 34, 16, 180),   // Ohrensessel
-        Cell("ph-side_table_tall_01", 1, 14, 90),   // Hoher Beistelltisch
-        Cell("ph-marble_bust_01", 1, 14, 90),   // Marmorbüste
-        Cell("coatRackStanding", 1, 11, 0),   // Garderobe
-        Cell("coatRackStanding", 1, 18, 0),   // Garderobe
-        Cell("game-tictactoe", 32, 3, 0),   // Tic-Tac-Toe-Tisch
-        Cell("ph-dining_chair_02", 30, 4, 90),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 35, 4, 270),   // Esszimmerstuhl
-        Cell("ph-potted_plant_01", 1, 26, 180),   // Grosse Pflanze
-        Cell("ph-potted_plant_01", 38, 26, 180),   // Grosse Pflanze
-        Cell("ph-potted_plant_02", 0, 1, 180),   // Zimmerpflanze
-        Cell("ph-potted_plant_02", 38, 1, 180),   // Zimmerpflanze
-        Cell("ph-vintage_grandfather_clock_01", 19, 26, 180),   // Standuhr
-        Cell("ph-hanging_picture_frame_01", 39, 22, 270),   // Gemälde hoch
-        Cell("ph-hanging_picture_frame_02", 39, 5, 270),   // Gemälde quer
-        Cell("speaker", 14, 18, 0),   // Lautsprecher
-        Cell("speaker", 25, 18, 0),   // Lautsprecher
-        Cell("speaker", 14, 9, 0),   // Lautsprecher
-        Cell("speaker", 25, 9, 0),   // Lautsprecher
-        Cell("ph-Chandelier_01", 19, 13, 180),   // Kronleuchter
-        Cell("ph-Chandelier_01", 7, 23, 180),   // Kronleuchter
-        Cell("ph-Chandelier_01", 34, 13, 180),   // Kronleuchter
-        Cell("custom-column", 7, 18, 0),   // Säule
-        Cell("custom-column", 15, 18, 0),   // Säule
-        Cell("custom-column", 23, 18, 0),   // Säule
-        Cell("custom-column", 31, 18, 0),   // Säule
-        Cell("custom-column", 7, 6, 0),   // Säule
-        Cell("custom-column", 15, 6, 0),   // Säule
-        Cell("custom-column", 23, 6, 0),   // Säule
-        Cell("custom-column", 31, 6, 0),   // Säule
-        Cell("rugSquare", 14, 8, 0),   // Rug Square
-        Cell("rugSquare", 18, 8, 0),   // Rug Square
-        Cell("rugSquare", 22, 8, 0),   // Rug Square
-        Cell("rugSquare", 14, 12, 0),   // Rug Square
-        Cell("rugSquare", 18, 12, 0),   // Rug Square
-        Cell("rugSquare", 22, 12, 0),   // Rug Square
-        Cell("rugSquare", 14, 16, 0),   // Rug Square
-        Cell("rugSquare", 18, 16, 0),   // Rug Square
-        Cell("rugSquare", 22, 16, 0),   // Rug Square
-        // Foyer bar right of the entrance: back bar, 1 m behind the counter, counter with stools (none in front of the column).
-        Cell("kitchenCabinet", 24, 26, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 26, 26, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 28, 26, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 30, 26, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 32, 26, 0),   // Küchenschrank
-        Cell("kitchenCoffeeMachine", 24, 26, 0),   // Kaffeemaschine
-        Cell("ph-brass_candleholders", 26, 26, 180),   // Kerzenständer
-        Cell("ph-ceramic_vase_03", 31, 26, 180),   // Vase hell
-        Cell("kitchenBar", 24, 23, 0),   // Theke
-        Cell("kitchenBar", 26, 23, 0),   // Theke
-        Cell("kitchenBar", 28, 23, 0),   // Theke
-        Cell("kitchenBar", 30, 23, 0),   // Theke
-        Cell("kitchenBar", 32, 23, 0),   // Theke
-        Cell("ph-brass_candleholders", 28, 23, 180),   // Kerzenständer
-        Cell("ph-bar_chair_round_01", 24, 21, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 26, 21, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 28, 21, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 32, 21, 0),   // Barstuhl
+        Cell("custom-ruground", 10, 42, 0),   // Runder Teppich
+        Cell("ph-Sofa_01", 12, 52, 180),   // Klassisches Sofa
+        Cell("ph-CoffeeTable_01", 12, 46, 180),   // Couchtisch klassisch
+        At("ph-brass_candleholders", 4f, 11.75f, 180),   // Kerzenständer
+        Cell("ph-ArmChair_01", 9, 46, 90),   // Ohrensessel
+        Cell("ph-ArmChair_01", 18, 46, 270),   // Ohrensessel
+        Cell("custom-ruground", 64, 22, 90),   // Runder Teppich
+        Cell("ph-Sofa_01", 76, 24, 270),   // Klassisches Sofa
+        Cell("ph-CoffeeTable_01", 70, 24, 270),   // Couchtisch klassisch
+        At("ph-antique_ceramic_vase_01", 17.75f, 6.75f, 180),   // Antike Vase
+        Cell("ph-ArmChair_01", 70, 21, 0),   // Ohrensessel
+        Cell("ph-ArmChair_01", 70, 30, 180),   // Ohrensessel
+        Cell("ph-side_table_tall_01", 2, 28, 90),   // Hoher Beistelltisch
+        At("ph-marble_bust_01", 0.75f, 7.25f, 90),   // Marmorbüste
+        Cell("coatRackStanding", 2, 22, 0),   // Garderobe
+        Cell("coatRackStanding", 2, 36, 0),   // Garderobe
+        Cell("game-tictactoe", 64, 6, 0),   // Tic-Tac-Toe-Tisch
+        Cell("ph-dining_chair_02", 60, 8, 90),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 71, 8, 270),   // Esszimmerstuhl
+        Cell("ph-potted_plant_01", 2, 52, 180),   // Grosse Pflanze
+        Cell("ph-potted_plant_01", 76, 52, 180),   // Grosse Pflanze
+        Cell("ph-potted_plant_02", 0, 2, 180),   // Zimmerpflanze
+        Cell("ph-potted_plant_02", 76, 2, 180),   // Zimmerpflanze
+        Cell("ph-vintage_grandfather_clock_01", 37, 52, 180),   // Standuhr
+        Cell("ph-hanging_picture_frame_01", 79, 44, 270),   // Gemälde hoch
+        Cell("ph-hanging_picture_frame_02", 79, 10, 270),   // Gemälde quer
+        Cell("speaker", 28, 36, 0),   // Lautsprecher
+        Cell("speaker", 50, 36, 0),   // Lautsprecher
+        Cell("speaker", 28, 18, 0),   // Lautsprecher
+        Cell("speaker", 50, 18, 0),   // Lautsprecher
+        Cell("ph-Chandelier_01", 38, 26, 180),   // Kronleuchter
+        Cell("ph-Chandelier_01", 14, 46, 180),   // Kronleuchter
+        Cell("ph-Chandelier_01", 68, 26, 180),   // Kronleuchter
+        Cell("custom-column", 14, 36, 0),   // Säule
+        Cell("custom-column", 30, 36, 0),   // Säule
+        Cell("custom-column", 46, 36, 0),   // Säule
+        Cell("custom-column", 62, 36, 0),   // Säule
+        Cell("custom-column", 14, 12, 0),   // Säule
+        Cell("custom-column", 30, 12, 0),   // Säule
+        Cell("custom-column", 46, 12, 0),   // Säule
+        Cell("custom-column", 62, 12, 0),   // Säule
+        Cell("rugSquare", 28, 16, 0),   // Rug Square
+        Cell("rugSquare", 36, 16, 0),   // Rug Square
+        Cell("rugSquare", 44, 16, 0),   // Rug Square
+        Cell("rugSquare", 28, 24, 0),   // Rug Square
+        Cell("rugSquare", 36, 24, 0),   // Rug Square
+        Cell("rugSquare", 44, 24, 0),   // Rug Square
+        Cell("rugSquare", 28, 32, 0),   // Rug Square
+        Cell("rugSquare", 36, 32, 0),   // Rug Square
+        Cell("rugSquare", 44, 32, 0),   // Rug Square
+        Cell("kitchenCabinet", 48, 52, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 52, 52, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 56, 52, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 60, 52, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 64, 52, 0),   // Küchenschrank
+        At("kitchenCoffeeMachine", 12.375f, 13.375f, 0),   // Kaffeemaschine
+        At("ph-brass_candleholders", 13.5f, 13.25f, 180),   // Kerzenständer
+        At("ph-ceramic_vase_03", 15.75f, 13.25f, 180),   // Vase hell
+        Cell("kitchenBar", 48, 46, 0),   // Theke
+        Cell("kitchenBar", 52, 46, 0),   // Theke
+        Cell("kitchenBar", 56, 46, 0),   // Theke
+        Cell("kitchenBar", 60, 46, 0),   // Theke
+        Cell("kitchenBar", 64, 46, 0),   // Theke
+        At("ph-brass_candleholders", 14.5f, 11.75f, 180),   // Kerzenständer
+        Cell("ph-bar_chair_round_01", 49, 44, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 53, 44, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 57, 44, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 65, 44, 0),   // Barstuhl
     ];
 
     /// <summary>Bistro: counter with back bar and bar chairs, marble bistro tables, bench corner, coffee cart, menu board, quiz TV.</summary>
     private static List<RoomItem> Cafe() =>
     [
-        // Counter: kitchen along the north wall right of the entrance, 1 m for the barista, bar with four stools.
-        Cell("kitchenCabinet", 16, 18, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 18, 18, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 20, 18, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 22, 18, 0),   // Küchenschrank
-        Cell("kitchenFridgeLarge", 24, 18, 0),   // Kühlschrank
-        Cell("kitchenCoffeeMachine", 16, 18, 0),   // Kaffeemaschine
-        Cell("toaster", 19, 18, 0),   // Toaster
-        Cell("ph-ceramic_vase_03", 22, 18, 180),   // Vase hell
-        Cell("kitchenCabinetUpper", 16, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 18, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 20, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 22, 19, 0),   // Hängeschrank
-        Cell("kitchenBar", 16, 15, 0),   // Theke
-        Cell("kitchenBar", 18, 15, 0),   // Theke
-        Cell("kitchenBar", 20, 15, 0),   // Theke
-        Cell("kitchenBar", 22, 15, 0),   // Theke
-        Cell("ph-brass_candleholders", 20, 15, 180),   // Kerzenständer
-        Cell("ph-bar_chair_round_01", 16, 13, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 18, 13, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 20, 13, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 22, 13, 0),   // Barstuhl
-        Cell("game-quiz", 27, 8, 90),   // Quiz-TV
-        Cell("ph-painted_wooden_bench", 23, 7, 90),   // Holzbank bemalt
-        Cell("ph-painted_wooden_bench", 23, 10, 90),   // Holzbank bemalt
-        Cell("custom-rug", 3, 6, 90),   // Teppich
+        Cell("kitchenCabinet", 32, 36, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 36, 36, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 40, 36, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 44, 36, 0),   // Küchenschrank
+        Cell("kitchenFridgeLarge", 48, 36, 0),   // Kühlschrank
+        At("kitchenCoffeeMachine", 8.375f, 9.375f, 0),   // Kaffeemaschine
+        At("toaster", 9.75f, 9.25f, 0),   // Toaster
+        At("ph-ceramic_vase_03", 11.25f, 9.25f, 180),   // Vase hell
+        Cell("kitchenCabinetUpper", 32, 39, 0),   // Hängeschrank
+        Cell("kitchenCabinetUpper", 36, 39, 0),   // Hängeschrank
+        Cell("kitchenCabinetUpper", 40, 39, 0),   // Hängeschrank
+        Cell("kitchenCabinetUpper", 44, 39, 0),   // Hängeschrank
+        Cell("kitchenBar", 32, 30, 0),   // Theke
+        Cell("kitchenBar", 36, 30, 0),   // Theke
+        Cell("kitchenBar", 40, 30, 0),   // Theke
+        Cell("kitchenBar", 44, 30, 0),   // Theke
+        At("ph-brass_candleholders", 10.5f, 7.75f, 180),   // Kerzenständer
+        Cell("ph-bar_chair_round_01", 33, 28, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 37, 28, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 41, 28, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 45, 28, 0),   // Barstuhl
+        Cell("game-quiz", 54, 16, 90),   // Quiz-TV
+        Cell("ph-painted_wooden_bench", 46, 14, 90),   // Holzbank bemalt
+        Cell("ph-painted_wooden_bench", 46, 20, 90),   // Holzbank bemalt
+        Cell("custom-rug", 6, 12, 90),   // Teppich
         Cell("coatRackStanding", 0, 0, 0),   // Garderobe
-        Cell("ph-CoffeeCart_01", 4, 17, 180),   // Kaffeewagen
-        Cell("ph-standing_chalkboard_01", 22, 0, 180),   // Menütafel
-        Cell("ph-wooden_display_shelves_01", 26, 16, 270),   // Vitrinenregal
-        Cell("ph-tea_set_01", 26, 16, 180),   // Teeservice
-        Cell("ph-potted_plant_02", 0, 18, 180),   // Zimmerpflanze
-        Cell("ph-potted_plant_02", 26, 18, 180),   // Zimmerpflanze
-        Cell("ph-potted_plant_02", 26, 0, 180),   // Zimmerpflanze
-        Cell("lampRoundFloor", 0, 9, 0),   // Stehlampe
-        Cell("lampRoundFloor", 20, 0, 0),   // Stehlampe
-        Cell("ph-hanging_picture_frame_03", 27, 4, 270),   // Kleines Bild
-        Cell("ph-gallinera_table", 3, 14, 180),   // Bistrotisch
-        Cell("ph-ceramic_vase_03", 3, 14, 180),   // Vase hell
-        Cell("ph-gallinera_chair", 2, 14, 90),   // Bistrostuhl
-        Cell("ph-gallinera_chair", 4, 13, 270),   // Bistrostuhl
-        Cell("ph-gallinera_table", 3, 9, 180),   // Bistrotisch
-        Cell("ph-antique_ceramic_vase_01", 3, 9, 180),   // Antike Vase
-        Cell("ph-gallinera_chair", 2, 9, 90),   // Bistrostuhl
-        Cell("ph-gallinera_chair", 4, 8, 270),   // Bistrostuhl
-        Cell("ph-gallinera_table", 3, 4, 180),   // Bistrotisch
-        Cell("ph-antique_ceramic_vase_01", 3, 4, 180),   // Antike Vase
-        Cell("ph-gallinera_chair", 2, 4, 90),   // Bistrostuhl
-        Cell("ph-gallinera_chair", 4, 3, 270),   // Bistrostuhl
-        Cell("ph-gallinera_table", 9, 10, 180),   // Bistrotisch
-        Cell("ph-ceramic_vase_03", 9, 10, 180),   // Vase hell
-        Cell("ph-gallinera_chair", 8, 10, 90),   // Bistrostuhl
-        Cell("ph-gallinera_chair", 11, 10, 270),   // Bistrostuhl
-        Cell("ph-gallinera_table", 9, 4, 180),   // Bistrotisch
-        Cell("ph-antique_ceramic_vase_01", 9, 4, 180),   // Antike Vase
-        Cell("ph-gallinera_chair", 8, 4, 90),   // Bistrostuhl
-        Cell("ph-gallinera_chair", 11, 4, 270),   // Bistrostuhl
-        Cell("ph-gallinera_table", 15, 8, 180),   // Bistrotisch
-        Cell("ph-antique_ceramic_vase_01", 16, 8, 180),   // Antike Vase
-        Cell("ph-gallinera_chair", 14, 8, 90),   // Bistrostuhl
-        Cell("ph-gallinera_chair", 17, 8, 270),   // Bistrostuhl
-        Cell("ph-gallinera_table", 15, 3, 180),   // Bistrotisch
-        Cell("ph-antique_ceramic_vase_01", 16, 3, 180),   // Antike Vase
-        Cell("ph-gallinera_chair", 14, 3, 90),   // Bistrostuhl
-        Cell("ph-gallinera_chair", 17, 3, 270),   // Bistrostuhl
+        Cell("ph-CoffeeCart_01", 8, 34, 180),   // Kaffeewagen
+        Cell("ph-standing_chalkboard_01", 44, 0, 180),   // Menütafel
+        Cell("ph-wooden_display_shelves_01", 52, 32, 270),   // Vitrinenregal
+        Cell("ph-potted_plant_02", 0, 36, 180),   // Zimmerpflanze
+        Cell("ph-potted_plant_02", 52, 36, 180),   // Zimmerpflanze
+        Cell("ph-potted_plant_02", 52, 0, 180),   // Zimmerpflanze
+        Cell("lampRoundFloor", 0, 18, 0),   // Stehlampe
+        Cell("lampRoundFloor", 40, 0, 0),   // Stehlampe
+        Cell("ph-hanging_picture_frame_03", 55, 8, 270),   // Kleines Bild
+        Cell("ph-gallinera_table", 6, 28, 180),   // Bistrotisch
+        At("ph-ceramic_vase_03", 1.75f, 7.25f, 180),   // Vase hell
+        Cell("ph-gallinera_chair", 3, 28, 90),   // Bistrostuhl
+        Cell("ph-gallinera_chair", 9, 28, 270),   // Bistrostuhl
+        Cell("ph-gallinera_table", 6, 18, 180),   // Bistrotisch
+        At("ph-antique_ceramic_vase_01", 1.75f, 4.75f, 180),   // Antike Vase
+        Cell("ph-gallinera_chair", 3, 18, 90),   // Bistrostuhl
+        Cell("ph-gallinera_chair", 9, 18, 270),   // Bistrostuhl
+        Cell("ph-gallinera_table", 6, 8, 180),   // Bistrotisch
+        At("ph-antique_ceramic_vase_01", 1.75f, 2.25f, 180),   // Antike Vase
+        Cell("ph-gallinera_chair", 3, 8, 90),   // Bistrostuhl
+        Cell("ph-gallinera_chair", 9, 8, 270),   // Bistrostuhl
+        Cell("ph-gallinera_table", 18, 20, 180),   // Bistrotisch
+        At("ph-ceramic_vase_03", 4.75f, 5.25f, 180),   // Vase hell
+        Cell("ph-gallinera_chair", 15, 20, 90),   // Bistrostuhl
+        Cell("ph-gallinera_chair", 21, 20, 270),   // Bistrostuhl
+        Cell("ph-gallinera_table", 18, 8, 180),   // Bistrotisch
+        At("ph-antique_ceramic_vase_01", 4.75f, 2.25f, 180),   // Antike Vase
+        Cell("ph-gallinera_chair", 15, 8, 90),   // Bistrostuhl
+        Cell("ph-gallinera_chair", 21, 8, 270),   // Bistrostuhl
+        Cell("ph-gallinera_table", 30, 16, 180),   // Bistrotisch
+        At("ph-antique_ceramic_vase_01", 8.125f, 4.25f, 180),   // Antike Vase
+        Cell("ph-gallinera_chair", 27, 16, 90),   // Bistrostuhl
+        Cell("ph-gallinera_chair", 33, 16, 270),   // Bistrostuhl
+        Cell("ph-gallinera_table", 30, 6, 180),   // Bistrotisch
+        At("ph-antique_ceramic_vase_01", 8.125f, 1.75f, 180),   // Antike Vase
+        Cell("ph-gallinera_chair", 27, 6, 90),   // Bistrostuhl
+        Cell("ph-gallinera_chair", 33, 6, 270),   // Bistrostuhl
     ];
 
     /// <summary>Studio: easels, work tables, a bronze sculpture, paintings, shelves, sofa corner, computer desk, tic-tac-toe.</summary>
     private static List<RoomItem> Atelier() =>
     [
-        Cell("custom-easel", 3, 16, 0),   // Staffelei
-        Cell("custom-easel", 8, 17, 0),   // Staffelei
-        Cell("custom-easel", 12, 16, 0),   // Staffelei
-        Cell("ph-dining_chair_02", 4, 14, 0),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 8, 15, 0),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 13, 14, 0),   // Esszimmerstuhl
-        Cell("ph-WoodenTable_01", 4, 8, 180),   // Langer Holztisch
-        Cell("books", 5, 8, 0),   // Bücher
-        Cell("ph-ceramic_vase_03", 7, 8, 180),   // Vase hell
-        Cell("ph-WoodenTable_01", 11, 8, 180),   // Langer Holztisch
-        Cell("laptop", 12, 8, 0),   // Laptop
-        Cell("ph-desk_lamp_arm_01", 14, 8, 180),   // Schreibtischlampe
-        Cell("ph-dining_chair_02", 6, 6, 0),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 12, 6, 0),   // Esszimmerstuhl
-        Cell("custom-rug", 6, 6, 0),   // Teppich
-        Cell("ph-side_table_tall_01", 18, 15, 180),   // Hoher Beistelltisch
-        Cell("custom-rug", 21, 15, 90),   // Teppich
-        Cell("ph-sofa_03", 25, 16, 270),   // Ledersofa
-        Cell("ph-mid_century_lounge_chair", 22, 21, 180),   // Lounge Chair
-        Cell("ph-modern_coffee_table_01", 22, 18, 270),   // Moderner Couchtisch
-        Cell("ph-standing_picture_frame_01", 23, 18, 180),   // Bilderrahmen
-        Cell("ph-metal_office_desk", 25, 4, 270),   // Bürotisch
-        Cell("computerScreen", 25, 6, 0),   // Bildschirm
-        Cell("ph-GreenChair_01", 23, 6, 90),   // Samtstuhl
-        Cell("game-tictactoe", 18, 8, 0),   // Tic-Tac-Toe-Tisch
-        Cell("ph-dining_chair_02", 17, 9, 90),   // Esszimmerstuhl
-        Cell("ph-dining_chair_02", 21, 9, 270),   // Esszimmerstuhl
-        Cell("ph-hanging_picture_frame_01", 27, 12, 270),   // Gemälde hoch
-        Cell("ph-hanging_picture_frame_02", 27, 1, 270),   // Gemälde quer
-        Cell("ph-potted_plant_01", 0, 22, 180),   // Grosse Pflanze
+        Cell("custom-easel", 6, 32, 0),   // Staffelei
+        Cell("custom-easel", 16, 34, 0),   // Staffelei
+        Cell("custom-easel", 24, 32, 0),   // Staffelei
+        Cell("ph-dining_chair_02", 8, 28, 0),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 16, 30, 0),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 26, 28, 0),   // Esszimmerstuhl
+        Cell("ph-WoodenTable_01", 8, 16, 180),   // Langer Holztisch
+        At("books", 2.75f, 4.25f, 0),   // Bücher
+        At("ph-ceramic_vase_03", 3.625f, 4.25f, 180),   // Vase hell
+        Cell("ph-WoodenTable_01", 22, 16, 180),   // Langer Holztisch
+        At("laptop", 6.25f, 4.25f, 0),   // Laptop
+        At("ph-desk_lamp_arm_01", 7.125f, 4.375f, 180),   // Schreibtischlampe
+        Cell("ph-dining_chair_02", 12, 14, 0),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 24, 14, 0),   // Esszimmerstuhl
+        Cell("custom-rug", 12, 12, 0),   // Teppich
+        Cell("ph-side_table_tall_01", 36, 30, 180),   // Hoher Beistelltisch
+        Cell("custom-rug", 42, 30, 90),   // Teppich
+        Cell("ph-sofa_03", 50, 32, 270),   // Ledersofa
+        Cell("ph-mid_century_lounge_chair", 44, 42, 180),   // Lounge Chair
+        Cell("ph-modern_coffee_table_01", 44, 36, 270),   // Moderner Couchtisch
+        At("ph-standing_picture_frame_01", 11.75f, 9.25f, 180),   // Bilderrahmen
+        Cell("ph-metal_office_desk", 50, 8, 270),   // Bürotisch
+        At("computerScreen", 13f, 3.25f, 0),   // Bildschirm
+        Cell("ph-GreenChair_01", 47, 12, 90),   // Samtstuhl
+        Cell("game-tictactoe", 36, 16, 0),   // Tic-Tac-Toe-Tisch
+        Cell("ph-dining_chair_02", 34, 18, 90),   // Esszimmerstuhl
+        Cell("ph-dining_chair_02", 43, 18, 270),   // Esszimmerstuhl
+        Cell("ph-hanging_picture_frame_01", 55, 24, 270),   // Gemälde hoch
+        Cell("ph-hanging_picture_frame_02", 55, 2, 270),   // Gemälde quer
+        Cell("ph-potted_plant_01", 0, 44, 180),   // Grosse Pflanze
         Cell("ph-potted_plant_02", 0, 0, 180),   // Zimmerpflanze
-        Cell("ph-potted_plant_02", 26, 0, 180),   // Zimmerpflanze
-        Cell("ph-Shelf_01", 1, 23, 180),   // Metallregal
-        Cell("ph-Shelf_01", 3, 23, 180),   // Metallregal
-        Cell("ph-Shelf_01", 5, 23, 180),   // Metallregal
-        Cell("ph-Shelf_01", 8, 23, 180),   // Metallregal
-        Cell("ph-wooden_display_shelves_01", 11, 22, 180),   // Vitrinenregal
-        Cell("ph-wooden_display_shelves_01", 16, 22, 180),   // Vitrinenregal
-        Cell("ph-ceramic_vase_03", 11, 23, 180),   // Vase hell
-        Cell("radio", 16, 23, 0),   // Radio
+        Cell("ph-potted_plant_02", 52, 0, 180),   // Zimmerpflanze
+        Cell("ph-Shelf_01", 2, 46, 180),   // Metallregal
+        Cell("ph-Shelf_01", 6, 46, 180),   // Metallregal
+        Cell("ph-Shelf_01", 10, 46, 180),   // Metallregal
+        Cell("ph-Shelf_01", 16, 46, 180),   // Metallregal
+        Cell("ph-wooden_display_shelves_01", 22, 44, 180),   // Vitrinenregal
+        Cell("ph-wooden_display_shelves_01", 32, 44, 180),   // Vitrinenregal
+        At("ph-ceramic_vase_03", 5.75f, 11.75f, 180),   // Vase hell
+        At("radio", 8.25f, 11.75f, 0),   // Radio
     ];
 
     /// <summary>
@@ -434,4 +430,7 @@ internal static partial class ShowcaseRooms
     /// 0/90/180/270 (Kenney models face -Z at 0, Poly Haven models +Z). Layouts follow <c>RoomLayout</c>'s rules.
     /// </summary>
     internal static RoomItem Cell(string itemId, int x, int z, float rotation = 0f) => RoomItem.AtCell(itemId, x, z, rotation);
+
+    /// <summary>Small thing on a table: centre in metres on the 12.5 cm decor grid.</summary>
+    internal static RoomItem At(string itemId, float x, float z, float rotation = 0f) => RoomItem.At(itemId, x, z, rotation);
 }

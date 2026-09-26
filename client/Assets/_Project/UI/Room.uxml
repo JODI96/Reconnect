@@ -93,11 +93,12 @@
         </ui:VisualElement>
 
         <ui:VisualElement name="emote-bar" class="emote-bar">
+            <ui:Button name="view-left" text="‹" tooltip="Ansicht drehen" class="button button--small emote view-turn" />
+            <ui:Button name="view-right" text="›" tooltip="Ansicht drehen" class="button button--small emote view-turn" />
             <ui:Button name="emote-wave" text="Winken" class="button button--small emote" />
             <ui:Button name="emote-yes" text="Ja" class="button button--small emote" />
             <ui:Button name="emote-no" text="Nein" class="button button--small emote" />
             <ui:Button name="emote-jump" text="Hüpfen" class="button button--small emote" />
-            <ui:Button name="emote-sit" text="Sitzen" class="button button--small emote" />
         </ui:VisualElement>
         <ui:Label name="tower-credit" text="Gebäudeumriss © OpenStreetMap-Mitwirkende · Unabhängiges Spiel, nicht verbunden mit den Eigentümern des Gebäudes" class="attribution pass-through" style="display: none; align-self: flex-end;" />
         <ui:VisualElement name="chat-bar" class="chat-bar">

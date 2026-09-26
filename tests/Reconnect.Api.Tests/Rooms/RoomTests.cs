@@ -14,7 +14,7 @@ public sealed class RoomTests(ReconnectApiFactory factory)
 {
     // A sofa turned sideways, on the build grid (4 × 2 cells → 1 × 2 m once turned).
     private static readonly UpdateRoomLayoutRequest Sofa = new(
-        [new RoomItemDto("loungeSofa", new Vector3Dto(3.5f, 0f, 3f), 90f)]);
+        [RoomLayout.Snap(new RoomItemDto("loungeSofa", new Vector3Dto(3.5f, 0f, 3f), 90f))]);
 
     [Fact]
     public async Task Owner_can_update_layout_and_it_is_persisted_as_json()
@@ -28,7 +28,7 @@ public sealed class RoomTests(ReconnectApiFactory factory)
         var reloaded = await (await owner.Client.GetAsync(ApiRoutes.Rooms.ById(room.Id))).ReadAsync<RoomDto>();
         var item = Assert.Single(reloaded.Layout);
         Assert.Equal("loungeSofa", item.ItemId);
-        Assert.Equal(new Vector3Dto(3.5f, 0f, 3f), item.Position);
+        Assert.Equal(Sofa.Items[0].Position, item.Position);
         Assert.Equal(90f, item.Rotation);
         Assert.True(reloaded.UpdatedAt >= reloaded.CreatedAt);
     }

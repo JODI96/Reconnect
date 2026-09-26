@@ -172,6 +172,7 @@
 /* Wraps into two rows on narrow phones instead of running off screen. */
 .emote-bar { flex-direction: row; flex-wrap: wrap; justify-content: center; margin-bottom: 2px; }
 .emote { margin: 0 2px 4px 2px; padding: 0 8px; background-color: rgba(20, 18, 32, 0.85); }
+.view-turn { font-size: 26px; -unity-font-style: bold; padding: 0 0 4px 0; }
 
 .game-panel {
     background-color: rgba(20, 18, 32, 0.95);
@@ -335,14 +336,17 @@
 .build-items { flex-shrink: 0; margin-bottom: 6px; }
 .build-items .unity-scroll-view__content-container { flex-direction: row; }
 .build-card {
-    width: 112px; min-height: 64px; margin: 0 6px 0 0; padding: 6px 8px; flex-shrink: 0;
+    width: 96px; margin: 0 6px 0 0; padding: 4px 4px 6px 4px; flex-shrink: 0;
     border-radius: 12px; border-width: 2px; border-color: rgba(0, 0, 0, 0);
-    background-color: var(--color-surface);
-    -unity-text-align: upper-left; white-space: normal;
+    background-color: var(--color-surface-hover);
+    align-items: center;
 }
 .build-card--selected { border-color: var(--color-primary); }
-.build-card__name { font-size: 14px; -unity-font-style: bold; color: var(--color-text); white-space: normal; }
-.build-card__size { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
+.build-card__picture { width: 84px; height: 84px; border-radius: 8px; -unity-background-scale-mode: scale-to-fit; }
+.build-card__name {
+    font-size: 12px; -unity-font-style: bold; color: var(--color-text); white-space: normal;
+    -unity-text-align: upper-center; margin-top: 4px; height: 34px; overflow: hidden;
+}
 .build-footer { flex-direction: row; align-items: center; }
 .build-footer > .button { margin: 0 0 0 6px; padding: 0 10px; }
 .build-footer > .button:first-child { margin-left: 0; }

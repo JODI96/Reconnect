@@ -17,6 +17,10 @@ internal sealed class RoomItem
     /// An item placed like the build editor does: its footprint starts at build cell (<paramref name="x"/>,
     /// <paramref name="z"/>) – 50 cm cells, see <see cref="RoomLayout"/> – turned by <paramref name="rotation"/> (0/90/180/270).
     /// </summary>
+    /// <summary>A small thing on a table: its centre in metres on the finer decor grid (<see cref="BuildGrid.DecorStep"/>).</summary>
+    public static RoomItem At(string itemId, float x, float z, float rotation = 0f) =>
+        new() { ItemId = itemId, Position = new Position3 { X = x, Z = z }, Rotation = rotation };
+
     public static RoomItem AtCell(string itemId, int x, int z, float rotation = 0f)
     {
         var definition = ItemDefinitions.Find(itemId) ?? throw new ArgumentException($"Unknown item {itemId}.", nameof(itemId));

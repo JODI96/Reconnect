@@ -13,6 +13,28 @@ namespace Reconnect.UnitTests.Rooms;
 /// </summary>
 public sealed class SeedRoomExport
 {
+    /// <summary>With RECONNECT_DUMP_ROOMS=&lt;file&gt;: the shipped layouts as JSON (item centres in metres).</summary>
+    [Fact]
+    public void Dump_seed_rooms()
+    {
+        var file = Environment.GetEnvironmentVariable("RECONNECT_DUMP_ROOMS");
+        if (string.IsNullOrEmpty(file))
+        {
+            return;
+        }
+        var dump = SeedRooms().ToDictionary(r => r.Name, r => r.Layout.Select(i => i.ToDto()).ToList());
+        File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(dump));
+    }
+
+    internal static List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout)> SeedRooms()
+    {
+        var rooms = new List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout)>();
+        rooms.AddRange(ShowcaseRooms.Definitions().Select(r => (r.Name, r.Theme, r.Width, r.Depth, r.Layout)));
+        rooms.AddRange(PrimeTowerFloors.Floors().Select(f => (f.Name, f.Theme, f.Width, f.Depth, f.Layout)));
+        rooms.Add(("Starter", RoomThemes.Coworking, RoomProvisioning.OfficeWidth, RoomProvisioning.OfficeDepth, StarterOffice.Layout()));
+        return rooms;
+    }
+
     [Fact]
     public void Export_seed_rooms_onto_the_grid()
     {
@@ -22,14 +44,15 @@ public sealed class SeedRoomExport
             return;
         }
         Directory.CreateDirectory(folder);
-        var rooms = new List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout)>();
-        rooms.AddRange(ShowcaseRooms.Definitions().Select(r => (r.Name, r.Theme, r.Width, r.Depth, r.Layout)));
-        rooms.AddRange(PrimeTowerFloors.Floors().Select(f => (f.Name, f.Theme, f.Width, f.Depth, f.Layout)));
-        rooms.Add(("Starter", RoomThemes.Coworking, RoomProvisioning.OfficeWidth, RoomProvisioning.OfficeDepth, StarterOffice.Layout()));
+        // RECONNECT_EXPORT_FROM=<file from Dump_seed_rooms>: take the layouts from there (e.g. across a grid change).
+        var from = Environment.GetEnvironmentVariable("RECONNECT_EXPORT_FROM");
+        var dumped = string.IsNullOrEmpty(from)
+            ? null
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, List<RoomItemDto>>>(File.ReadAllText(from));
 
-        foreach (var (name, theme, width, depth, layout) in rooms)
+        foreach (var (name, theme, width, depth, layout) in SeedRooms())
         {
-            var items = layout.Select(i => i.ToDto()).ToList();
+            var items = dumped?[name] ?? layout.Select(i => i.ToDto()).ToList();
             var log = new List<string>();
             var fixedItems = RoomLayoutFixer.Legalize(theme, width, depth, items, log);
             var problems = RoomLayout.Validate(RoomZones.ContextFor(theme, width, depth, fixedItems), fixedItems);
@@ -38,6 +61,13 @@ public sealed class SeedRoomExport
             foreach (var item in fixedItems)
             {
                 var definition = ItemDefinitions.Find(item.ItemId)!;
+                if (definition.Kind == ItemKind.Decor)
+                {
+                    // Small things stand on the finer decor grid: their centre in metres.
+                    code.AppendLine(CultureInfo.InvariantCulture,
+                        $"        At(\"{item.ItemId}\", {item.Position.X:0.###}f, {item.Position.Z:0.###}f, {item.Rotation:0}),   // {definition.Name}");
+                    continue;
+                }
                 var cells = RoomLayout.Footprint(item, definition);
                 code.AppendLine(CultureInfo.InvariantCulture,
                     $"        Cell(\"{item.ItemId}\", {cells.X}, {cells.Z}, {item.Rotation:0}),   // {definition.Name}");

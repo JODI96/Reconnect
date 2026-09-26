@@ -11,7 +11,7 @@ namespace Reconnect.Client.Rooms
     /// </summary>
     public sealed class BuildPreview
     {
-        private const int PixelsPerCell = 16;
+        private const int PixelsPerCell = 8;
 
         private readonly RoomView _room;
         private readonly Material _grid;
@@ -43,8 +43,10 @@ namespace Reconnect.Client.Rooms
                 name = "Build Grid",
             };
             var pixels = new Color32[texture.width * texture.height];
-            var line = new Color32(255, 255, 255, 70);
-            var tileLine = new Color32(255, 255, 255, 150);
+            // Bright cyan reads on light and dark floors alike; metre lines are bold, 25 cm lines fine.
+            var line = new Color32(90, 220, 255, 90);
+            var halfLine = new Color32(90, 220, 255, 150);
+            var tileLine = new Color32(90, 220, 255, 235);
             var reserved = new Color32(255, 70, 70, 70);
             for (var y = 0; y < texture.height; y++)
             {
@@ -54,7 +56,11 @@ namespace Reconnect.Client.Rooms
                     var cellZ = y / PixelsPerCell;
                     var edgeX = x % PixelsPerCell == 0 || x == texture.width - 1;
                     var edgeZ = y % PixelsPerCell == 0 || y == texture.height - 1;
+                    // Metre lines two pixels wide.
+                    var boldX = (x + 1) % (PixelsPerCell * BuildGrid.CellsPerTile) == 0;
+                    var boldZ = (y + 1) % (PixelsPerCell * BuildGrid.CellsPerTile) == 0;
                     var tileEdge = (edgeX && cellX % BuildGrid.CellsPerTile == 0) || (edgeZ && cellZ % BuildGrid.CellsPerTile == 0);
+                    var halfEdge = (edgeX && cellX % (BuildGrid.CellsPerTile / 2) == 0) || (edgeZ && cellZ % (BuildGrid.CellsPerTile / 2) == 0);
                     Color32 colour = default;
                     foreach (var zone in context.Reserved)
                     {
@@ -65,7 +71,11 @@ namespace Reconnect.Client.Rooms
                     }
                     if (edgeX || edgeZ)
                     {
-                        colour = tileEdge ? tileLine : line;
+                        colour = tileEdge ? tileLine : halfEdge ? halfLine : line;
+                    }
+                    else if (boldX || boldZ)
+                    {
+                        colour = tileLine;
                     }
                     pixels[y * texture.width + x] = colour;
                 }
@@ -117,14 +127,25 @@ namespace Reconnect.Client.Rooms
                 {
                     tableTop = _room.transform.InverseTransformPoint(bounds.max).y;
                 }
-                var cells = RoomLayout.Footprint(item, definition);
                 var plate = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 plate.name = "Footprint";
                 Object.Destroy(plate.GetComponent<Collider>());
                 plate.transform.SetParent(_ghost.transform, false);
-                var (x, z) = RoomLayout.Centre(cells);
-                plate.transform.localPosition = new Vector3(x, 0.02f, z);
-                plate.transform.localScale = new Vector3(cells.Width * BuildGrid.CellSize - 0.04f, 0.02f, cells.Depth * BuildGrid.CellSize - 0.04f);
+                if (definition.Kind == ItemKind.Decor)
+                {
+                    // Small things: their real outline, just above the table top.
+                    var area = RoomLayout.DecorArea(item, definition);
+                    var y = _room.transform.InverseTransformPoint(bounds.min).y + 0.01f;
+                    plate.transform.localPosition = new Vector3(area.CentreX, y, area.CentreZ);
+                    plate.transform.localScale = new Vector3(area.MaxX - area.MinX, 0.01f, area.MaxZ - area.MinZ);
+                }
+                else
+                {
+                    var cells = RoomLayout.Footprint(item, definition);
+                    var (x, z) = RoomLayout.Centre(cells);
+                    plate.transform.localPosition = new Vector3(x, 0.02f, z);
+                    plate.transform.localScale = new Vector3(cells.Width * BuildGrid.CellSize - 0.02f, 0.02f, cells.Depth * BuildGrid.CellSize - 0.02f);
+                }
             }
             foreach (var renderer in _ghost.GetComponentsInChildren<Renderer>())
             {

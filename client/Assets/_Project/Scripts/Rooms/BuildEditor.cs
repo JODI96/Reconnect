@@ -105,7 +105,9 @@ namespace Reconnect.Client.Rooms
             var cellZ = (int)Math.Floor(z / BuildGrid.CellSize);
             var hit = _items
                 .Select((item, index) => (Item: item, Index: index, Definition: ItemDefinitions.Find(item.ItemId)))
-                .Where(i => i.Definition != null && RoomLayout.Footprint(i.Item, i.Definition).Contains(cellX, cellZ))
+                .Where(i => i.Definition != null && (i.Definition.Kind == ItemKind.Decor
+                    ? Grown(RoomLayout.DecorArea(i.Item, i.Definition), 0.15f).Contains(x, z)
+                    : RoomLayout.Footprint(i.Item, i.Definition).Contains(cellX, cellZ)))
                 .OrderBy(i => Priority(i.Definition.Kind))
                 .Select(i => (int?)i.Index)
                 .FirstOrDefault();
@@ -118,14 +120,14 @@ namespace Reconnect.Client.Rooms
             _selectionIsNew = false;
             Selection = _items[index];
             var definition = SelectionDefinition;
-            var cells = RoomLayout.Footprint(Selection, definition);
             var taken = new HashSet<int> { index };
             if (definition.Kind == ItemKind.Floor && definition.HasSurface)
             {
+                var top = RoomLayout.SurfaceArea(Selection, definition);
                 for (var i = 0; i < _items.Count; i++)
                 {
                     var other = ItemDefinitions.Find(_items[i].ItemId);
-                    if (other?.Kind == ItemKind.Decor && cells.Contains(RoomLayout.Footprint(_items[i], other)))
+                    if (other?.Kind == ItemKind.Decor && top.Contains(RoomLayout.DecorArea(_items[i], other), 0.02f))
                     {
                         taken.Add(i);
                         _carried.Add((_items[i].Position.X - Selection.Position.X, _items[i].Position.Z - Selection.Position.Z, _items[i]));
@@ -148,6 +150,11 @@ namespace Reconnect.Client.Rooms
             var definition = SelectionDefinition;
             var context = Context(_items);
             var rotation = Selection.Rotation;
+            if (definition.Kind == ItemKind.Decor)
+            {
+                SetSelection(new RoomItemDto(Selection.ItemId, new Vector3Dto(x, 0f, z), rotation));
+                return;
+            }
             if (definition.Kind == ItemKind.Wall)
             {
                 var near = RoomLayoutFixer.OntoNearestWall(context, RoomLayout.Footprint(definition, x, z, RoomLayout.Quarter(rotation)));
@@ -268,17 +275,56 @@ namespace Reconnect.Client.Rooms
 
         private void SetSelection(RoomItemDto selection)
         {
+            var definition = ItemDefinitions.Find(selection.ItemId);
+            if (definition.Kind == ItemKind.Decor)
+            {
+                selection = OntoTable(selection, definition);
+            }
             Selection = selection;
             for (var i = 0; i < _carried.Count; i++)
             {
                 var (dx, dz, item) = _carried[i];
-                var definition = ItemDefinitions.Find(item.ItemId);
-                var cells = RoomLayout.Footprint(definition, selection.Position.X + dx, selection.Position.Z + dz, RoomLayout.Quarter(item.Rotation));
-                var (cx, cz) = RoomLayout.Centre(cells);
-                _carried[i] = (dx, dz, item with { Position = new Vector3Dto(cx, 0f, cz) });
+                _carried[i] = (dx, dz, item with
+                {
+                    Position = new Vector3Dto(RoomLayout.SnapDecor(selection.Position.X + dx), 0f, RoomLayout.SnapDecor(selection.Position.Z + dz)),
+                });
             }
             SelectionChanged?.Invoke();
         }
+
+        /// <summary>A small thing on the fine grid, pushed fully onto the table top under it (if there is one).</summary>
+        private RoomItemDto OntoTable(RoomItemDto item, ItemDefinition definition)
+        {
+            var x = RoomLayout.SnapDecor(item.Position.X);
+            var z = RoomLayout.SnapDecor(item.Position.Z);
+            var tops = _items
+                .Select(i => (Item: i, Definition: ItemDefinitions.Find(i.ItemId)))
+                .Where(i => i.Definition is { Kind: ItemKind.Floor, HasSurface: true })
+                .Select(i => RoomLayout.SurfaceArea(i.Item, i.Definition))
+                .Where(top => Grown(top, 0.25f).Contains(item.Position.X, item.Position.Z))
+                .ToList();
+            if (tops.Count > 0)
+            {
+                var top = tops.OrderBy(t => Math.Abs(t.CentreX - item.Position.X) + Math.Abs(t.CentreZ - item.Position.Z)).First();
+                var area = RoomLayout.DecorArea(item with { Position = new Vector3Dto(x, 0f, z) }, definition);
+                var halfX = (area.MaxX - area.MinX) / 2f;
+                var halfZ = (area.MaxZ - area.MinZ) / 2f;
+                // Nearest fine-grid point that keeps it on the top (a thing wider than the top stays centred).
+                x = Clamp(x, top.MinX + halfX, top.MaxX - halfX, top.CentreX);
+                z = Clamp(z, top.MinZ + halfZ, top.MaxZ - halfZ, top.CentreZ);
+            }
+            return item with { Position = new Vector3Dto(x, 0f, z) };
+        }
+
+        private static float Clamp(float value, float min, float max, float centre)
+        {
+            var step = BuildGrid.DecorStep;
+            var low = (float)Math.Ceiling((min - 0.0001f) / step) * step;
+            var high = (float)Math.Floor((max + 0.0001f) / step) * step;
+            return low > high ? RoomLayout.SnapDecor(centre) : Math.Max(low, Math.Min(high, value));
+        }
+
+        private static Area Grown(Area area, float by) => new(area.MinX - by, area.MinZ - by, area.MaxX + by, area.MaxZ + by);
 
         private void ClearSelection()
         {

@@ -4,6 +4,33 @@ using System.Linq;
 
 namespace Reconnect.Contracts.Rooms
 {
+    /// <summary>A rectangle in metres (room coordinates).</summary>
+    public readonly struct Area
+    {
+        public Area(float minX, float minZ, float maxX, float maxZ)
+        {
+            MinX = minX;
+            MinZ = minZ;
+            MaxX = maxX;
+            MaxZ = maxZ;
+        }
+
+        public float MinX { get; }
+        public float MinZ { get; }
+        public float MaxX { get; }
+        public float MaxZ { get; }
+        public float CentreX => (MinX + MaxX) / 2f;
+        public float CentreZ => (MinZ + MaxZ) / 2f;
+
+        public bool Contains(Area other, float tolerance = 0f) =>
+            other.MinX >= MinX - tolerance && other.MaxX <= MaxX + tolerance && other.MinZ >= MinZ - tolerance && other.MaxZ <= MaxZ + tolerance;
+
+        public bool Contains(float x, float z) => x >= MinX && x <= MaxX && z >= MinZ && z <= MaxZ;
+
+        public bool Overlaps(Area other, float margin = 0f) =>
+            MinX < other.MaxX - margin && other.MinX < MaxX - margin && MinZ < other.MaxZ - margin && other.MinZ < MaxZ - margin;
+    }
+
     /// <summary>A room as the build rules see it: size in walking tiles, walls, cells kept free (entrance, lift landing).</summary>
     public sealed class RoomLayoutContext
     {
@@ -70,8 +97,34 @@ namespace Reconnect.Contracts.Rooms
                 return item;
             }
             var quarter = Quarter(item.Rotation);
+            if (definition.Kind == ItemKind.Decor)
+            {
+                return new RoomItemDto(item.ItemId, new Vector3Dto(SnapDecor(item.Position.X), 0f, SnapDecor(item.Position.Z)), quarter * 90f);
+            }
             var (x, z) = Centre(Footprint(definition, item.Position.X, item.Position.Z, quarter));
             return new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), quarter * 90f);
+        }
+
+        /// <summary>Small things stand on a finer grid (<see cref="BuildGrid.DecorStep"/>).</summary>
+        public static float SnapDecor(float metres) => (float)Math.Round(metres / BuildGrid.DecorStep) * BuildGrid.DecorStep;
+
+        /// <summary>Where a small thing stands (metres, its real size turned with it).</summary>
+        public static Area DecorArea(RoomItemDto item, ItemDefinition definition)
+        {
+            var turned = Quarter(item.Rotation) % 2 == 1;
+            var halfX = (turned ? definition.SizeZ : definition.SizeX) / 2f;
+            var halfZ = (turned ? definition.SizeX : definition.SizeZ) / 2f;
+            return new Area(item.Position.X - halfX, item.Position.Z - halfZ, item.Position.X + halfX, item.Position.Z + halfZ);
+        }
+
+        /// <summary>The table top of a surface item (metres), turned with it, centred on its footprint.</summary>
+        public static Area SurfaceArea(RoomItemDto item, ItemDefinition definition)
+        {
+            var (x, z) = Centre(Footprint(item, definition));
+            var turned = Quarter(item.Rotation) % 2 == 1;
+            var halfX = (turned ? definition.SurfaceDepth : definition.SurfaceWidth) / 2f;
+            var halfZ = (turned ? definition.SurfaceWidth : definition.SurfaceDepth) / 2f;
+            return new Area(x - halfX, z - halfZ, x + halfX, z + halfZ);
         }
 
         /// <summary>Checks every rule; empty = the layout can be stored.</summary>
@@ -100,7 +153,9 @@ namespace Reconnect.Contracts.Rooms
                     continue;
                 }
                 var cells = Footprint(item, definition);
-                var (centreX, centreZ) = Centre(cells);
+                var (centreX, centreZ) = definition.Kind == ItemKind.Decor
+                    ? (SnapDecor(item.Position.X), SnapDecor(item.Position.Z))
+                    : Centre(cells);
                 if (Math.Abs(centreX - item.Position.X) > Tolerance || Math.Abs(centreZ - item.Position.Z) > Tolerance)
                 {
                     problems.Add(new LayoutProblem(i, $"„{definition.Name}“ steht nicht auf dem Raster."));
@@ -130,12 +185,18 @@ namespace Reconnect.Contracts.Rooms
                         AddOverlaps(problems, placed, index, definition, cells, definition.Kind);
                         break;
                     case ItemKind.Decor:
-                        var surface = placed.FirstOrDefault(p => p.Definition.Kind == ItemKind.Floor && p.Definition.HasSurface && p.Cells.Contains(cells));
-                        if (surface.Definition == null)
+                        var area = DecorArea(items[index], definition);
+                        if (!placed.Any(p => p.Definition.Kind == ItemKind.Floor && p.Definition.HasSurface
+                                             && SurfaceArea(items[p.Index], p.Definition).Contains(area, Tolerance)))
                         {
-                            problems.Add(new LayoutProblem(index, $"„{definition.Name}“ braucht einen Tisch, ein Regal oder eine Theke darunter."));
+                            problems.Add(new LayoutProblem(index, $"„{definition.Name}“ muss ganz auf einem Tisch, Regal oder einer Theke stehen."));
                         }
-                        AddOverlaps(problems, placed, index, definition, cells, ItemKind.Decor);
+                        var other = placed.FirstOrDefault(p => p.Index < index && p.Definition.Kind == ItemKind.Decor
+                                                               && DecorArea(items[p.Index], p.Definition).Overlaps(area, 0.01f));
+                        if (other.Definition != null)
+                        {
+                            problems.Add(new LayoutProblem(index, $"„{definition.Name}“ überlappt mit „{other.Definition.Name}“."));
+                        }
                         break;
                     case ItemKind.Wall:
                         if (WallOf(room, cells) == WallSides.None)
@@ -183,6 +244,24 @@ namespace Reconnect.Contracts.Rooms
                 return WallSides.West;
             }
             return WallSides.None;
+        }
+
+        /// <summary>The way an item faces (the side one sits looking at) in whole cells: Kenney -Z, Poly Haven +Z at 0°.</summary>
+        public static (int X, int Z) Front(string itemId, float rotation)
+        {
+            var quarter = Quarter(rotation);
+            if (itemId != null && itemId.StartsWith("ph-", StringComparison.Ordinal))
+            {
+                quarter = (quarter + 2) % 4;
+            }
+            // -Z turned by +90° around Y points to -X.
+            return quarter switch
+            {
+                1 => (-1, 0),
+                2 => (0, 1),
+                3 => (1, 0),
+                _ => (0, -1),
+            };
         }
 
         /// <summary>

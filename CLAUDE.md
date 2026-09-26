@@ -145,7 +145,10 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   `tools/polyhaven_mobile.py` (Blender) auf ≤ 3k Dreiecke pro Teil reduziert; der GPU Resident Drawer (Forward+) bündelt
   die Möbel. `CrowdPerformanceTests`: volle Lobby (80 Personen, ganzer Raum) ≤ 400 Draw Calls, ≤ 80 Set-Pass-Calls,
   ≤ 400k Dreiecke (SRP Batcher: Set-Pass-Wechsel sind der teure Teil).
-- **Sitzen:** welche Möbel Sitze sind und wie viele Plätze sie haben, steht in `RoomSeats` (Contracts, Server und Client).
+- **Kamera im Raum:** drehbar (Knöpfe ‹ › in 90°-Schritten, zwei Finger drehen, Q/E am PC); Wände zwischen Kamera und
+  Raum werden ausgeblendet (`RoomView.RotateView`, Habbo-Prinzip: man schaut immer in den Raum).
+- **Sitzen:** Kein Emote-Knopf – Stuhl/Sofa/Liege antippen (auch knapp daneben, `RoomView.SeatAt`), die Figur läuft hin und
+  setzt sich. Welche Möbel Sitze sind und wie viele Plätze sie haben, steht in `RoomSeats` (Contracts, Server und Client).
   Der Server merkt sich den Platz pro Person (`Sit(item, place)` → false wenn besetzt, `StandUp`, `MoveTo` steht auf;
   `PlayerSeated`, Snapshot enthält `Seat`), adressiert über den Index im Layout. Der Client misst Sitzhöhe und Richtung
   am Modell selbst (`Seat`: Lehne = höchste Seite, Sitzfläche per Strahl von oben), Hocker drehen sich zur Theke – oder
@@ -166,16 +169,22 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Kenney-Möbel-ItemId = Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen, `custom-*` baut der Client
   (Pool, Säule …). Massstab: Möbel ×0.2 ≈ echte Grösse (Tisch 65 cm, Tür 2 m) – Ausreisser des Kenney-Kits (Laptop, WC,
   Dusche …) bekommen in `ProjectSetup.KenneyRealHeights` ihre echte Höhe. Figuren 1:1 (1,60–1,85 m). 1 Laufeld = 1 m.
-- **Baueditor & Bauregeln:** Baufeld = 50 cm (4 pro Laufeld, `BuildGrid`). Jedes Item hat im Katalog
-  (`ItemDefinitions`, generiert von `BuildCatalogGenerator` beim Setup Project aus den echten Modellen →
-  `Contracts/Rooms/ItemCatalogData.cs`, danach `dotnet build`) Grundfläche in Zellen, Höhe, Tischfläche, Art
-  (Boden/Teppich/Deko/Wand/Decke), Kategorie und deutschen Namen. `RoomLayout.Validate` (Server bei jedem Speichern, Client
+- **Baueditor & Bauregeln:** Baufeld = 25 cm (16 pro Laufeld, `BuildGrid`), Deko auf Tischen im 12,5-cm-Raster
+  (`DecorStep`, Position = Mitte in Metern). Jedes Item hat im Katalog (`ItemDefinitions`, generiert von
+  `BuildCatalogGenerator` beim Setup Project aus den echten Modellen → `Contracts/Rooms/ItemCatalogData.cs`, danach
+  `dotnet build`) Grundfläche in Zellen (bis 5 cm Überstand), echte Grösse, Höhe, Art (Boden/Teppich/Deko/Wand/Decke),
+  Kategorie, deutschen Namen und – bei Tischen/Regalen/Theken – die per Strahlen gemessene Tischplatte (Höhe + flache
+  Fläche; runde Tische: Quadrat in der Platte). Dazu rendert er pro Item ein Katalogbild (`Build/Icons`, `BuildIcons.asset`).
+  Poly-Haven-Dateien mit mehreren Varianten nebeneinander (Glückskastanie, Kerzenständer) werden in `fetch_polyhaven.py`
+  (`VARIANTS`) auf eine reduziert. `RoomLayout.Validate` (Server bei jedem Speichern, Client
   im Editor): Raster + 90°-Schritte, im Raum, keine Überlappung pro Ebene, Deko nur ganz auf einer Tischfläche, Wandobjekte
   an einer Wand, Eingang und Lift-Ausstieg frei (`RoomZones`), jeder Sitz erreichbar. Begehbare/Wasser-Felder kommen aus
   `RoomLayout.BlockedTiles/WaterTiles` (Server, Client, Editor gleich). `PUT /rooms/{id}/layout`: Besitzer oder Admin,
   400 mit Fehler pro `items[i]`, danach `RoomLayoutChanged` an alle im Raum. Im Client: „Bauen“ → `BuildPanel` +
   `BuildEditor` (reines C#) + `BuildPreview` (Raster, Geist grün/rot). `RoomLayoutFixer` setzt alte Layouts aufs Raster.
-  Geseedete Räume stehen als `Cell(item, x, z, rotation)` (Zellen, linke untere Ecke der Grundfläche) im Code;
+  `RoomLayoutFixer` schiebt Stühle/Hocker an den Tisch vor ihnen (an kleinen Tischen mittig).
+  Geseedete Räume stehen als `Cell(item, x, z, rotation)` (Zellen, linke untere Ecke der Grundfläche) bzw. Deko als
+  `At(item, x, z, rotation)` (Mitte in Metern) im Code; neu aufs Raster: `Dump_seed_rooms` + `RECONNECT_EXPORT_FROM`;
   `SeedRoomLayoutTests` prüft jeden Raum; `SeedRoomExport` (mit `RECONNECT_EXPORT_ROOMS=<Ordner>`) gibt Karten aus.
 - **Räume:** eigene Grösse (6–40 m), Themes mit prozeduralem Boden (FloorTextures) und einer `Enclosure`:
   `Walls` (Kenney-Wände mit Fenstern/Tür), `Railing` (Dachterrasse, Glasgeländer) oder `GlassFacade` (verglastes

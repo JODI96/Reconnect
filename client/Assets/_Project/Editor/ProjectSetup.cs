@@ -49,6 +49,7 @@ namespace Reconnect.Client.Editor
         private const string WaterMaterialPath = MaterialsDir + "/Water.mat";
         private const string BuildingsMaterialPath = MaterialsDir + "/Buildings.mat";
         private const string ItemCatalogPath = SettingsDir + "/ItemCatalog.asset";
+        private const string BuildIconsPath = SettingsDir + "/BuildIcons.asset";
         private const string AvatarCatalogPath = SettingsDir + "/AvatarCatalog.asset";
         private const string MusicCatalogPath = SettingsDir + "/MusicCatalog.asset";
         private const string MusicDir = "Assets/ThirdParty/Music";
@@ -226,7 +227,9 @@ namespace Reconnect.Client.Editor
         {
             var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             var custom = new CustomItems(material, material, material, RoomTheme.For("default"));
-            BuildCatalogGenerator.Generate(Load<ItemCatalog>(ItemCatalogPath), custom);
+            var icons = LoadOrCreate<BuildIconCatalog>(BuildIconsPath);
+            icons.items = BuildCatalogGenerator.Generate(Load<ItemCatalog>(ItemCatalogPath), custom);
+            EditorUtility.SetDirty(icons);
         }
 
         /// <summary>One CC0 track per room theme: file name = theme id (tools/fetch_music.py), "default" for the rest.</summary>
@@ -393,6 +396,7 @@ namespace Reconnect.Client.Editor
                 ("glassMaterial", Load<Material>(GlassMaterialPath)),
                 ("waterMaterial", Load<Material>(WaterMaterialPath)),
                 ("itemCatalog", Load<ItemCatalog>(ItemCatalogPath)),
+                ("buildIcons", Load<BuildIconCatalog>(BuildIconsPath)),
                 ("avatarCatalog", Load<AvatarCatalog>(AvatarCatalogPath)));
             roomView.gameObject.AddComponent<AudioSource>();
             Assign(roomView.gameObject.AddComponent<RoomMusic>(), ("catalog", Load<MusicCatalog>(MusicCatalogPath)));

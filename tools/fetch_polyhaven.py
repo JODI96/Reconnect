@@ -49,7 +49,7 @@ def save(url, path):
 
 
 # Some Poly Haven files hold several variants side by side; keep one (node-name suffix) and move it to the origin.
-VARIANTS = {"pachira_aquatica_01": "_d"}
+VARIANTS = {"pachira_aquatica_01": "_d", "brass_candleholders": "_02"}
 
 
 def keep_variant(path, suffix):

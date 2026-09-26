@@ -5,14 +5,17 @@ using System.Globalization;
 namespace Reconnect.Contracts.Rooms
 {
     /// <summary>
-    /// The build grid: a walking tile (1 m) has 2 × 2 build cells of 50 cm. Every item stands exactly on build cells and
+    /// The build grid: a walking tile (1 m) has 4 × 4 build cells of 25 cm. Every item stands exactly on build cells and
     /// is turned in 90° steps, so its footprint is a rectangle of cells (see <see cref="RoomLayout"/>).
     /// </summary>
     public static class BuildGrid
     {
-        public const float CellSize = 0.5f;
-        public const int CellsPerTile = 2;
+        public const float CellSize = 0.25f;
+        public const int CellsPerTile = 4;
         public const int MaxItems = 400;
+
+        /// <summary>Small things on tables snap finer: 12.5 cm steps inside the table top.</summary>
+        public const float DecorStep = 0.125f;
     }
 
     /// <summary>How an item is placed.</summary>
@@ -49,8 +52,13 @@ namespace Reconnect.Contracts.Rooms
     public sealed class ItemDefinition
     {
         public ItemDefinition(string id, string name, string category, ItemKind kind, int width, int depth, float height,
-            float surfaceHeight = 0f, float mountHeight = 0f)
+            float surfaceHeight = 0f, float mountHeight = 0f, float sizeX = 0f, float sizeZ = 0f,
+            float surfaceWidth = 0f, float surfaceDepth = 0f)
         {
+            SizeX = sizeX > 0f ? sizeX : Math.Max(1, width) * BuildGrid.CellSize;
+            SizeZ = sizeZ > 0f ? sizeZ : Math.Max(1, depth) * BuildGrid.CellSize;
+            SurfaceWidth = surfaceHeight > 0f ? (surfaceWidth > 0f ? surfaceWidth : Math.Max(1, width) * BuildGrid.CellSize) : 0f;
+            SurfaceDepth = surfaceHeight > 0f ? (surfaceDepth > 0f ? surfaceDepth : Math.Max(1, depth) * BuildGrid.CellSize) : 0f;
             Id = id;
             Name = name;
             Category = category;
@@ -88,6 +96,14 @@ namespace Reconnect.Contracts.Rooms
         public float MountHeight { get; }
 
         public bool HasSurface => SurfaceHeight > 0f;
+
+        /// <summary>Real size of the model in metres at rotation 0 (small things on tables are placed by it).</summary>
+        public float SizeX { get; }
+        public float SizeZ { get; }
+
+        /// <summary>The flat top things can stand on (metres, centred on the footprint, at rotation 0) – measured on the model.</summary>
+        public float SurfaceWidth { get; }
+        public float SurfaceDepth { get; }
 
         /// <summary>Places to sit on it (<see cref="RoomSeats"/>).</summary>
         public int Seats => RoomSeats.PlacesFor(Id);

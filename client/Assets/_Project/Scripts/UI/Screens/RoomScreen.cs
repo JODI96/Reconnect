@@ -104,8 +104,14 @@ namespace Reconnect.Client.UI.Screens
             });
             foreach (var emote in Emotes.All)
             {
-                Q<Button>("emote-" + emote).clicked += () => PlayEmote(emote);
+                // Sitting is not an emote button: tap a chair, sofa or lounger and you walk there and sit down.
+                if (Root.Q<Button>("emote-" + emote) is { } button)
+                {
+                    button.clicked += () => PlayEmote(emote);
+                }
             }
+            Q<Button>("view-left").clicked += () => _room.RotateView(-1);
+            Q<Button>("view-right").clicked += () => _room.RotateView(1);
             _chatInput.RegisterCallback<KeyDownEvent>(e =>
             {
                 if (e.keyCode is KeyCode.Return or KeyCode.KeypadEnter)
@@ -130,6 +136,8 @@ namespace Reconnect.Client.UI.Screens
             _room.TileTapped += OnTileTapped;
             _room.StationTapped += OnStationTapped;
             _room.IsPointerOverUi = IsPointerOverUi;
+            _room.IsTyping = () => Root.panel?.focusController?.focusedElement is VisualElement focused
+                && (focused is TextField || focused.GetFirstAncestorOfType<TextField>() != null);
 
             Root.schedule.Execute(UpdateOverlays).Every(0);
             RunAsync(JoinAsync);
@@ -162,6 +170,7 @@ namespace Reconnect.Client.UI.Screens
             _room.TileTapped -= OnTileTapped;
             _room.StationTapped -= OnStationTapped;
             _room.IsPointerOverUi = _ => false;
+            _room.IsTyping = () => false;
             _room.Hide();
             _city.HideTowerCutaway();
             _city.SetVisible(false);

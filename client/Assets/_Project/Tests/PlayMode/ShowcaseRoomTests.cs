@@ -84,6 +84,31 @@ namespace Reconnect.Client.PlayModeTests
                 view.FrameWholeRoom();
                 yield return null;
                 Save(view.Camera, $"showcase-{number}.png", room.Name);
+
+                // Turned half around: the walls in front of the camera fade out, the room stays visible.
+                view.RotateView(1);
+                view.RotateView(1);
+                for (var i = 0; i < 40; i++)
+                {
+                    yield return null;   // the view turns smoothly
+                }
+                Save(view.Camera, $"showcase-{number}-turned.png", room.Name);
+                view.RotateView(-1);
+                view.RotateView(-1);
+                for (var i = 0; i < 40; i++)
+                {
+                    yield return null;
+                }
+
+                // Build mode: grid, zones and a sofa in hand.
+                var preview = new BuildPreview(view, view.TransparentMaterial);
+                var editor = new BuildEditor(room.Theme, room.Width, room.Depth, view.Layout);
+                preview.Show(editor.Context(editor.Items));
+                editor.Pick("ph-sofa_02", room.Width / 2f, room.Depth / 2f);
+                preview.Update(editor);
+                yield return null;
+                Save(view.Camera, $"showcase-{number}-build.png", room.Name);
+                preview.Hide();
                 view.Hide();
             }
             view.Camera.targetTexture = null;

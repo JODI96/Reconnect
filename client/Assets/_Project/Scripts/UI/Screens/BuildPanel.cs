@@ -234,14 +234,18 @@ namespace Reconnect.Client.UI.Screens
                 .OrderBy(d => d.Name, StringComparer.CurrentCulture);
             foreach (var definition in definitions)
             {
-                var card = new Button(() => Pick(definition)) { name = "build-item-" + definition.Id };
+                var card = new Button(() => Pick(definition)) { name = "build-item-" + definition.Id, tooltip = definition.Name };
                 card.AddToClassList("build-card");
+                var picture = new VisualElement { pickingMode = PickingMode.Ignore };
+                picture.AddToClassList("build-card__picture");
+                if (_room.BuildIcons != null && _room.BuildIcons.Find(definition.Id) is { } icon)
+                {
+                    picture.style.backgroundImage = new StyleBackground(icon);
+                }
                 var title = new Label(definition.Name) { pickingMode = PickingMode.Ignore };
                 title.AddToClassList("build-card__name");
-                var size = new Label(Size(definition)) { pickingMode = PickingMode.Ignore };
-                size.AddToClassList("build-card__size");
+                card.Add(picture);
                 card.Add(title);
-                card.Add(size);
                 _items.Add(card);
             }
             _items.scrollOffset = Vector2.zero;
@@ -257,20 +261,6 @@ namespace Reconnect.Client.UI.Screens
             _editor.Pick(definition.Id, focus.x, focus.z);
             _message = null;
             Refresh();
-        }
-
-        /// <summary>"1 × 2 m" (footprint), plus where it goes for things that don't stand on the floor.</summary>
-        private static string Size(ItemDefinition definition)
-        {
-            static string Metres(int cells) => (cells * BuildGrid.CellSize).ToString("0.#", System.Globalization.CultureInfo.GetCultureInfo("de-CH"));
-            var size = $"{Metres(definition.Width)} × {Metres(definition.Depth)} m";
-            return definition.Kind switch
-            {
-                ItemKind.Decor => size + " · auf Tisch",
-                ItemKind.Wall => size + " · an Wand",
-                ItemKind.Ceiling => size + " · Decke",
-                _ => size,
-            };
         }
 
         // ---------- State ----------
