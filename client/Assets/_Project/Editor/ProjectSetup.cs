@@ -85,6 +85,7 @@ namespace Reconnect.Client.Editor
             //    become invalid because Unity unloads unmodified assets while importing new ones.
             CreateMainScene();
             ConfigurePlayer();
+            ConfigureRendering();
             RemoveTemplateContent();
 
             AssetDatabase.SaveAssets();
@@ -402,6 +403,29 @@ namespace Reconnect.Client.Editor
             overlay.maximumLevel = maximumLevel;
             overlay.tileWidth = 256;
             overlay.tileHeight = 256;
+        }
+
+        /// <summary>
+        /// GPU Resident Drawer: Unity draws the many furniture meshes of a room instanced on the GPU instead of one
+        /// draw call each (needs Forward+, which both renderers use). Big win on phones in full rooms.
+        /// </summary>
+        private static void ConfigureRendering()
+        {
+            foreach (var path in new[] { "Assets/Settings/Mobile_RPAsset.asset", "Assets/Settings/PC_RPAsset.asset" })
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(path);
+                if (asset == null)
+                {
+                    continue;
+                }
+                var settings = new SerializedObject(asset);
+                settings.FindProperty("m_GPUResidentDrawerMode").intValue = 1;   // GPUResidentDrawerMode.InstancedDrawing
+                settings.ApplyModifiedPropertiesWithoutUndo();
+            }
+            // The drawer needs the BatchRendererGroup shader variants in builds.
+            var graphics = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/GraphicsSettings.asset")[0]);
+            graphics.FindProperty("m_BrgStripping").intValue = 2;   // keep all
+            graphics.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void ConfigurePlayer()

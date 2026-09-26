@@ -15,7 +15,7 @@ namespace Reconnect.Client.Editor
         public const string Animations = "Assets/ThirdParty/Quaternius/";
 
         /// <summary>Bump when the rules change, so Unity reimports the avatars.</summary>
-        public override uint GetVersion() => 2;
+        public override uint GetVersion() => 3;
 
         private void OnPreprocessModel()
         {
@@ -38,8 +38,9 @@ namespace Reconnect.Client.Editor
             importer.importBlendShapes = false;
             importer.importVisibility = false;
             importer.useFileScale = true;
-            // Materials are built by ProjectSetup (URP, per slot), the figures carry none of their own.
-            importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            // The FBX materials ("opaque", "cutout") only name the submeshes; AvatarSetup puts URP materials there.
+            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
             importer.importAnimation = assetPath.StartsWith(Animations);
             importer.optimizeGameObjects = false;
             importer.meshCompression = ModelImporterMeshCompression.Medium;
@@ -75,15 +76,21 @@ namespace Reconnect.Client.Editor
             {
                 return;
             }
+            // Atlases (tools/avatars): opaque.png 1024, cutout.png 512 with alpha. ASTC on phones.
             var importer = (TextureImporter)assetImporter;
-            importer.maxTextureSize = assetPath.EndsWith("_normal.png") ? 512 : 1024;
+            var cutout = System.IO.Path.GetFileNameWithoutExtension(assetPath) == "cutout";
+            importer.maxTextureSize = cutout ? 512 : 1024;
             importer.mipmapEnabled = true;
-            if (assetPath.EndsWith("_normal.png"))
+            importer.alphaIsTransparency = cutout;
+            importer.alphaSource = cutout ? TextureImporterAlphaSource.FromInput : TextureImporterAlphaSource.None;
+            foreach (var platform in new[] { "Android", "iPhone" })
             {
-                importer.textureType = TextureImporterType.NormalMap;
+                var settings = importer.GetPlatformTextureSettings(platform);
+                settings.overridden = true;
+                settings.maxTextureSize = importer.maxTextureSize;
+                settings.format = TextureImporterFormat.ASTC_6x6;
+                importer.SetPlatformTextureSettings(settings);
             }
-            var file = System.IO.Path.GetFileNameWithoutExtension(assetPath);
-            importer.alphaIsTransparency = file is "hair" or "beard" or "eyebrows" or "eyelashes";
         }
     }
 }

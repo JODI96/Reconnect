@@ -468,7 +468,7 @@ MonoBehaviour:
     model: {fileID: 7216191201510177953, guid: eeffa4a2f2f8d944fb4762247daaef70, type: 3}
     scale: 1
   - itemId: ph-modern_arm_chair_01
-    model: {fileID: -6716258032573464376, guid: 351935d249f7329429573d8fe97dc9bc, type: 3}
+    model: {fileID: -3886755200470228989, guid: 351935d249f7329429573d8fe97dc9bc, type: 3}
     scale: 1
   - itemId: ph-modern_ceiling_lamp_01
     model: {fileID: 6931845082293638876, guid: c423acb3b9dd8d847aa23d569557ad3d, type: 3}

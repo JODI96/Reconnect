@@ -1,250 +1,258 @@
 {
-  "asset": {
-    "generator": "Khronos glTF Blender I/O v3.2.40",
-    "version": "2.0"
-  },
-  "scene": 0,
-  "scenes": [
-    {
-      "name": "Scene",
-      "nodes": [
-        0
-      ]
-    }
-  ],
-  "nodes": [
-    {
-      "mesh": 0,
-      "name": "desk_lamp_arm_01"
-    }
-  ],
-  "materials": [
-    {
-      "doubleSided": true,
-      "name": "desk_lamp_arm_01",
-      "normalTexture": {
-        "index": 0
-      },
-      "pbrMetallicRoughness": {
-        "baseColorTexture": {
-          "index": 1
-        },
-        "metallicRoughnessTexture": {
-          "index": 2
-        }
-      }
-    },
-    {
-      "doubleSided": true,
-      "emissiveFactor": [
-        1,
-        0.9837890267372131,
-        0.649111270904541
-      ],
-      "name": "desk_lamp_arm_01_light",
-      "normalTexture": {
-        "index": 3
-      },
-      "pbrMetallicRoughness": {
-        "baseColorTexture": {
-          "index": 4
-        },
-        "metallicRoughnessTexture": {
-          "index": 5
-        }
-      }
-    }
-  ],
-  "meshes": [
-    {
-      "name": "Box.001",
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 0,
-            "NORMAL": 1,
-            "TEXCOORD_0": 2
-          },
-          "indices": 3,
-          "material": 0
-        },
-        {
-          "attributes": {
-            "POSITION": 4,
-            "NORMAL": 5,
-            "TEXCOORD_0": 6
-          },
-          "indices": 7,
-          "material": 1
-        }
-      ]
-    }
-  ],
-  "textures": [
-    {
-      "sampler": 0,
-      "source": 0
-    },
-    {
-      "sampler": 0,
-      "source": 1
-    },
-    {
-      "sampler": 0,
-      "source": 2
-    },
-    {
-      "sampler": 0,
-      "source": 0
-    },
-    {
-      "sampler": 0,
-      "source": 1
-    },
-    {
-      "sampler": 0,
-      "source": 2
-    }
-  ],
-  "images": [
-    {
-      "mimeType": "image/jpeg",
-      "name": "desk_lamp_arm_01_nor_gl",
-      "uri": "textures/desk_lamp_arm_01_nor_gl_1k.jpg"
-    },
-    {
-      "mimeType": "image/jpeg",
-      "name": "desk_lamp_arm_01_diff",
-      "uri": "textures/desk_lamp_arm_01_diff_1k.jpg"
-    },
-    {
-      "mimeType": "image/jpeg",
-      "name": "desk_lamp_arm_01_metal-desk_lamp_arm_01_rough",
-      "uri": "textures/desk_lamp_arm_01_arm_1k.jpg"
-    }
-  ],
-  "accessors": [
-    {
-      "bufferView": 0,
-      "componentType": 5126,
-      "count": 17533,
-      "max": [
-        0.08325615525245667,
-        0.8046169281005859,
-        0.3172350823879242
-      ],
-      "min": [
-        -0.11847317218780518,
-        -0.08799377083778381,
-        -0.29663750529289246
-      ],
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 1,
-      "componentType": 5126,
-      "count": 17533,
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 2,
-      "componentType": 5126,
-      "count": 17533,
-      "type": "VEC2"
-    },
-    {
-      "bufferView": 3,
-      "componentType": 5123,
-      "count": 67794,
-      "type": "SCALAR"
-    },
-    {
-      "bufferView": 4,
-      "componentType": 5126,
-      "count": 973,
-      "max": [
-        0.027660036459565163,
-        0.7424256801605225,
-        -0.1412101536989212
-      ],
-      "min": [
-        -0.03705751523375511,
-        0.6487915515899658,
-        -0.21220247447490692
-      ],
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 5,
-      "componentType": 5126,
-      "count": 973,
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 6,
-      "componentType": 5126,
-      "count": 973,
-      "type": "VEC2"
-    },
-    {
-      "bufferView": 7,
-      "componentType": 5123,
-      "count": 4512,
-      "type": "SCALAR"
-    }
-  ],
-  "bufferViews": [
-    {
-      "buffer": 0,
-      "byteLength": 210396,
-      "byteOffset": 0
-    },
-    {
-      "buffer": 0,
-      "byteLength": 210396,
-      "byteOffset": 210396
-    },
-    {
-      "buffer": 0,
-      "byteLength": 140264,
-      "byteOffset": 420792
-    },
-    {
-      "buffer": 0,
-      "byteLength": 135588,
-      "byteOffset": 561056
-    },
-    {
-      "buffer": 0,
-      "byteLength": 11676,
-      "byteOffset": 696644
-    },
-    {
-      "buffer": 0,
-      "byteLength": 11676,
-      "byteOffset": 708320
-    },
-    {
-      "buffer": 0,
-      "byteLength": 7784,
-      "byteOffset": 719996
-    },
-    {
-      "buffer": 0,
-      "byteLength": 9024,
-      "byteOffset": 727780
-    }
-  ],
-  "samplers": [
-    {
-      "magFilter": 9729,
-      "minFilter": 9987
-    }
-  ],
-  "buffers": [
-    {
-      "byteLength": 736804,
-      "uri": "desk_lamp_arm_01.bin"
-    }
-  ]
+	"asset":{
+		"generator":"Khronos glTF Blender I/O v5.2.40",
+		"version":"2.0"
+	},
+	"scene":0,
+	"scenes":[
+		{
+			"name":"Scene",
+			"nodes":[
+				0
+			]
+		}
+	],
+	"nodes":[
+		{
+			"mesh":0,
+			"name":"desk_lamp_arm_01"
+		}
+	],
+	"materials":[
+		{
+			"doubleSided":true,
+			"name":"desk_lamp_arm_01",
+			"normalTexture":{
+				"index":0
+			},
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":1
+				},
+				"metallicRoughnessTexture":{
+					"index":2
+				}
+			}
+		},
+		{
+			"doubleSided":true,
+			"emissiveFactor":[
+				1,
+				0.9837890267372131,
+				0.649111270904541
+			],
+			"name":"desk_lamp_arm_01_light",
+			"normalTexture":{
+				"index":3
+			},
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":4
+				},
+				"metallicRoughnessTexture":{
+					"index":5
+				}
+			}
+		}
+	],
+	"meshes":[
+		{
+			"name":"Box.001",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":0,
+						"NORMAL":1,
+						"TEXCOORD_0":2
+					},
+					"indices":3,
+					"material":0
+				},
+				{
+					"attributes":{
+						"POSITION":4,
+						"NORMAL":5,
+						"TEXCOORD_0":6
+					},
+					"indices":7,
+					"material":1
+				}
+			]
+		}
+	],
+	"textures":[
+		{
+			"sampler":0,
+			"source":0
+		},
+		{
+			"sampler":0,
+			"source":1
+		},
+		{
+			"sampler":0,
+			"source":2
+		},
+		{
+			"sampler":0,
+			"source":0
+		},
+		{
+			"sampler":0,
+			"source":1
+		},
+		{
+			"sampler":0,
+			"source":2
+		}
+	],
+	"images":[
+		{
+			"mimeType":"image/jpeg",
+			"name":"desk_lamp_arm_01_nor_gl",
+			"uri":"textures/desk_lamp_arm_01_nor_gl_1k.jpg"
+		},
+		{
+			"mimeType":"image/jpeg",
+			"name":"desk_lamp_arm_01_diff",
+			"uri":"textures/desk_lamp_arm_01_diff_1k.jpg"
+		},
+		{
+			"mimeType":"image/jpeg",
+			"name":"desk_lamp_arm_01_metal-desk_lamp_arm_01_rough",
+			"uri":"textures/desk_lamp_arm_01_arm_1k.jpg"
+		}
+	],
+	"accessors":[
+		{
+			"bufferView":0,
+			"componentType":5126,
+			"count":3947,
+			"max":[
+				0.08373482525348663,
+				0.8047349452972412,
+				0.3182886838912964
+			],
+			"min":[
+				-0.11795220524072647,
+				-0.08799377083778381,
+				-0.2974458336830139
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":1,
+			"componentType":5126,
+			"count":3947,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":2,
+			"componentType":5126,
+			"count":3947,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":3,
+			"componentType":5123,
+			"count":8244,
+			"type":"SCALAR"
+		},
+		{
+			"bufferView":4,
+			"componentType":5126,
+			"count":277,
+			"max":[
+				0.02804143913090229,
+				0.7421343922615051,
+				-0.14133702218532562
+			],
+			"min":[
+				-0.03788839653134346,
+				0.6490183472633362,
+				-0.21271201968193054
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":5,
+			"componentType":5126,
+			"count":277,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":6,
+			"componentType":5126,
+			"count":277,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":7,
+			"componentType":5123,
+			"count":756,
+			"type":"SCALAR"
+		}
+	],
+	"bufferViews":[
+		{
+			"buffer":0,
+			"byteLength":47364,
+			"byteOffset":0,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":47364,
+			"byteOffset":47364,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":31576,
+			"byteOffset":94728,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":16488,
+			"byteOffset":126304,
+			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":3324,
+			"byteOffset":142792,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":3324,
+			"byteOffset":146116,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":2216,
+			"byteOffset":149440,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":1512,
+			"byteOffset":151656,
+			"target":34963
+		}
+	],
+	"samplers":[
+		{
+			"magFilter":9729,
+			"minFilter":9987
+		}
+	],
+	"buffers":[
+		{
+			"byteLength":153168,
+			"uri":"desk_lamp_arm_01.bin"
+		}
+	]
 }

@@ -9,8 +9,9 @@ using UnityEngine;
 namespace Reconnect.Client.Editor
 {
     /// <summary>
-    /// Realistic avatars: one prefab per MakeHuman figure (URP materials per slot) and one Humanoid animator for all
-    /// of them (Quaternius clips + wave / nod / head shake built here as muscle clips). Called by ProjectSetup.
+    /// Realistic avatars: one prefab per MakeHuman figure and one Humanoid animator for all of them (Quaternius clips +
+    /// wave / nod / head shake built here as muscle clips). Called by ProjectSetup. Mobile budget: each figure is one
+    /// skinned mesh per LOD with two materials (opaque atlas, cut-out atlas for hair), 2-bone skinning, LODGroup.
     /// </summary>
     internal static class AvatarSetup
     {
@@ -22,7 +23,9 @@ namespace Reconnect.Client.Editor
         /// <summary>Layer names are part of the contract with <see cref="AvatarView"/>.</summary>
         public static AvatarCatalog Build(string catalogPath, string controllerPath)
         {
+            AssetDatabase.DeleteAsset(MaterialDir);   // materials of older builds (one per part)
             Directory.CreateDirectory(MaterialDir);
+            AssetDatabase.Refresh();
             var figures = Directory.GetDirectories(AvatarImportSettings.Figures.TrimEnd('/'))
                 .Select(dir => dir.Replace('\\', '/'))
                 .Where(dir => File.Exists($"{dir}/{Path.GetFileName(dir)}.fbx"))
@@ -43,60 +46,65 @@ namespace Reconnect.Client.Editor
             return catalog;
         }
 
+        /// <summary>Screen height (fraction) below which the next LOD is used; below the last the figure is culled.</summary>
+        private static readonly float[] LodHeights = { 0.25f, 0.08f, 0.01f };
+
         private static GameObject BuildPrefab(string dir)
         {
             var id = Path.GetFileName(dir);
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{dir}/{id}.fbx");
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(model);
-            foreach (var renderer in instance.GetComponentsInChildren<SkinnedMeshRenderer>())
+            PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.OutermostRoot, InteractionMode.AutomatedAction);
+            var materials = new Dictionary<string, Material>
             {
-                renderer.sharedMaterial = Material(dir, id, renderer.name);
+                ["opaque"] = Material(dir, id, "opaque"),
+                ["cutout"] = Material(dir, id, "cutout"),
+            };
+
+            var lods = new List<LOD>();
+            for (var level = 0; level < LodHeights.Length; level++)
+            {
+                var renderer = instance.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single(r => r.name == $"{id}_LOD{level}");
+                renderer.sharedMaterials = renderer.sharedMaterials
+                    .Select(m => m != null && materials.TryGetValue(m.name, out var ours) ? ours : materials["opaque"])
+                    .ToArray();
+                renderer.quality = SkinQuality.Bone2;          // phones: 2 bones per vertex
                 renderer.updateWhenOffscreen = false;
                 renderer.skinnedMotionVectors = false;
-                // Small parts don't cast shadows on phones.
-                renderer.shadowCastingMode = renderer.name is "skin" || renderer.name.StartsWith("cloth_") || renderer.name == "hair"
-                    ? UnityEngine.Rendering.ShadowCastingMode.On
-                    : UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.shadowCastingMode = level < 2 ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
+                lods.Add(new LOD(LodHeights[level], new Renderer[] { renderer }));
             }
+            var group = instance.GetComponent<LODGroup>() ?? instance.AddComponent<LODGroup>();
+            group.SetLODs(lods.ToArray());
+            group.RecalculateBounds();
+
             var animator = instance.GetComponent<Animator>() ?? instance.AddComponent<Animator>();
             animator.avatar = AssetDatabase.LoadAllAssetsAtPath($"{dir}/{id}.fbx").OfType<Avatar>().First();
-            animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;   // off screen: no bone updates
             var path = $"{PrefabDir}/{id}.prefab";
             var prefab = PrefabUtility.SaveAsPrefabAsset(instance, path);
             Object.DestroyImmediate(instance);
             return prefab;
         }
 
-        /// <summary>URP Lit material for one slot: skin, eyes, eyebrows, eyelashes, hair, beard or cloth_n.</summary>
-        private static Material Material(string dir, string id, string slot)
+        /// <summary>URP Lit material for one atlas: "opaque" (skin, eyes, clothes) or "cutout" (hair, beard, brows, lashes).</summary>
+        private static Material Material(string dir, string id, string atlas)
         {
-            var path = $"{MaterialDir}/{id}_{slot}.mat";
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material == null)
-            {
-                material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                AssetDatabase.CreateAsset(material, path);
-            }
-            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/{slot}.png"));
+            var path = $"{MaterialDir}/{id}_{atlas}.mat";
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            AssetDatabase.CreateAsset(material, path);
+            material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/{atlas}.png"));
             material.SetColor("_BaseColor", Color.white);
-            var normal = AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/{slot}_normal.png");
-            material.SetTexture("_BumpMap", normal);
-            SetKeyword(material, "_NORMALMAP", normal != null);
-
-            var cutout = slot is "hair" or "beard" or "eyebrows" or "eyelashes";
+            var cutout = atlas == "cutout";
             material.SetFloat("_AlphaClip", cutout ? 1f : 0f);
-            material.SetFloat("_Cutoff", slot == "hair" ? 0.35f : 0.5f);
+            material.SetFloat("_Cutoff", 0.4f);
             SetKeyword(material, "_ALPHATEST_ON", cutout);
             material.SetFloat("_Cull", cutout ? 0f : 2f);   // hair cards are seen from both sides
             material.renderQueue = cutout ? (int)UnityEngine.Rendering.RenderQueue.AlphaTest : -1;
-            material.SetFloat("_Smoothness", slot switch
-            {
-                "skin" => 0.38f,
-                "eyes" => 0.85f,
-                "hair" => 0.3f,
-                _ => 0.12f,
-            });
-            material.SetFloat("_SpecularHighlights", 1f);
+            material.SetFloat("_Smoothness", cutout ? 0.25f : 0.3f);
+            material.SetFloat("_EnvironmentReflections", 0f);   // cheaper on phones, fabric and skin barely reflect
+            SetKeyword(material, "_ENVIRONMENTREFLECTIONS_OFF", true);
+            material.enableInstancing = true;
             EditorUtility.SetDirty(material);
             return material;
         }

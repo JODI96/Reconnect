@@ -32,7 +32,7 @@ Animator. `AvatarGalleryTests` rendert `client/Logs/avatars*.png` zur Kontrolle,
 
 - **T-Pose:** MakeHuman-Rigs ruhen in einer A-Pose; `build_avatars.py` stellt Arme, Beine und Finger gerade und macht
   das zur Ruhepose. Sonst verschiebt Unitys Humanoid-Retargeting jede Animation (Arme abgespreizt, Fäuste).
-- **Mesh-Namen = Material-Slots** (`skin`, `eyes`, `eyebrows`, `eyelashes`, `hair`, `beard`, `cloth_<n>`):
-  `AvatarSetup` findet darüber Textur und Material.
-- Figuren: 13–25k Dreiecke, 1k-Texturen. Für volle Räume (Lobby 80 Personen) fehlt noch ein LOD.
+- **Handy-Format:** alle Teile werden zu einem Mesh verbunden, ihre Texturen in zwei Atlanten gepackt (`opaque.png`
+  1024: Haut, Augen, Kleidung; `cutout.png` 512: Haare, Bart, Brauen, Wimpern) → 2 Draw Calls pro Figur. Drei LODs
+  (`<id>_LOD0/1/2`, ~8k / 3k / 1k Dreiecke), aus denen `AvatarSetup` eine LODGroup baut.
 - Keine Haut-Assets mit Genitalien oder Tattoos; Figuren sind erwachsen (20–40) und angezogen.

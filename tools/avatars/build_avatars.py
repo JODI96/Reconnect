@@ -5,8 +5,9 @@ Builds the realistic avatar figures for Reconnect from MakeHuman (CC0) with Blen
 
 Needs Blender 5.x with the MPFB extension and the CC0 asset packs installed in MPFB's user data
 (see tools/avatars/README.md). Writes one folder per figure to client/Assets/ThirdParty/MakeHuman/<id>/:
-<id>.fbx (mixamo_unity rig, meters, mobile-sized meshes) and 1k textures named after the material slots
-(skin, eyes, eyebrows, eyelashes, hair, beard, cloth_<n>) that ProjectSetup turns into URP materials.
+<id>.fbx (mixamo_unity rig, meters, T-pose) and two texture atlases. Built for phones: every figure is ONE
+skinned mesh with two materials ("opaque": skin, eyes, clothes; "cutout": hair, beard, brows, lashes) in three
+LODs (<id>_LOD0/1/2, Unity makes a LODGroup of them) - two draw calls per visible figure.
 Previews for review go to client/Logs/avatars/.
 """
 import bpy
@@ -22,8 +23,13 @@ OUT = os.path.join(REPO, "client", "Assets", "ThirdParty", "MakeHuman")
 PREVIEWS = os.path.join(REPO, "client", "Logs", "avatars")
 DATA = LocationService.get_user_data()
 
-TEXTURE_SIZE = 1024
-MAX_CLOTH_TRIS = 8000          # per garment; only very dense meshes are reduced (holes in hems otherwise)
+# Triangle budget of the close-up LOD per part (the body proxy has ~3k); LOD1/LOD2 are reduced from LOD0.
+PART_TRIS = {"hair": 1800, "beard": 600}
+CLOTH_TRIS = 1500
+LODS = [(1, 0.35), (2, 0.12)]
+CUTOUT = {"hair", "beard", "eyebrows", "eyelashes"}
+OPAQUE_ATLAS = 1024           # a figure is ~150-400 px tall on a phone; 512 px skin is plenty
+CUTOUT_ATLAS = 512
 
 
 def woman(race, **kw):
@@ -161,36 +167,160 @@ def build_figure(fig):
     out_dir = os.path.join(OUT, fig["id"])
     os.makedirs(out_dir, exist_ok=True)
     for f in os.listdir(out_dir):
-        if f.endswith((".png", ".fbx")):
+        if f.endswith((".png", ".fbx", ".png.meta")):
             os.remove(os.path.join(out_dir, f))
 
-    meshes = [o for o in bpy.data.objects if o.type == "MESH" and o != basemesh]
-    for obj in meshes:
+    meshes = {}
+    for obj in [o for o in bpy.data.objects if o.type == "MESH" and o != basemesh]:
         slot = next((name for name, (asset, _) in parts.items() if obj.name.endswith("." + asset) or obj.name.endswith(asset)), None)
         if slot is None:
             print("UNMAPPED", obj.name)
+            bpy.data.objects.remove(obj, do_unlink=True)
             continue
         prepare_mesh(obj, slot)
-        diffuse, normal = textures_of(parts[slot][1])
-        obj.data.materials.clear()
-        obj.data.materials.append(make_material(slot, out_dir, diffuse, normal))
-        obj.name = slot   # Unity finds the material for each renderer by this name
+        meshes[slot] = obj
     bpy.data.objects.remove(basemesh, do_unlink=True)
-    to_t_pose(rig, [o for o in bpy.data.objects if o.type == "MESH"])
 
-    # Export: armature + meshes, meters, Y up (Unity).
+    # Two atlases, UVs moved into each part's cell, one mesh with two materials.
+    textures = {slot: textures_of(parts[slot][1])[0] for slot in meshes}
+    # The garment covering the most surface (dress, suit, shirt) gets as much texture as the skin.
+    cloths = sorted((s for s in meshes if s.startswith("cloth_")), key=lambda s: -sum(p.area for p in meshes[s].data.polygons))
+    opaque_sizes = [(s, 512 if s == "skin" or (cloths and s == cloths[0]) else 128 if s == "eyes" else 256)
+                    for s in meshes if s not in CUTOUT]
+    cutout_sizes = [(s, 256 if s == "hair" else 128) for s in meshes if s in CUTOUT]
+    for name, sizes, atlas, opaque in (("opaque", opaque_sizes, OPAQUE_ATLAS, True), ("cutout", cutout_sizes, CUTOUT_ATLAS, False)):
+        if not sizes:
+            continue
+        cells = pack(sizes, atlas)
+        image = compose_atlas(cells, textures, atlas, os.path.join(out_dir, name + ".png"), opaque)
+        material = atlas_material(name, image)
+        for slot, cell in cells.items():
+            remap_uvs(meshes[slot], cell, atlas)
+            meshes[slot].data.materials.clear()
+            meshes[slot].data.materials.append(material)
+
     bpy.ops.object.select_all(action="DESELECT")
-    for obj in bpy.data.objects:
-        if obj.type in ("MESH", "ARMATURE"):
-            obj.select_set(True)
+    for obj in meshes.values():
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = meshes["skin"]
+    bpy.ops.object.join()
+    lod0 = meshes["skin"]
+    lod0.name = lod0.data.name = fig["id"] + "_LOD0"
+    to_t_pose(rig, [lod0])
+
+    lods = [lod0]
+    for level, ratio in LODS:
+        lod = lod0.copy()
+        lod.data = lod0.data.copy()
+        lod.name = lod.data.name = f"{fig['id']}_LOD{level}"
+        bpy.context.scene.collection.objects.link(lod)
+        decimate(lod, ratio)
+        lod.hide_render = True
+        lods.append(lod)
+
+    # Export: armature + LOD meshes, meters, Y up (Unity).
+    bpy.ops.object.select_all(action="DESELECT")
+    rig.select_set(True)
+    for lod in lods:
+        lod.select_set(True)
     bpy.context.view_layer.objects.active = rig
     bpy.ops.export_scene.fbx(filepath=os.path.join(out_dir, fig["id"] + ".fbx"), use_selection=True,
                              object_types={"ARMATURE", "MESH"}, apply_scale_options="FBX_SCALE_ALL",
                              axis_forward="-Z", axis_up="Y", add_leaf_bones=False, bake_anim=False,
                              use_mesh_modifiers=True, mesh_smooth_type="FACE", path_mode="STRIP")
-    tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == "MESH")
-    print(f"FIGURE {fig['id']}: {tris} triangles, {len(rig.data.bones)} bones")
+    print(f"FIGURE {fig['id']}: LOD triangles {[triangles(l) for l in lods]}, {len(rig.data.bones)} bones")
     render_preview(fig["id"])
+
+
+def triangles(obj):
+    return sum(len(p.vertices) - 2 for p in obj.data.polygons)
+
+
+def decimate(obj, ratio):
+    """Collapse-decimates the mesh (before the armature modifier) and applies it."""
+    if ratio >= 1.0:
+        return
+    modifier = obj.modifiers.new("Decimate", "DECIMATE")
+    modifier.ratio = ratio
+    with bpy.context.temp_override(object=obj, active_object=obj):
+        bpy.ops.object.modifier_move_to_index(modifier="Decimate", index=0)
+        bpy.ops.object.modifier_apply(modifier="Decimate")
+
+
+def pack(sizes, atlas):
+    """Places power-of-two squares into the atlas (quadtree): slot -> (x, y, size) in pixels."""
+    free = [(0, 0, atlas)]
+    cells = {}
+    for slot, size in sorted(sizes, key=lambda item: -item[1]):
+        fitting = sorted((f for f in free if f[2] >= size), key=lambda f: f[2])
+        if not fitting:
+            raise RuntimeError(f"Atlas {atlas} full, cannot place {slot} ({size})")
+        x, y, square = fitting[0]
+        free.remove(fitting[0])
+        while square > size:
+            square //= 2
+            free += [(x + square, y, square), (x, y + square, square), (x + square, y + square, square)]
+        cells[slot] = (x, y, size)
+    return cells
+
+
+def compose_atlas(cells, textures, atlas, path, opaque):
+    """Scales each part's texture into its cell and saves the atlas as PNG."""
+    import numpy as np
+
+    pixels = np.zeros((atlas, atlas, 4), np.float32)
+    pixels[..., :3] = 0.5
+    if opaque:
+        pixels[..., 3] = 1.0
+    for slot, (x, y, size) in cells.items():
+        if not textures.get(slot):
+            continue
+        image = bpy.data.images.load(textures[slot], check_existing=False)
+        image.scale(size, size)
+        cell = np.empty(size * size * 4, np.float32)
+        image.pixels.foreach_get(cell)
+        cell = cell.reshape(size, size, 4)
+        if opaque:
+            cell[..., 3] = 1.0
+        pixels[y:y + size, x:x + size] = cell
+        bpy.data.images.remove(image)
+    result = bpy.data.images.new(os.path.basename(path), atlas, atlas, alpha=True)
+    result.pixels.foreach_set(pixels.ravel())
+    result.filepath_raw = path
+    result.file_format = "PNG"
+    result.save()
+    return result
+
+
+def remap_uvs(obj, cell, atlas):
+    """Moves the part's 0..1 UVs into its atlas cell (one pixel inset against bleeding)."""
+    import numpy as np
+
+    mesh = obj.data
+    while len(mesh.uv_layers) > 1:
+        mesh.uv_layers.remove(mesh.uv_layers[-1])
+    mesh.uv_layers[0].name = "UVMap"
+    data = mesh.uv_layers[0].data
+    uv = np.empty(len(data) * 2, np.float32)
+    data.foreach_get("uv", uv)
+    uv = np.clip(uv.reshape(-1, 2), 0.0, 1.0)
+    x, y, size = cell
+    uv[:, 0] = (x + 1 + uv[:, 0] * (size - 2)) / atlas
+    uv[:, 1] = (y + 1 + uv[:, 1] * (size - 2)) / atlas
+    data.foreach_set("uv", uv.ravel())
+
+
+def atlas_material(name, image):
+    material = bpy.data.materials.new(name)
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    bsdf = nodes.get("Principled BSDF")
+    tex = nodes.new("ShaderNodeTexImage")
+    tex.image = image
+    material.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    material.node_tree.links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
+    bsdf.inputs["Roughness"].default_value = 0.7
+    return material
 
 
 # Unity's Humanoid retargeting expects the rest pose to be a T-pose (the animation library is in T-pose);
@@ -258,7 +388,7 @@ def to_t_pose(rig, meshes):
 
 
 def prepare_mesh(obj, slot):
-    """Bakes shape keys, applies the masks (no skin under clothes) and trims garments for mobile."""
+    """Bakes shape keys, applies the masks (no skin under clothes) and trims parts to the mobile budget."""
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.select_all(action="DESELECT")
     obj.select_set(True)
@@ -267,47 +397,10 @@ def prepare_mesh(obj, slot):
     for modifier in list(obj.modifiers):
         if modifier.type in ("MASK", "SUBSURF"):
             bpy.ops.object.modifier_apply(modifier=modifier.name)
-    tris = sum(len(p.vertices) - 2 for p in obj.data.polygons)
-    if slot.startswith("cloth_") and tris > MAX_CLOTH_TRIS:
-        decimate = obj.modifiers.new("Decimate", "DECIMATE")
-        decimate.ratio = MAX_CLOTH_TRIS / tris
-        bpy.ops.object.modifier_move_to_index(modifier="Decimate", index=0)
-        bpy.ops.object.modifier_apply(modifier="Decimate")
-
-
-def save_texture(path, out_path, size):
-    copy = bpy.data.images.load(path, check_existing=False)   # own copy: scaled and saved elsewhere
-    image = copy
-    scale = min(1.0, size / max(image.size[0], image.size[1]))
-    if scale < 1.0:
-        copy.scale(max(1, int(image.size[0] * scale)), max(1, int(image.size[1] * scale)))
-    copy.filepath_raw = out_path
-    copy.file_format = "PNG"
-    copy.save()
-    return copy
-
-
-def make_material(slot, out_dir, diffuse, normal):
-    material = bpy.data.materials.new(slot)
-    material.use_nodes = True
-    nodes = material.node_tree.nodes
-    bsdf = nodes.get("Principled BSDF")
-    if diffuse:
-        image = save_texture(diffuse, os.path.join(out_dir, slot + ".png"), TEXTURE_SIZE)
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = image
-        material.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-        material.node_tree.links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
-    if normal and not slot.startswith(("eye", "hair")):
-        image = save_texture(normal, os.path.join(out_dir, slot + "_normal.png"), TEXTURE_SIZE // 2)
-        image.colorspace_settings.name = "Non-Color"
-        tex = nodes.new("ShaderNodeTexImage")
-        tex.image = image
-        normal_map = nodes.new("ShaderNodeNormalMap")
-        material.node_tree.links.new(tex.outputs["Color"], normal_map.inputs["Color"])
-        material.node_tree.links.new(normal_map.outputs["Normal"], bsdf.inputs["Normal"])
-    bsdf.inputs["Roughness"].default_value = 0.55 if slot == "skin" else 0.8
-    return material
+    budget = PART_TRIS.get(slot, CLOTH_TRIS if slot.startswith("cloth_") else None)
+    tris = triangles(obj)
+    if budget and tris > budget:
+        decimate(obj, budget / tris)
 
 
 def render_preview(name):

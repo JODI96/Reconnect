@@ -138,10 +138,16 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   T-Pose), `AvatarSetup` baut Prefabs (`_Project/Avatars`), URP-Materialien pro Mesh-Slot und den Animator: Basis
   (Idle/Walk/Talk/Sitzen/Springen), Ebene `Hands` (entspannte Finger), `Arm Gestures`/`Head Gestures` (Winken, Nicken,
   Kopfschütteln als Muskel-Clips; `AvatarView` blendet die Ebene während der Geste ein). Massstab echte Meter.
+  **Handy-Budget:** jede Figur = ein Skinned Mesh mit 2 Materialien (Atlas `opaque` 1024 / `cutout` 512, ASTC) in
+  3 LODs (~8k / 3k / 1k Dreiecke, LODGroup), 2-Knochen-Skinning. Poly-Haven-Möbel werden nach dem Download mit
+  `tools/polyhaven_mobile.py` (Blender) auf ≤ 3k Dreiecke pro Teil reduziert; der GPU Resident Drawer (Forward+) bündelt
+  die Möbel. `CrowdPerformanceTests`: volle Lobby (80 Personen, ganzer Raum) ≤ 400 Draw Calls, ≤ 80 Set-Pass-Calls,
+  ≤ 400k Dreiecke (SRP Batcher: Set-Pass-Wechsel sind der teure Teil).
 - **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney` (Low-Poly, Figuren nicht mehr genutzt), dazu
   realistische **Poly-Haven-Modelle** (CC0, kommerziell frei, keine Namensnennung nötig) in `Assets/ThirdParty/PolyHaven`
   als glTF (Import über `com.unity.cloud.gltfast`, 1k-Texturen für Mobile). Neue Poly-Haven-Modelle: Namen in
-  `tools/fetch_polyhaven.py` eintragen, Skript ausführen, dann Setup Project. ItemId = `ph-<name>` (echte Meter, Scale 1;
+  `tools/fetch_polyhaven.py` eintragen, Skript ausführen, dann `tools/polyhaven_mobile.py` (Blender, Dreiecksbudget),
+  dann Setup Project. ItemId = `ph-<name>` (echte Meter, Scale 1;
   im Backend über `Ph(...)` platzieren – die Modelle schauen nach +Z, `Ph` dreht sie passend). Kenney-Möbel-ItemId =
   Modellname; `game-tictactoe`/`game-quiz` sind Spielstationen, `custom-*` baut der Client (Pool, Säule …),
   Kleinteile (Laptop, Lampe, Kaffeemaschine) werden automatisch auf Möbel gestapelt.
