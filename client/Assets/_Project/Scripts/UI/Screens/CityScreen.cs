@@ -78,6 +78,9 @@ namespace Reconnect.Client.UI.Screens
             _city.CameraController.IsPointerOverUi = IsPointerOverUi;
             _city.BuildingTapped += Select;
             Root.schedule.Execute(UpdateOverlay).Every(0);
+            // Staying in the city for hours: renew the map session once it expires (free while it is valid).
+            Root.schedule.Execute(() => RunAsync(async () => _city.ApplyMap(await _maps.GetAsync(Lifetime))))
+                .StartingIn(60_000).Every(60_000);
 
             RunAsync(async () =>
             {

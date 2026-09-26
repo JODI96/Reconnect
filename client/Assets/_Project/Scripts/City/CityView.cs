@@ -38,6 +38,7 @@ namespace Reconnect.Client.City
         private CityMarker _selected;
         private bool _cameraPlaced;
         private int _markerGeneration;
+        private MapSessionDto _appliedMap;
 
         /// <summary>Layer for data that is loaded but not drawn (swisstopo while Google is shown).</summary>
         public const string DataOnlyLayerName = "CityData";
@@ -86,12 +87,28 @@ namespace Reconnect.Client.City
         }
 
         /// <summary>Switches between Google Photorealistic 3D Tiles and swisstopo (see class summary).</summary>
+        /// <remarks>
+        /// A Google session (root tileset request) is billed once and valid for ~3 h. Passing the same
+        /// <paramref name="map"/> instance again is free; a new instance from <see cref="MapService"/> means a new
+        /// session – the tileset is reloaded then, because the URL (key) is the same but the session inside expired.
+        /// </remarks>
         public void ApplyMap(MapSessionDto map)
         {
+            if (ReferenceEquals(map, _appliedMap))
+            {
+                return;
+            }
+            var wasGoogle = IsGoogle;
+            _appliedMap = map;
+
             var google = googleTiles != null && map.Provider == MapProviders.Google && !string.IsNullOrEmpty(map.GoogleTilesetUrl);
             if (google && googleTiles.url != map.GoogleTilesetUrl)
             {
-                googleTiles.url = map.GoogleTilesetUrl;   // a new session (the URL carries the key)
+                googleTiles.url = map.GoogleTilesetUrl;   // setting the URL reloads the tileset
+            }
+            else if (google && wasGoogle)
+            {
+                googleTiles.RecreateTileset();   // same URL, new session
             }
             Provider = google ? MapProviders.Google : MapProviders.Swisstopo;
             if (googleTiles != null)
