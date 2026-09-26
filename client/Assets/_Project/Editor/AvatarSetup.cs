@@ -81,6 +81,10 @@ namespace Reconnect.Client.Editor
             var animator = instance.GetComponent<Animator>() ?? instance.AddComponent<Animator>();
             animator.avatar = AssetDatabase.LoadAllAssetsAtPath($"{dir}/{id}.fbx").OfType<Avatar>().First();
             animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;   // off screen: no bone updates
+            if (instance.GetComponent<UprightPosture>() == null)
+            {
+                instance.AddComponent<UprightPosture>();
+            }
             var path = $"{PrefabDir}/{id}.prefab";
             var prefab = PrefabUtility.SaveAsPrefabAsset(instance, path);
             Object.DestroyImmediate(instance);
@@ -247,10 +251,11 @@ namespace Reconnect.Client.Editor
 
         private static AnimationClip Wave() => GestureClip("Wave", 1.8f, new Dictionary<string, AnimationCurve>
         {
-            ["Right Shoulder Down-Up"] = Hold(1.8f, 0.3f),
-            ["Right Arm Down-Up"] = Hold(1.8f, 0.6f),
-            ["Right Arm Front-Back"] = Hold(1.8f, 0.3f),
-            ["Right Forearm Stretch"] = Hold(1.8f, -0.55f),
+            // Hand up beside the head, forearm upright, swinging from the elbow.
+            ["Right Shoulder Down-Up"] = Hold(1.8f, 0.5f),
+            ["Right Arm Down-Up"] = Hold(1.8f, 0.95f),
+            ["Right Arm Front-Back"] = Hold(1.8f, 0.15f),
+            ["Right Forearm Stretch"] = Hold(1.8f, -0.25f),
             ["Right Arm Twist In-Out"] = Oscillate(1.8f, 0.1f, 0.45f, 3),
             ["Right Hand In-Out"] = Oscillate(1.8f, 0f, 0.3f, 3),
         });

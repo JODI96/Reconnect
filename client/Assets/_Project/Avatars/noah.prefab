@@ -935,6 +935,7 @@ GameObject:
   - component: {fileID: 2506588154633870848}
   - component: {fileID: 8370252658100569210}
   - component: {fileID: 7247187954776009073}
+  - component: {fileID: 3869945706373321449}
   m_Layer: 0
   m_Name: noah
   m_TagString: Untagged
@@ -1010,6 +1011,18 @@ LODGroup:
     renderers:
     - renderer: {fileID: 6202792450877558920}
   m_Enabled: 1
+--- !u!114 &3869945706373321449
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2991199435839964346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 366da29c47c73e847806443908d47ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.UprightPosture
 --- !u!1 &3030297471178351165
 GameObject:
   m_ObjectHideFlags: 0

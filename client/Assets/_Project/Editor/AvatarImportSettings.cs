@@ -15,7 +15,7 @@ namespace Reconnect.Client.Editor
         public const string Animations = "Assets/ThirdParty/Quaternius/";
 
         /// <summary>Bump when the rules change, so Unity reimports the avatars.</summary>
-        public override uint GetVersion() => 3;
+        public override uint GetVersion() => 4;
 
         private void OnPreprocessModel()
         {
@@ -52,7 +52,9 @@ namespace Reconnect.Client.Editor
             {
                 return;
             }
-            // Clips play in place: the room moves the avatar, the clip only animates the body.
+            // Clips play in place: the room moves the avatar, the clip only animates the body. The root follows the
+            // body's centre of mass and orientation (not the clip's original root), so a figure walks upright and
+            // centred on its tile instead of drifting sideways or leaning; the feet keep it on the floor.
             var importer = (ModelImporter)assetImporter;
             importer.clipAnimations = importer.defaultClipAnimations
                 .Select(clip =>
@@ -62,9 +64,10 @@ namespace Reconnect.Client.Editor
                     clip.lockRootRotation = true;
                     clip.lockRootHeightY = true;
                     clip.lockRootPositionXZ = true;
-                    clip.keepOriginalOrientation = true;
-                    clip.keepOriginalPositionY = true;
-                    clip.keepOriginalPositionXZ = true;
+                    clip.keepOriginalOrientation = false;
+                    clip.keepOriginalPositionY = false;
+                    clip.heightFromFeet = true;
+                    clip.keepOriginalPositionXZ = false;
                     return clip;
                 })
                 .ToArray();

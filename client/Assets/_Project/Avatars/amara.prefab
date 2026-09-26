@@ -2402,6 +2402,7 @@ GameObject:
   - component: {fileID: 7262770522918471407}
   - component: {fileID: 3614885935260769429}
   - component: {fileID: 2490654313063739806}
+  - component: {fileID: 1355033128400114675}
   m_Layer: 0
   m_Name: amara
   m_TagString: Untagged
@@ -2477,6 +2478,18 @@ LODGroup:
     renderers:
     - renderer: {fileID: 566087103421243250}
   m_Enabled: 1
+--- !u!114 &1355033128400114675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8034804241074461781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 366da29c47c73e847806443908d47ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.UprightPosture
 --- !u!1 &8053551061453053680
 GameObject:
   m_ObjectHideFlags: 0

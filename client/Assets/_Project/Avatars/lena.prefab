@@ -2306,6 +2306,7 @@ GameObject:
   - component: {fileID: 8904075336146170139}
   - component: {fileID: 3274553998613605217}
   - component: {fileID: 4452862658802189930}
+  - component: {fileID: 1460478921722825895}
   m_Layer: 0
   m_Name: lena
   m_TagString: Untagged
@@ -2381,6 +2382,18 @@ LODGroup:
     renderers:
     - renderer: {fileID: 3137134152280854484}
   m_Enabled: 1
+--- !u!114 &1460478921722825895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8131937400877181857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 366da29c47c73e847806443908d47ded, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.UprightPosture
 --- !u!1 &8171832924805001779
 GameObject:
   m_ObjectHideFlags: 0

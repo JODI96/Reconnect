@@ -29,6 +29,7 @@ namespace Reconnect.Client.Rooms
 
         private readonly Queue<Vector2Int> _path = new();
         private Animator _animator;
+        private UprightPosture _posture;
         private bool _sitting;
         private Vector3 _stepTarget;
         private bool _walking;
@@ -61,6 +62,7 @@ namespace Reconnect.Client.Rooms
                     avatar._animator = figure.AddComponent<Animator>();
                 }
                 avatar._animator.runtimeAnimatorController = catalog.animator;
+                avatar._posture = figure.GetComponent<UprightPosture>();
                 avatar._animator.applyRootMotion = false;
                 foreach (var renderer in figure.GetComponentsInChildren<Renderer>())
                 {
@@ -103,6 +105,10 @@ namespace Reconnect.Client.Rooms
             {
                 _sitting = !_sitting;
                 _animator.SetBool(SittingParameter, _sitting);
+                if (_posture != null)
+                {
+                    _posture.Sitting = _sitting;
+                }
                 return;
             }
             if (Gestures.TryGetValue(emote, out var gesture))
@@ -235,6 +241,10 @@ namespace Reconnect.Client.Rooms
             if (_animator != null)
             {
                 _animator.SetBool(WalkingParameter, _walking);
+            }
+            if (_posture != null)
+            {
+                _posture.Walking = _walking;
             }
             if (_walking)
             {

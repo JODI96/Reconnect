@@ -15,7 +15,7 @@ import bpy
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(REPO, "client", "Assets", "ThirdParty", "Quaternius")
 
-CLIPS = ["Idle_Loop", "Idle_Talking_Loop", "Walk_Loop", "Jump_Start", "Jump_Loop", "Jump_Land",
+CLIPS = ["Idle_Loop", "Idle_Talking_Loop", "Walk_Loop", "Walk_Formal_Loop", "Jump_Start", "Jump_Loop", "Jump_Land",
          "Sitting_Enter", "Sitting_Idle_Loop", "Sitting_Exit", "Dance_Loop"]
 
 source = sys.argv[sys.argv.index("--") + 1]
