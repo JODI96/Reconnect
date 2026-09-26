@@ -19,4 +19,5 @@ public static class ZurichBuildings
     public static readonly Guid OpernhausId = new("0199a000-0000-7000-8000-000000000005");
     public static readonly Guid LandesmuseumId = new("0199a000-0000-7000-8000-000000000006");
     public static readonly Guid KunsthausId = new("0199a000-0000-7000-8000-000000000007");
+    public static readonly Guid SeebadUtoquaiId = new("0199a000-0000-7000-8000-000000000008");
 }

@@ -56,6 +56,7 @@ internal sealed class CityDbContext(DbContextOptions<CityDbContext> options) : D
         Building.Create(ZurichBuildings.OpernhausId, "Opernhaus Zürich", "Falkenstrasse 1, 8008 Zürich", 47.36490, 8.54671),
         Building.Create(ZurichBuildings.LandesmuseumId, "Landesmuseum", "Museumstrasse 2, 8001 Zürich", 47.37926, 8.54063),
         Building.Create(ZurichBuildings.KunsthausId, "Kunsthaus Zürich", "Heimplatz 1, 8001 Zürich", 47.37036, 8.54826),
+        Building.Create(ZurichBuildings.SeebadUtoquaiId, "Seebad Utoquai", "Utoquai 49, 8008 Zürich", 47.36271, 8.54895),
     ];
 }
 

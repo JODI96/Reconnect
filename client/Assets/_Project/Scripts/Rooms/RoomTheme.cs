@@ -65,6 +65,7 @@ namespace Reconnect.Client.Rooms
             "coworking" => new RoomTheme(FloorPattern.Planks, Hex(0xCDAA7D), Hex(0xB38D62), Hex(0x55675F), Hex(0xFFB547), Hex(0xFFF1DC), 1.5f, Enclosure.GlassFacade),
             "conference" => new RoomTheme(FloorPattern.Concrete, Hex(0x4B505B), Hex(0x3C414B), Hex(0x6B7A74), Hex(0xFFC46B), Hex(0xFFEAD0), 1.6f, Enclosure.GlassFacade),
             "skylounge" => new RoomTheme(FloorPattern.Terrazzo, Hex(0xCFC9BE), Hex(0xBDB6AA), Hex(0x9FD8CF), Hex(0x5CE1FF), Hex(0xFFE2C0), 1.4f, Enclosure.GlassFacade),
+            "pool" => new RoomTheme(FloorPattern.Planks, Hex(0xB58B62), Hex(0x9A7250), Hex(0xEDEAE3), Hex(0x2EB6D9), Hex(0xFFF1D8), 1.9f, Enclosure.Railing),
             "rooftop" => new RoomTheme(FloorPattern.Planks, Hex(0xA87450), Hex(0x8C5E3E), Hex(0xE8E4DC), Hex(0xFF5C8A), Hex(0xFFC98A), 1.6f, Enclosure.Railing),
             "cafe" => new RoomTheme(FloorPattern.Checker, Hex(0xF1EBDD), Hex(0x2B2B30), Hex(0xE9D3B0), Hex(0x7A4A2E), Hex(0xFFD9A0), 2.0f),
             "atelier" => new RoomTheme(FloorPattern.Concrete, Hex(0xBFC3C8), Hex(0xA9AEB5), Hex(0xF5F5F2), Hex(0x2F80ED), Hex(0xF0F5FF), 1.8f),

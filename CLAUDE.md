@@ -149,6 +149,11 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   am Modell selbst (`Seat`: Lehne = höchste Seite, Sitzfläche per Strahl von oben), Hocker drehen sich zur Theke – oder
   mit dem Rücken dazu, wenn kein Beinraum ist. `AvatarView.SitOn` schiebt die Figur nach der Animation so, dass die Hüfte
   auf der Sitzfläche liegt. Antippen eines Stuhls/Sofas oder „Sitzen“ (nächster freier Platz). `SeatingTests` prüft alle Sitztypen.
+- **Schwimmen:** Pools (`custom-pool` 6×3 m oder `custom-pool-<B>x<T>`) sind in den Boden versenkt (Boden und Sockel
+  werden um sie herum aus Stücken gebaut, `CustomItems.PoolDepth`/`WaterLevel`); ihre Felder sind begehbares Wasser
+  (`RoomView.IsWater`). Wer darauf steht, schwimmt (`Swimming`: Wassertreten/Kraulen aus der Quaternius-Bibliothek), die
+  Figur wird so tief gesetzt, dass der Kopf knapp über dem Wasser bleibt. Der Server kennt kein Wasser (keine
+  Tile-Prüfung) – jeder Client leitet es gleich aus dem Layout ab. Raum: „Seebad Utoquai“ (Theme `pool`), `PoolTests`.
 - **Musik:** ein CC0-Titel pro Raum-Theme (OpenGameArt, `tools/fetch_music.py` prüft die Lizenz, `Music/CREDITS.md`),
   `RoomMusic` blendet ein/aus, „Ton“/„Stumm“ im Raum wird gemerkt; Import: Streaming + Vorbis.
 - **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney` (Low-Poly, Figuren nicht mehr genutzt), dazu
@@ -269,7 +274,9 @@ Migrationen werden in der Entwicklung beim Start der API automatisch angewendet 
 Lokale Dev-DB zurücksetzen: AppHost stoppen, Container entfernen, Volume `reconnect.apphost-*-postgres-data` löschen.
 
 **Showcase-Räume:** In Development legt `Modules/Rooms/.../Infrastructure/Seeding/ShowcaseRooms.cs` 5 eingerichtete Räume an
-(Rooftop Lounge, Café Limmat, Kunst-Atelier, Opern-Foyer, ETH Bibliothek) und aktualisiert sie bei jedem Start.
+(Café Limmat, Kunst-Atelier, Opern-Foyer, ETH Bibliothek, Seebad Utoquai) und aktualisiert sie bei jedem Start. Möbel sind
+überwiegend realistische Poly-Haven-Modelle (`Ph(...)`); Dekoration auf Möbeln (Schachspiel, Vasen, Lampen) steht in
+`RoomView.StackableItems`.
 
 **Dev-Login:** In Development legt die API das Konto **Admin / Admin** an (Rolle `Admin`,
 `DevAdmin` in `appsettings.Development.json`, Code: `Modules/Identity/.../Features/DevAdminSeeder.cs`).

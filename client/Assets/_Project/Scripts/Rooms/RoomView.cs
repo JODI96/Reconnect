@@ -41,6 +41,8 @@ namespace Reconnect.Client.Rooms
             "kitchenBlender", "kitchenMicrowave", "toaster", "lampSquareTable", "lampRoundTable", "plantSmall",
             "radio", "televisionModern", "televisionVintage", "speakerSmall", "pillow", "cardboardBox",
             "ph-tea_set_01", "ph-ceramic_vase_01", "ph-throw_pillows_01", "ph-marble_bust_01", "ph-desk_lamp_arm_01",
+            "ph-chess_set", "ph-book_encyclopedia_set_01", "ph-mantel_clock_01", "ph-brass_candleholders", "ph-ceramic_vase_03",
+            "ph-antique_ceramic_vase_01", "ph-standing_picture_frame_01", "ph-bronze_ray_statue",
         };
 
         [SerializeField] private Camera roomCamera;
@@ -56,6 +58,8 @@ namespace Reconnect.Client.Rooms
         private readonly Dictionary<Guid, AvatarView> _avatars = new();
         private readonly List<GameStation> _stations = new();
         private readonly Dictionary<int, Seat> _seats = new();
+        private readonly List<Rect> _pools = new();              // water surfaces (room coordinates)
+        private readonly HashSet<Vector2Int> _water = new();
         private readonly Dictionary<SeatDto, Guid> _occupied = new();
         private readonly HashSet<Vector2Int> _blocked = new();
         private readonly List<Bounds> _surfaces = new();
@@ -130,6 +134,7 @@ namespace Reconnect.Client.Rooms
             _content = new GameObject("Room " + snapshot.Room.Name).transform;
             _content.SetParent(transform, false);
 
+            FindPools(snapshot.Room.Layout);
             BuildFloor();
             switch (_theme.Enclosure)
             {
@@ -187,6 +192,8 @@ namespace Reconnect.Client.Rooms
             _stations.Clear();
             _seats.Clear();
             _occupied.Clear();
+            _pools.Clear();
+            _water.Clear();
             _blocked.Clear();
             _surfaces.Clear();
             _obstacles.Clear();
@@ -206,7 +213,9 @@ namespace Reconnect.Client.Rooms
             {
                 return;
             }
-            _avatars[player.UserId] = AvatarView.Create(_content, player, avatarCatalog, avatarMaterial, isLocal);
+            var avatar = AvatarView.Create(_content, player, avatarCatalog, avatarMaterial, isLocal);
+            avatar.WaterAt = IsWater;
+            _avatars[player.UserId] = avatar;
         }
 
         public void RemovePlayer(Guid userId)
@@ -236,6 +245,61 @@ namespace Reconnect.Client.Rooms
         }
 
         public AvatarView Avatar(Guid userId) => _avatars.TryGetValue(userId, out var avatar) ? avatar : null;
+
+        /// <summary>Tile of a pool: walkable, avatars swim there.</summary>
+        public bool IsWater(Vector2Int tile) => _water.Contains(tile);
+
+        /// <summary>Pools are sunk into the floor, so the floor needs holes there: collect them before building it.</summary>
+        private void FindPools(IEnumerable<RoomItemDto> layout)
+        {
+            foreach (var item in layout ?? Enumerable.Empty<RoomItemDto>())
+            {
+                if (!CustomItems.TryPoolSize(item.ItemId, out var size))
+                {
+                    continue;
+                }
+                var quarterTurn = Mathf.RoundToInt(item.Rotation / 90f) % 2 != 0;
+                var extent = quarterTurn ? new Vector2(size.y, size.x) : size;
+                var rect = new Rect(item.Position.X - extent.x / 2f, item.Position.Z - extent.y / 2f, extent.x, extent.y);
+                _pools.Add(rect);
+                for (var x = Mathf.FloorToInt(rect.xMin); x <= Mathf.CeilToInt(rect.xMax); x++)
+                {
+                    for (var z = Mathf.FloorToInt(rect.yMin); z <= Mathf.CeilToInt(rect.yMax); z++)
+                    {
+                        if (rect.Contains(new Vector2(x + 0.5f, z + 0.5f)))
+                        {
+                            _water.Add(new Vector2Int(x, z));
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>The rectangle minus all pool holes, as a few rectangles.</summary>
+        private List<Rect> WithoutPools(Rect area)
+        {
+            var pieces = new List<Rect> { area };
+            foreach (var hole in _pools)
+            {
+                var next = new List<Rect>();
+                foreach (var piece in pieces)
+                {
+                    if (!piece.Overlaps(hole))
+                    {
+                        next.Add(piece);
+                        continue;
+                    }
+                    var cut = Rect.MinMaxRect(Mathf.Max(piece.xMin, hole.xMin), Mathf.Max(piece.yMin, hole.yMin),
+                        Mathf.Min(piece.xMax, hole.xMax), Mathf.Min(piece.yMax, hole.yMax));
+                    next.Add(Rect.MinMaxRect(piece.xMin, piece.yMin, cut.xMin, piece.yMax));   // left
+                    next.Add(Rect.MinMaxRect(cut.xMax, piece.yMin, piece.xMax, piece.yMax));   // right
+                    next.Add(Rect.MinMaxRect(cut.xMin, piece.yMin, cut.xMax, cut.yMin));       // front
+                    next.Add(Rect.MinMaxRect(cut.xMin, cut.yMax, cut.xMax, piece.yMax));       // back
+                }
+                pieces = next.Where(r => r.width > 0.01f && r.height > 0.01f).ToList();
+            }
+            return pieces;
+        }
 
         // ---------- Seats ----------
 
@@ -478,17 +542,42 @@ namespace Reconnect.Client.Rooms
             });
             material.mainTextureScale = new Vector2(_width / FloorTextures.MetersPerTexture, _depth / FloorTextures.MetersPerTexture);
 
-            var floor = Primitive(PrimitiveType.Cube, "Floor", material);
-            floor.transform.localPosition = new Vector3(_width / 2f, -0.05f, _depth / 2f);
-            floor.transform.localScale = new Vector3(_width, 0.1f, _depth);
+            // One piece normally; around pools several, each with its part of the texture so the pattern runs on.
+            foreach (var piece in WithoutPools(new Rect(0f, 0f, _width, _depth)))
+            {
+                var floor = Primitive(PrimitiveType.Cube, "Floor", _pools.Count == 0 ? material : new Material(material)
+                {
+                    mainTextureScale = new Vector2(piece.width / FloorTextures.MetersPerTexture, piece.height / FloorTextures.MetersPerTexture),
+                    mainTextureOffset = new Vector2(piece.xMin / FloorTextures.MetersPerTexture, piece.yMin / FloorTextures.MetersPerTexture),
+                });
+                floor.transform.localPosition = new Vector3(piece.center.x, -0.05f, piece.center.y);
+                floor.transform.localScale = new Vector3(piece.width, 0.1f, piece.height);
+            }
 
             // A thick base under the floor: a solid block indoors, the building's roof slab outdoors.
             var baseColor = _theme.Outdoor ? new Color(0.55f, 0.56f, 0.58f) : _theme.FloorB * 0.6f;
-            var slab = Primitive(PrimitiveType.Cube, "Floor Base", Tinted(wallMaterial, baseColor));
+            var slabMaterial = Tinted(wallMaterial, baseColor);
             // Roof terraces: a structure that meets the roof. Upper tower storeys stand on the tower's floor plate.
             var thickness = _theme.Outdoor ? (_storey is > 0 ? 0.3f : 4f) : 0.5f;
-            slab.transform.localPosition = new Vector3(_width / 2f, -0.1f - thickness / 2f, _depth / 2f);
-            slab.transform.localScale = new Vector3(_width + (_theme.Outdoor ? 0.6f : 0f), thickness, _depth + (_theme.Outdoor ? 0.6f : 0f));
+            if (_pools.Count > 0)
+            {
+                thickness = Mathf.Max(thickness, CustomItems.PoolDepth + 0.3f);   // room for the basins
+            }
+            var margin = _theme.Outdoor ? 0.3f : 0f;
+            foreach (var piece in WithoutPools(new Rect(-margin, -margin, _width + 2 * margin, _depth + 2 * margin)))
+            {
+                var slab = Primitive(PrimitiveType.Cube, "Floor Base", slabMaterial);
+                slab.transform.localPosition = new Vector3(piece.center.x, -0.1f - thickness / 2f, piece.center.y);
+                slab.transform.localScale = new Vector3(piece.width, thickness, piece.height);
+            }
+            foreach (var pool in _pools)
+            {
+                // Under the basin the slab continues.
+                var below = Primitive(PrimitiveType.Cube, "Floor Base", slabMaterial);
+                var rest = thickness + 0.1f - CustomItems.PoolDepth - 0.1f;
+                below.transform.localPosition = new Vector3(pool.center.x, -CustomItems.PoolDepth - 0.1f - rest / 2f, pool.center.y);
+                below.transform.localScale = new Vector3(pool.width, Mathf.Max(0.05f, rest), pool.height);
+            }
         }
 
         /// <summary>North and east walls from Kenney pieces: windows, a door in the middle of the north wall.</summary>
@@ -760,6 +849,10 @@ namespace Reconnect.Client.Rooms
                     if (blocks)
                     {
                         BlockTiles(Bounds(pivot));
+                    }
+                    if (RoomSeats.PlacesFor(item.ItemId) is var loungerPlaces and > 0)
+                    {
+                        _seats[index] = Seat.Build(pivot, _content, Bounds(pivot), index, loungerPlaces);
                     }
                     continue;
                 }

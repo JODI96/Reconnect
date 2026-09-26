@@ -18,7 +18,8 @@ namespace Reconnect.Contracts.Rooms
             // Poly Haven (ph-...)
             ["ph-dining_chair_02"] = 1, ["ph-bar_chair_round_01"] = 1, ["ph-GreenChair_01"] = 1, ["ph-ArmChair_01"] = 1,
             ["ph-modern_arm_chair_01"] = 1, ["ph-mid_century_lounge_chair"] = 1, ["ph-Ottoman_01"] = 1,
-            ["ph-sofa_02"] = 3, ["ph-sofa_03"] = 2,
+            ["ph-sofa_02"] = 3, ["ph-sofa_03"] = 2, ["ph-Sofa_01"] = 2, ["ph-painted_wooden_bench"] = 2,
+            ["ph-gallinera_chair"] = 1,
             // Built by the client
             ["custom-lounger"] = 1,
         };

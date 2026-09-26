@@ -16,6 +16,31 @@ namespace Reconnect.Client.Rooms
         /// <summary>Depth of the lift core; the doors are on its front (-Z) side.</summary>
         public const float ElevatorDepth = 2.4f;
 
+        /// <summary>Pools are sunk into the floor: basin depth and the water surface (room coordinates, floor = 0).</summary>
+        public const float PoolDepth = 2f;
+        public const float WaterLevel = -0.18f;
+
+        /// <summary>Water surface of a pool item: "custom-pool" = 6 × 3 m, "custom-pool-12x6" = 12 × 6 m (before rotation).</summary>
+        public static bool TryPoolSize(string itemId, out Vector2 size)
+        {
+            size = new Vector2(6f, 3f);
+            if (itemId == "custom-pool")
+            {
+                return true;
+            }
+            if (!itemId.StartsWith("custom-pool-"))
+            {
+                return false;
+            }
+            var parts = itemId.Substring("custom-pool-".Length).Split('x');
+            if (parts.Length == 2 && float.TryParse(parts[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w)
+                && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d))
+            {
+                size = new Vector2(Mathf.Clamp(w, 2f, 30f), Mathf.Clamp(d, 2f, 20f));
+            }
+            return true;
+        }
+
         private readonly Material _litBase;
         private readonly Material _water;
         private readonly Material _glass;
@@ -34,9 +59,15 @@ namespace Reconnect.Client.Rooms
         public bool TryBuild(string itemId, Transform pivot, out bool blocksTiles)
         {
             blocksTiles = true;
+            if (TryPoolSize(itemId, out var poolSize))
+            {
+                Pool(pivot, poolSize);   // one can swim in it: the room makes its tiles water, not obstacles
+                blocksTiles = false;
+                return true;
+            }
             switch (itemId)
             {
-                case "custom-pool": Pool(pivot); return true;
+                case "custom-lounger": Lounger(pivot); return true;
                 case "custom-parasol": Parasol(pivot); return true;
                 case "custom-firepit": FirePit(pivot); return true;
                 case "custom-planter": Planter(pivot); return true;
@@ -63,27 +94,70 @@ namespace Reconnect.Client.Rooms
             }
         }
 
-        /// <summary>6 × 3 m pool with a stone coping, translucent water over a deep-blue basin and a ladder.</summary>
-        private void Pool(Transform pivot)
+        /// <summary>
+        /// Pool sunk into the floor (the room leaves a hole there): tiled walls and floor with lane lines, translucent
+        /// water a little below the edge, a stone coping around it, a steel ladder and underwater light.
+        /// </summary>
+        private void Pool(Transform pivot, Vector2 size)
         {
-            const float w = 6f, d = 3f, rim = 0.3f;
-            var stone = Lit(new Color(0.9f, 0.88f, 0.84f));
-            Box(pivot, stone, new Vector3(0f, 0.08f, d / 2f - rim / 2f), new Vector3(w, 0.16f, rim));
-            Box(pivot, stone, new Vector3(0f, 0.08f, -d / 2f + rim / 2f), new Vector3(w, 0.16f, rim));
-            Box(pivot, stone, new Vector3(w / 2f - rim / 2f, 0.08f, 0f), new Vector3(rim, 0.16f, d));
-            Box(pivot, stone, new Vector3(-w / 2f + rim / 2f, 0.08f, 0f), new Vector3(rim, 0.16f, d));
-            Box(pivot, Lit(new Color(0.05f, 0.35f, 0.55f)), new Vector3(0f, 0.01f, 0f), new Vector3(w - 2 * rim, 0.02f, d - 2 * rim));
-            Box(pivot, _water, new Vector3(0f, 0.1f, 0f), new Vector3(w - 2 * rim, 0.02f, d - 2 * rim));
+            float w = size.x, d = size.y;
+            const float rim = 0.35f;
+            var tiles = Lit(new Color(0.55f, 0.82f, 0.9f), smoothness: 0.6f);
+            var deep = Lit(new Color(0.18f, 0.55f, 0.72f), smoothness: 0.6f);
+            var stone = Lit(new Color(0.92f, 0.9f, 0.86f), smoothness: 0.25f);
 
-            var steel = Lit(new Color(0.75f, 0.78f, 0.82f), smoothness: 0.8f);
-            foreach (var side in new[] { -0.25f, 0.25f })
+            // Basin: floor and four walls below the room floor.
+            Box(pivot, deep, new Vector3(0f, -PoolDepth - 0.05f, 0f), new Vector3(w, 0.1f, d));
+            Box(pivot, tiles, new Vector3(0f, -PoolDepth / 2f, d / 2f + 0.05f), new Vector3(w + 0.2f, PoolDepth, 0.1f));
+            Box(pivot, tiles, new Vector3(0f, -PoolDepth / 2f, -d / 2f - 0.05f), new Vector3(w + 0.2f, PoolDepth, 0.1f));
+            Box(pivot, tiles, new Vector3(w / 2f + 0.05f, -PoolDepth / 2f, 0f), new Vector3(0.1f, PoolDepth, d));
+            Box(pivot, tiles, new Vector3(-w / 2f - 0.05f, -PoolDepth / 2f, 0f), new Vector3(0.1f, PoolDepth, d));
+            var lane = Lit(new Color(0.08f, 0.2f, 0.35f));
+            for (var i = 1; i < Mathf.RoundToInt(d / 2f); i++)
             {
-                Cylinder(pivot, steel, new Vector3(w / 2f - rim - 0.2f, 0.55f, side), new Vector3(0.04f, 0.45f, 0.04f));
+                Box(pivot, lane, new Vector3(0f, -PoolDepth + 0.01f, -d / 2f + i * 2f), new Vector3(w - 1.4f, 0.02f, 0.2f));
             }
-            for (var i = 0; i < 3; i++)
+
+            // Coping on the floor around the edge.
+            Box(pivot, stone, new Vector3(0f, 0.02f, d / 2f + rim / 2f), new Vector3(w + 2 * rim, 0.04f, rim));
+            Box(pivot, stone, new Vector3(0f, 0.02f, -d / 2f - rim / 2f), new Vector3(w + 2 * rim, 0.04f, rim));
+            Box(pivot, stone, new Vector3(w / 2f + rim / 2f, 0.02f, 0f), new Vector3(rim, 0.04f, d));
+            Box(pivot, stone, new Vector3(-w / 2f - rim / 2f, 0.02f, 0f), new Vector3(rim, 0.04f, d));
+
+            Box(pivot, _water, new Vector3(0f, WaterLevel, 0f), new Vector3(w, 0.02f, d));
+
+            var steel = Lit(new Color(0.78f, 0.8f, 0.84f), smoothness: 0.85f);
+            foreach (var side in new[] { -0.3f, 0.3f })
             {
-                Box(pivot, steel, new Vector3(w / 2f - rim - 0.2f, 0.2f + i * 0.25f, 0f), new Vector3(0.04f, 0.03f, 0.5f));
+                var rail = Cylinder(pivot, steel, new Vector3(w / 2f - 0.15f, -0.15f, side), new Vector3(0.05f, 0.75f, 0.05f));
+                rail.transform.localRotation = Quaternion.Euler(0f, 0f, 12f);
             }
+            for (var i = 0; i < 4; i++)
+            {
+                Box(pivot, steel, new Vector3(w / 2f - 0.12f - i * 0.05f, -0.35f - i * 0.3f, 0f), new Vector3(0.1f, 0.03f, 0.55f));
+            }
+            AddLight(pivot, new Vector3(0f, -PoolDepth + 0.4f, 0f), new Color(0.45f, 0.85f, 1f), 2.5f, Mathf.Max(w, d));
+        }
+
+        /// <summary>Wooden sun lounger with a cushion and a raised back rest (one can sit / lie on it).</summary>
+        private void Lounger(Transform pivot)
+        {
+            var wood = Lit(new Color(0.55f, 0.38f, 0.24f), smoothness: 0.3f);
+            var cushion = Lit(new Color(0.94f, 0.93f, 0.9f), smoothness: 0.1f);
+            // Seat part towards -Z, back rest rising at +Z.
+            Box(pivot, wood, new Vector3(0f, 0.28f, -0.25f), new Vector3(0.7f, 0.06f, 1.4f));
+            Box(pivot, cushion, new Vector3(0f, 0.34f, -0.25f), new Vector3(0.64f, 0.07f, 1.35f));
+            foreach (var (x, z) in new[] { (-0.3f, -0.9f), (0.3f, -0.9f), (-0.3f, 0.35f), (0.3f, 0.35f) })
+            {
+                Box(pivot, wood, new Vector3(x, 0.13f, z), new Vector3(0.06f, 0.26f, 0.06f));
+            }
+            var back = Box(pivot, wood, new Vector3(0f, 0.55f, 0.72f), new Vector3(0.7f, 0.06f, 0.75f));
+            back.transform.localRotation = Quaternion.Euler(-40f, 0f, 0f);
+            var backCushion = Box(pivot, cushion, new Vector3(0f, 0.58f, 0.69f), new Vector3(0.64f, 0.07f, 0.7f));
+            backCushion.transform.localRotation = Quaternion.Euler(-40f, 0f, 0f);
+            // A rolled towel at the foot end.
+            var towel = Cylinder(pivot, Lit(_theme.WallTrim), new Vector3(0f, 0.43f, -0.8f), new Vector3(0.12f, 0.25f, 0.12f));
+            towel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
         }
 
         private void Parasol(Transform pivot)

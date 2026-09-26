@@ -113,6 +113,13 @@ namespace Reconnect.Modules.City.Infrastructure.Migrations
                             Address = "Heimplatz 1, 8001 Zürich",
                             Location = (NetTopologySuite.Geometries.Point)new NetTopologySuite.IO.WKTReader().Read("SRID=4326;POINT (8.54826 47.37036)"),
                             Name = "Kunsthaus Zürich"
+                        },
+                        new
+                        {
+                            Id = new Guid("0199a000-0000-7000-8000-000000000008"),
+                            Address = "Utoquai 49, 8008 Zürich",
+                            Location = (NetTopologySuite.Geometries.Point)new NetTopologySuite.IO.WKTReader().Read("SRID=4326;POINT (8.54895 47.36271)"),
+                            Name = "Seebad Utoquai"
                         });
                 });
 

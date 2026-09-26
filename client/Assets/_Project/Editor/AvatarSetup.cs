@@ -136,6 +136,7 @@ namespace Reconnect.Client.Editor
             controller.AddParameter("Walking", AnimatorControllerParameterType.Bool);
             controller.AddParameter("Sitting", AnimatorControllerParameterType.Bool);
             controller.AddParameter("Talking", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("Swimming", AnimatorControllerParameterType.Bool);
             controller.AddParameter("jump", AnimatorControllerParameterType.Trigger);
             var machine = controller.layers[0].stateMachine;
 
@@ -183,6 +184,22 @@ namespace Reconnect.Client.Editor
 
             // Relaxed, slightly open hands on top of every clip (the library's hands are half-closed fists).
             AddPoseLayer(controller, "Hands", new[] { AvatarMaskBodyPart.LeftFingers, AvatarMaskBodyPart.RightFingers }, RelaxedHands());
+
+            // Swimming: treading water, or swimming forward while moving. Entered from anywhere, left back to land.
+            var swimIdle = machine.AddState("SwimIdle");
+            swimIdle.motion = clips["Swim_Idle_Loop"];
+            var swim = machine.AddState("Swim");
+            swim.motion = clips["Swim_Fwd_Loop"];
+            foreach (var (state, walking) in new[] { (swimIdle, false), (swim, true) })
+            {
+                var enter = machine.AddAnyStateTransition(state);
+                enter.AddCondition(AnimatorConditionMode.If, 0, "Swimming");
+                enter.AddCondition(walking ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot, 0, "Walking");
+                enter.canTransitionToSelf = false;
+                enter.duration = 0.3f;
+            }
+            Connect(swimIdle, idle, AnimatorConditionMode.IfNot, "Swimming", 0.3f);
+            Connect(swim, walk, AnimatorConditionMode.IfNot, "Swimming", 0.3f);
 
             // Gestures on masked layers (AvatarView fades the layer weight in while one plays).
             AddGestureLayer(controller, "Arm Gestures", AvatarMaskBodyPart.RightArm, new[] { ("wave", Wave()) });

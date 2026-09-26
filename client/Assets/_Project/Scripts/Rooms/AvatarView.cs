@@ -28,11 +28,17 @@ namespace Reconnect.Client.Rooms
         };
 
         private const float SitSeconds = 0.6f;   // sliding onto / off the seat
+        private const float SwimSpeedFactor = 0.55f;
+        private const float HeadAboveWater = 0.12f;
+        private const string SwimmingParameter = "Swimming";
         private const float HipsAboveSeat = 0.1f;
 
         private readonly Queue<Vector2Int> _path = new();
         private readonly List<Vector2Int> _afterStandingUp = new();
         private Transform _hips;
+        private Transform _head;
+        private bool _swimming;
+        private float _depth;   // how far the root is sunk into a pool (0 on land)
         private GameObject _ring;
         private bool _seated;
         private Vector3 _seatPoint;
@@ -55,11 +61,16 @@ namespace Reconnect.Client.Rooms
 
         public bool IsSeated => _seated;
 
+        public bool IsSwimming => _swimming;
+
+        /// <summary>Whether a tile is pool water (set by the room); on water the avatar swims.</summary>
+        public Func<Vector2Int, bool> WaterAt { get; set; }
+
         /// <summary>Reached the end of a walk (e.g. the tile in front of a chair).</summary>
         public event Action<AvatarView> Arrived;
 
         /// <summary>World position above the head – anchor for name label and speech bubble.</summary>
-        public Vector3 LabelAnchor => transform.position + Vector3.up * 2.0f;
+        public Vector3 LabelAnchor => _head != null ? _head.position + Vector3.up * 0.4f : transform.position + Vector3.up * 2.0f;
 
         public static AvatarView Create(Transform parent, RoomPlayerDto player, AvatarCatalog catalog, Material fallbackMaterial, bool isLocal)
         {
@@ -81,6 +92,7 @@ namespace Reconnect.Client.Rooms
                 avatar._animator.runtimeAnimatorController = catalog.animator;
                 avatar._posture = figure.GetComponent<UprightPosture>();
                 avatar._hips = avatar._animator.isHuman ? avatar._animator.GetBoneTransform(HumanBodyBones.Hips) : null;
+                avatar._head = avatar._animator.isHuman ? avatar._animator.GetBoneTransform(HumanBodyBones.Head) : null;
                 avatar._animator.applyRootMotion = false;
                 foreach (var renderer in figure.GetComponentsInChildren<Renderer>())
                 {
@@ -116,7 +128,7 @@ namespace Reconnect.Client.Rooms
         /// <summary>Plays a gesture ("wave", "yes", "no") or jumps ("jump"). Sitting happens on seats: <see cref="SitOn"/>.</summary>
         public void PlayEmote(string emote)
         {
-            if (_animator == null || emote == "sit" || (_seated && emote == "jump"))
+            if (_animator == null || emote == "sit" || ((_seated || _swimming) && emote == "jump"))
             {
                 return;
             }
@@ -257,6 +269,7 @@ namespace Reconnect.Client.Rooms
         public void Teleport(Vector2Int tile)
         {
             _path.Clear();
+            _depth = 0f;
             _seated = false;
             _seatBlend = 0f;
             _walking = false;
@@ -294,19 +307,24 @@ namespace Reconnect.Client.Rooms
             UpdateBodyLanguage();
             if (!_walking)
             {
+                UpdateSwimming();   // e.g. appeared on a pool tile
                 return;
             }
 
             var position = transform.localPosition;
-            var direction = _stepTarget - position;
+            var direction = _stepTarget - new Vector3(position.x, 0f, position.z);
             if (direction.sqrMagnitude > 0.0001f)
             {
                 var look = Quaternion.LookRotation(new Vector3(direction.x, 0f, direction.z));
                 transform.localRotation = Quaternion.RotateTowards(transform.localRotation, look, TurnSpeed * Time.deltaTime);
             }
 
-            transform.localPosition = Vector3.MoveTowards(position, _stepTarget, TilesPerSecond * Time.deltaTime);
-            if ((transform.localPosition - _stepTarget).sqrMagnitude < 0.0001f)
+            // Horizontal only: the height is the pool's business (KeepHeadAboveWater).
+            var speed = TilesPerSecond * (_swimming ? SwimSpeedFactor : 1f);
+            var flat = Vector3.MoveTowards(new Vector3(position.x, 0f, position.z), _stepTarget, speed * Time.deltaTime);
+            transform.localPosition = new Vector3(flat.x, position.y, flat.z);
+            UpdateSwimming();
+            if ((flat - _stepTarget).sqrMagnitude < 0.0001f)
             {
                 Tile = RoomView.WorldToTile(_stepTarget);
                 NextStep();
@@ -315,6 +333,10 @@ namespace Reconnect.Client.Rooms
 
         private void LateUpdate()
         {
+            if (_swimming || _depth < 0f)
+            {
+                KeepHeadAboveWater();
+            }
             if (_seatBlend <= 0f && !_seated)
             {
                 return;
@@ -343,6 +365,44 @@ namespace Reconnect.Client.Rooms
                     WalkAlong(path);
                 }
             }
+        }
+
+        /// <summary>On a pool tile: swim animation, the body sinks until only head and shoulders are above the water.</summary>
+        private void UpdateSwimming()
+        {
+            var inWater = WaterAt != null && WaterAt(RoomView.WorldToTile(transform.localPosition));
+            if (inWater == _swimming)
+            {
+                return;
+            }
+            _swimming = inWater;
+            if (_animator != null)
+            {
+                _animator.SetBool(SwimmingParameter, inWater);
+                _animator.SetBool(TalkingParameter, false);
+            }
+            if (_posture != null)
+            {
+                _posture.Swimming = inWater;
+            }
+            if (_ring != null)
+            {
+                _ring.SetActive(!inWater);
+            }
+        }
+
+        private void KeepHeadAboveWater()
+        {
+            // Target depth: head just above the surface while swimming, back to the floor on land.
+            var target = 0f;
+            if (_swimming && _head != null && transform.parent != null)
+            {
+                var headAboveRoot = transform.parent.InverseTransformPoint(_head.position).y - transform.localPosition.y;
+                target = Mathf.Min(0f, CustomItems.WaterLevel + HeadAboveWater - headAboveRoot);
+            }
+            _depth = Mathf.MoveTowards(_depth, target, 2.5f * Time.deltaTime);
+            var position = transform.localPosition;
+            transform.localPosition = new Vector3(position.x, _depth, position.z);
         }
 
         private void NextStep()

@@ -20,6 +20,15 @@ MODELS = [
     # Offices and conference centre (Prime Tower)
     "metal_office_desk", "desk_lamp_arm_01", "Shelf_01", "GreenChair_01", "ArmChair_01", "modern_wooden_cabinet",
     "dining_table",
+    # Showcase rooms (replace the low-poly Kenney pieces): café, library, opera foyer, art studio
+    "gallinera_chair", "gallinera_table", "painted_wooden_bench", "WoodenChair_01", "WoodenTable_01", "Sofa_01",
+    "CoffeeTable_01", "CoffeeCart_01", "standing_chalkboard_01", "wooden_display_shelves_01", "metal_stool_02",
+    "wooden_bookshelf_worn", "book_encyclopedia_set_01", "decorative_book_set_01", "chess_set",
+    "vintage_grandfather_clock_01", "mantel_clock_01", "Chandelier_01", "brass_candleholders", "antique_ceramic_vase_01",
+    "hanging_picture_frame_01", "hanging_picture_frame_02", "hanging_picture_frame_03", "standing_picture_frame_01",
+    "bronze_ray_statue", "potted_plant_01", "ceramic_vase_03",
+    # Lake bath (Seebad): outdoor furniture, planters, deck lights
+    "outdoor_table_chair_set_01", "planter_box_01", "planter_box_02", "street_lamp_02",
 ]
 RESOLUTION = "1k"
 ROOT = os.path.join(os.path.dirname(__file__), "..", "client", "Assets", "ThirdParty", "PolyHaven")
@@ -42,7 +51,10 @@ def save(url, path):
 def main():
     for model in MODELS:
         files = json.loads(get(f"https://api.polyhaven.com/files/{model}"))
-        gltf = files["gltf"][RESOLUTION]["gltf"]
+        gltf = files.get("gltf", {}).get(RESOLUTION, {}).get("gltf")
+        if gltf is None:
+            print("skipped (no glTF at", RESOLUTION + "):", model)
+            continue
         folder = os.path.join(ROOT, model)
         save(gltf["url"], os.path.join(folder, f"{model}.gltf"))
         for relative, include in gltf.get("include", {}).items():

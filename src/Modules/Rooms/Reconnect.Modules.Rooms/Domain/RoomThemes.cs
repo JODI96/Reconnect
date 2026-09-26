@@ -15,10 +15,12 @@ internal static class RoomThemes
     public const string Lobby = "lobby";
     public const string Coworking = "coworking";
     public const string Conference = "conference";
+    /// <summary>Open-air bath: wooden deck, sunken pool one can swim in.</summary>
+    public const string Pool = "pool";
 
     public const int MaxLength = 32;
 
-    public static readonly IReadOnlyList<string> All = [Cozy, Rooftop, Cafe, Atelier, Opera, Library, SkyLounge, Lobby, Coworking, Conference];
+    public static readonly IReadOnlyList<string> All = [Cozy, Rooftop, Cafe, Atelier, Opera, Library, SkyLounge, Lobby, Coworking, Conference, Pool];
 
     public static string Validate(string? theme)
     {

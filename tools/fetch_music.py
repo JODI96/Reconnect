@@ -15,6 +15,7 @@ TRACKS = {
     "cafe": "https://opengameart.org/content/bossa-nova",
     "skylounge": "https://opengameart.org/content/chill-lofi-inspired-loop-edit",
     "rooftop": "https://opengameart.org/content/calm-relax-1-synthwave-421k",
+    "pool": "https://opengameart.org/content/aquaria",
     "library": "https://opengameart.org/content/calm-piano-1-vaporware",
     "opera": "https://opengameart.org/content/harpsichord-flurry",
     "atelier": "https://opengameart.org/content/frets",

@@ -24,6 +24,9 @@ namespace Reconnect.Client.Rooms
         /// <summary>Sitting clips have their own posture: no correction then.</summary>
         public bool Sitting { get; set; }
 
+        /// <summary>Swimming clips neither.</summary>
+        public bool Swimming { get; set; }
+
         private void Awake()
         {
             var animator = GetComponentInChildren<Animator>();
@@ -40,13 +43,13 @@ namespace Reconnect.Client.Rooms
         public void Snap()
         {
             _walkBlend = Walking ? 1f : 0f;
-            _weight = Sitting ? 0f : 1f;
+            _weight = Sitting || Swimming ? 0f : 1f;
         }
 
         private void LateUpdate()
         {
             _walkBlend = Mathf.MoveTowards(_walkBlend, Walking ? 1f : 0f, 4f * Time.deltaTime);
-            _weight = Mathf.MoveTowards(_weight, Sitting ? 0f : 1f, 3f * Time.deltaTime);
+            _weight = Mathf.MoveTowards(_weight, Sitting || Swimming ? 0f : 1f, 3f * Time.deltaTime);
             var angle = Mathf.Lerp(StandingCorrection, WalkingCorrection, _walkBlend) * _weight;
             if (_weight <= 0.001f || _bones.Length == 0)
             {
