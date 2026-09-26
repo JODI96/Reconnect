@@ -12,7 +12,7 @@ namespace Reconnect.Client.PlayModeTests
     /// <summary>
     /// Visual and numeric check of the avatar body language with the real animator: the walk at four points of the
     /// gait (front and side: client/Logs/walk-front.png, walk-side.png) and every emote at its key moment
-    /// (client/Logs/emotes.png). The walking body must stay centred over the tile and upright.
+    /// (client/Logs/emotes.png). The walking body must stay centred over the tile, upright and with a level pelvis.
     /// </summary>
     public sealed class WalkCycleTests
     {
@@ -43,9 +43,6 @@ namespace Reconnect.Client.PlayModeTests
                 for (var i = 0; i < Phases.Length; i++)
                 {
                     var animator = Spawn(catalog, 6, root, new Vector3(i * 1.1f, 0f, 0f), yaw);
-                    var posture = animator.GetComponent<UprightPosture>();
-                    posture.Walking = true;
-                    posture.Snap();
                     animator.Play("Walk", 0, Phases[i]);
                     figures.Add(animator);
                 }
@@ -54,13 +51,17 @@ namespace Reconnect.Client.PlayModeTests
                 {
                     var figure = figures[i];
                     var hips = figure.GetBoneTransform(HumanBodyBones.Hips).position;
-                    var neck = figure.GetBoneTransform(HumanBodyBones.Neck).position;
+                    var head = figure.GetBoneTransform(HumanBodyBones.Head).position;
+                    var feet = (figure.GetBoneTransform(HumanBodyBones.LeftFoot).position + figure.GetBoneTransform(HumanBodyBones.RightFoot).position) / 2f;
+                    var pelvis = figure.GetBoneTransform(HumanBodyBones.RightUpperLeg).position - figure.GetBoneTransform(HumanBodyBones.LeftUpperLeg).position;
                     var sideways = Vector3.Dot(hips - figure.transform.position, figure.transform.right);
-                    var (lean, tilt) = Tilt(figure.transform, neck - hips);
-                    Debug.Log($"[Reconnect] Walk ({view}) phase {Phases[i]:0.00}: hips sideways {sideways:+0.00;-0.00} m, forward {lean:+0.0;-0.0}°, sideways {tilt:+0.0;-0.0}°");
+                    var (lean, tilt) = Tilt(figure.transform, head - feet);   // whole body, feet to head
+                    var pelvisRoll = Mathf.Asin(pelvis.normalized.y) * Mathf.Rad2Deg;
+                    Debug.Log($"[Reconnect] Walk ({view}) phase {Phases[i]:0.00}: hips sideways {sideways:+0.00;-0.00} m, body forward {lean:+0.0;-0.0}°, sideways {tilt:+0.0;-0.0}°, pelvis roll {pelvisRoll:+0.0;-0.0}°");
                     Assert.Less(Mathf.Abs(sideways), 0.1f, "the body stays over the tile");
-                    Assert.Less(Mathf.Abs(lean), 8f, "the body walks upright");
-                    Assert.Less(Mathf.Abs(tilt), 6f, "the body does not hang to one side");
+                    Assert.Less(Mathf.Abs(lean), 10f, "the body walks upright (a stride shifts the feet midpoint a little)");
+                    Assert.Less(Mathf.Abs(tilt), 4f, "the body does not hang to one side");
+                    Assert.Less(Mathf.Abs(pelvisRoll), 5f, "the pelvis stays level (a bad humanoid reference pose tilts it)");
                 }
                 Render(root.position + new Vector3(1.65f, 0.95f, 0f), 6.2f, $"walk-{view}.png");
                 Clear(root);
@@ -84,12 +85,6 @@ namespace Reconnect.Client.PlayModeTests
                 var index = layer == null ? 0 : animator.GetLayerIndex(layer);
                 animator.SetLayerWeight(index, 1f);
                 animator.Play(state, index, time);
-                if (state == "Sitting")
-                {
-                    var posture = animator.GetComponent<UprightPosture>();
-                    posture.Sitting = true;
-                    posture.Snap();
-                }
                 posed.Add(animator);
             }
             yield return Settle(posed);

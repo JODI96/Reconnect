@@ -81,10 +81,6 @@ namespace Reconnect.Client.Editor
             var animator = instance.GetComponent<Animator>() ?? instance.AddComponent<Animator>();
             animator.avatar = AssetDatabase.LoadAllAssetsAtPath($"{dir}/{id}.fbx").OfType<Avatar>().First();
             animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;   // off screen: no bone updates
-            if (instance.GetComponent<UprightPosture>() == null)
-            {
-                instance.AddComponent<UprightPosture>();
-            }
             var path = $"{PrefabDir}/{id}.prefab";
             var prefab = PrefabUtility.SaveAsPrefabAsset(instance, path);
             Object.DestroyImmediate(instance);
@@ -202,8 +198,8 @@ namespace Reconnect.Client.Editor
             Connect(swim, walk, AnimatorConditionMode.IfNot, "Swimming", 0.3f);
 
             // Gestures on masked layers (AvatarView fades the layer weight in while one plays).
-            AddGestureLayer(controller, "Arm Gestures", AvatarMaskBodyPart.RightArm, new[] { ("wave", Wave()) });
-            AddGestureLayer(controller, "Head Gestures", AvatarMaskBodyPart.Head, new[] { ("yes", Nod()), ("no", HeadShake()) });
+            AddGestureLayer(controller, "Arm Gestures", new[] { AvatarMaskBodyPart.RightArm, AvatarMaskBodyPart.RightFingers }, new[] { ("wave", Wave()) });
+            AddGestureLayer(controller, "Head Gestures", new[] { AvatarMaskBodyPart.Head }, new[] { ("yes", Nod()), ("no", HeadShake()) });
             return controller;
         }
 
@@ -235,10 +231,10 @@ namespace Reconnect.Client.Editor
             });
         }
 
-        private static void AddGestureLayer(AnimatorController controller, string name, AvatarMaskBodyPart part,
+        private static void AddGestureLayer(AnimatorController controller, string name, AvatarMaskBodyPart[] parts,
             IEnumerable<(string Trigger, AnimationClip Clip)> gestures)
         {
-            var mask = Mask(controller, name, part);
+            var mask = Mask(controller, name, parts);
             var machine = new AnimatorStateMachine { name = name, hideFlags = HideFlags.HideInHierarchy };
             AssetDatabase.AddObjectToAsset(machine, controller);
             var rest = machine.AddState("None");
@@ -266,16 +262,35 @@ namespace Reconnect.Client.Editor
 
         // ---------- Gestures as humanoid muscle clips (work on every figure) ----------
 
-        private static AnimationClip Wave() => GestureClip("Wave", 1.8f, new Dictionary<string, AnimationCurve>
+        /// <summary>
+        /// "Hello" wave: upper arm out to the side, almost horizontal, elbow bent 90°, forearm upright with an open hand,
+        /// swinging left and right from the elbow. Muscle values found by searching for exactly that arm direction on
+        /// the MakeHuman figures (upper arm 15° up, forearm vertical).
+        /// </summary>
+        private static AnimationClip Wave()
         {
-            // Hand up beside the head, forearm upright, swinging from the elbow.
-            ["Right Shoulder Down-Up"] = Hold(1.8f, 0.5f),
-            ["Right Arm Down-Up"] = Hold(1.8f, 0.95f),
-            ["Right Arm Front-Back"] = Hold(1.8f, 0.15f),
-            ["Right Forearm Stretch"] = Hold(1.8f, -0.25f),
-            ["Right Arm Twist In-Out"] = Oscillate(1.8f, 0.1f, 0.45f, 3),
-            ["Right Hand In-Out"] = Oscillate(1.8f, 0f, 0.3f, 3),
-        });
+            var muscles = new Dictionary<string, AnimationCurve>
+            {
+                ["Right Shoulder Down-Up"] = Hold(1.8f, 0.1f),
+                ["Right Arm Down-Up"] = Hold(1.8f, 0.5f),
+                ["Right Arm Front-Back"] = Hold(1.8f, 0.1f),
+                ["Right Arm Twist In-Out"] = Hold(1.8f, 0.8f),
+                ["Right Forearm Stretch"] = Oscillate(1.8f, 0f, 0.2f, 3),
+                ["Right Hand In-Out"] = Oscillate(1.8f, 0f, 0.15f, 3),
+            };
+            foreach (var finger in new[] { "Index", "Middle", "Ring", "Little" })   // open, fingers together
+            {
+                for (var joint = 1; joint <= 3; joint++)
+                {
+                    muscles[$"RightHand.{finger}.{joint} Stretched"] = Hold(1.8f, 0.8f);
+                }
+                muscles[$"RightHand.{finger}.Spread"] = Hold(1.8f, -0.4f);
+            }
+            muscles["RightHand.Thumb.1 Stretched"] = Hold(1.8f, 0.4f);
+            muscles["RightHand.Thumb.2 Stretched"] = Hold(1.8f, 0.6f);
+            muscles["RightHand.Thumb.3 Stretched"] = Hold(1.8f, 0.6f);
+            return GestureClip("Wave", 1.8f, muscles);
+        }
 
         private static AnimationClip RelaxedHands()
         {
@@ -284,12 +299,12 @@ namespace Reconnect.Client.Editor
             {
                 foreach (var finger in new[] { "Index", "Middle", "Ring", "Little" })
                 {
-                    // The little finger curls a bit more than the index, like a hand at rest.
+                    // Relaxed, half-open hand: the little finger curls a bit more than the index.
                     var curl = finger switch { "Index" => 0f, "Middle" => 0.05f, "Ring" => 0.1f, _ => 0.15f };
-                    muscles[$"{side}Hand.{finger}.1 Stretched"] = Constant(1f, 0.3f - curl);
-                    muscles[$"{side}Hand.{finger}.2 Stretched"] = Constant(1f, 0.15f - curl);
-                    muscles[$"{side}Hand.{finger}.3 Stretched"] = Constant(1f, 0.3f - curl);
-                    muscles[$"{side}Hand.{finger}.Spread"] = Constant(1f, -0.3f);
+                    muscles[$"{side}Hand.{finger}.1 Stretched"] = Constant(1f, 0.1f - curl);
+                    muscles[$"{side}Hand.{finger}.2 Stretched"] = Constant(1f, -0.05f - curl);
+                    muscles[$"{side}Hand.{finger}.3 Stretched"] = Constant(1f, 0.1f - curl);
+                    muscles[$"{side}Hand.{finger}.Spread"] = Constant(1f, -0.5f);
                 }
                 muscles[$"{side}Hand.Thumb.1 Stretched"] = Constant(1f, 0.2f);
                 muscles[$"{side}Hand.Thumb.2 Stretched"] = Constant(1f, 0.4f);

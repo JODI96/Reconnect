@@ -2435,7 +2435,6 @@ GameObject:
   - component: {fileID: 9143189088120220831}
   - component: {fileID: 2883164528443389669}
   - component: {fileID: 4087365899393997806}
-  - component: {fileID: 2307338043303389422}
   m_Layer: 0
   m_Name: jun
   m_TagString: Untagged
@@ -2511,18 +2510,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 8055841947461192734}
   m_Enabled: 1
---- !u!114 &2307338043303389422
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8478293088825144869}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 366da29c47c73e847806443908d47ded, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.UprightPosture
 --- !u!1 &8867570767416024441
 GameObject:
   m_ObjectHideFlags: 0

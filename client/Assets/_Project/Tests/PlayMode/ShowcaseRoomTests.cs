@@ -74,6 +74,10 @@ namespace Reconnect.Client.PlayModeTests
                 }
 
                 Assert.Greater(detail.Result.Value.Layout.Count, 25, "room is richly furnished");
+                Assert.AreEqual(1, UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length, "one audio listener, or nothing is heard");
+                Assert.IsNotNull(view.Music, "the room has music");
+                Assert.IsNotNull(view.Music.Current, room.Name + " plays its track");
+                Assert.IsTrue(view.Music.GetComponent<AudioSource>().isPlaying || view.Music.Muted, room.Name + ": music is playing");
                 CollectionAssert.IsEmpty(view.MissingItems, room.Name + ": every item id has a model");
                 number++;
                 Save(view.Camera, $"showcase-{number}-avatar.png", room.Name);   // start view, zoomed on me

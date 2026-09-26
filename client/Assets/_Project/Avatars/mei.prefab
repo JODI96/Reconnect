@@ -79,7 +79,6 @@ GameObject:
   - component: {fileID: 993664394104757129}
   - component: {fileID: 6569089759588418035}
   - component: {fileID: 5444899405379398904}
-  - component: {fileID: 1143889970032482674}
   m_Layer: 0
   m_Name: mei
   m_TagString: Untagged
@@ -155,18 +154,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 2941441870743019316}
   m_Enabled: 1
---- !u!114 &1143889970032482674
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 468906717848076595}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 366da29c47c73e847806443908d47ded, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.UprightPosture
 --- !u!1 &499484848579347551
 GameObject:
   m_ObjectHideFlags: 0

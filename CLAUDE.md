@@ -136,8 +136,10 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   `tools/avatars/build_avatars.py` (Blender + MPFB, siehe `tools/avatars/README.md`), Animationen aus der Quaternius
   Universal Animation Library (CC0, `Assets/ThirdParty/Quaternius`). Alles **Humanoid** (Rig `mixamo_unity`, Ruhepose
   T-Pose), `AvatarSetup` baut Prefabs (`_Project/Avatars`), URP-Materialien pro Mesh-Slot und den Animator: Basis
-  (Idle/Walk/Talk/Sitzen/Springen), Ebene `Hands` (entspannte Finger), `Arm Gestures`/`Head Gestures` (Winken, Nicken,
-  Kopfschütteln als Muskel-Clips; `AvatarView` blendet die Ebene während der Geste ein). Massstab echte Meter.
+  (Idle/Walk/Talk/Sitzen/Springen/Schwimmen), Ebene `Hands` (entspannte Finger), `Arm Gestures`/`Head Gestures` (Winken,
+  Nicken, Kopfschütteln als Muskel-Clips; `AvatarView` blendet die Ebene während der Geste ein). Massstab echte Meter.
+  Das Animations-FBX muss das Mannequin-Mesh enthalten (Bind-Pose = Humanoid-Referenz, sonst läuft alles schief).
+  Die Szene braucht genau einen `AudioListener` (an der Hauptkamera), sonst ist nichts zu hören.
   **Handy-Budget:** jede Figur = ein Skinned Mesh mit 2 Materialien (Atlas `opaque` 1024 / `cutout` 512, ASTC) in
   3 LODs (~8k / 3k / 1k Dreiecke, LODGroup), 2-Knochen-Skinning. Poly-Haven-Möbel werden nach dem Download mit
   `tools/polyhaven_mobile.py` (Blender) auf ≤ 3k Dreiecke pro Teil reduziert; der GPU Resident Drawer (Forward+) bündelt

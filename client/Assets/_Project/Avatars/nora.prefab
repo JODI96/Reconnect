@@ -555,7 +555,6 @@ GameObject:
   - component: {fileID: 3119947062404164974}
   - component: {fileID: 9055731174841939732}
   - component: {fileID: 7860568038696884767}
-  - component: {fileID: 5653145628018571335}
   m_Layer: 0
   m_Name: nora
   m_TagString: Untagged
@@ -631,18 +630,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 7521199626673711608}
   m_Enabled: 1
---- !u!114 &5653145628018571335
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2307980452003051476}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 366da29c47c73e847806443908d47ded, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.UprightPosture
 --- !u!1 &2438987160833653983
 GameObject:
   m_ObjectHideFlags: 0

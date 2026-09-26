@@ -36,17 +36,18 @@ if rig.animation_data:
     for track in list(rig.animation_data.nla_tracks):
         rig.animation_data.nla_tracks.remove(track)
 
-# The mannequin mesh is not needed; Unity builds the humanoid avatar from the skeleton.
-for obj in list(bpy.data.objects):
-    if obj.type == "MESH":
-        bpy.data.objects.remove(obj, do_unlink=True)
+# Keep the mannequin mesh: its bind pose is the T-pose Unity uses as the humanoid reference. Without a skinned
+# mesh Unity takes an arbitrary animation frame as reference and every clip plays tilted (pelvis ~15° to the side).
+meshes = [obj for obj in bpy.data.objects if obj.type == "MESH"]
 
 os.makedirs(OUT, exist_ok=True)
 bpy.ops.object.select_all(action="DESELECT")
 rig.select_set(True)
+for mesh in meshes:
+    mesh.select_set(True)
 bpy.context.view_layer.objects.active = rig
 bpy.ops.export_scene.fbx(filepath=os.path.join(OUT, "AvatarAnimations.fbx"), use_selection=True,
-                         object_types={"ARMATURE"}, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Z", axis_up="Y",
+                         object_types={"ARMATURE", "MESH"}, apply_scale_options="FBX_SCALE_ALL", axis_forward="-Z", axis_up="Y",
                          add_leaf_bones=False, bake_anim=True, bake_anim_use_all_actions=True,
                          bake_anim_use_nla_strips=False, bake_anim_force_startend_keying=True, bake_anim_simplify_factor=0.5)
 print("ANIMATIONS", sorted(a.name for a in bpy.data.actions), "bones", len(rig.data.bones))

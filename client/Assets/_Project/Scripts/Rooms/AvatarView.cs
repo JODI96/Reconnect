@@ -47,7 +47,6 @@ namespace Reconnect.Client.Rooms
         private Vector3 _standPosition;
         private Quaternion _standRotation;
         private Animator _animator;
-        private UprightPosture _posture;
         private bool _sitting;
         private Vector3 _stepTarget;
         private bool _walking;
@@ -90,7 +89,6 @@ namespace Reconnect.Client.Rooms
                     avatar._animator = figure.AddComponent<Animator>();
                 }
                 avatar._animator.runtimeAnimatorController = catalog.animator;
-                avatar._posture = figure.GetComponent<UprightPosture>();
                 avatar._hips = avatar._animator.isHuman ? avatar._animator.GetBoneTransform(HumanBodyBones.Hips) : null;
                 avatar._head = avatar._animator.isHuman ? avatar._animator.GetBoneTransform(HumanBodyBones.Head) : null;
                 avatar._animator.applyRootMotion = false;
@@ -170,11 +168,6 @@ namespace Reconnect.Client.Rooms
                     _animator.Play("Sitting", 0, 0f);
                 }
             }
-            if (_posture != null)
-            {
-                _posture.Walking = false;
-                _posture.Sitting = true;
-            }
             if (_ring != null)
             {
                 _ring.SetActive(false);
@@ -197,10 +190,6 @@ namespace Reconnect.Client.Rooms
             if (_animator != null)
             {
                 _animator.SetBool(SittingParameter, false);
-            }
-            if (_posture != null)
-            {
-                _posture.Sitting = false;
             }
         }
 
@@ -381,10 +370,6 @@ namespace Reconnect.Client.Rooms
                 _animator.SetBool(SwimmingParameter, inWater);
                 _animator.SetBool(TalkingParameter, false);
             }
-            if (_posture != null)
-            {
-                _posture.Swimming = inWater;
-            }
             if (_ring != null)
             {
                 _ring.SetActive(!inWater);
@@ -412,10 +397,6 @@ namespace Reconnect.Client.Rooms
             if (_animator != null)
             {
                 _animator.SetBool(WalkingParameter, _walking);
-            }
-            if (_posture != null)
-            {
-                _posture.Walking = _walking;
             }
             if (_walking)
             {

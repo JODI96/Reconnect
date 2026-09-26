@@ -291,6 +291,7 @@ namespace Reconnect.Client.Editor
 
             var cameraGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var camera = cameraGo.AddComponent<Camera>();
+            cameraGo.AddComponent<AudioListener>();   // without one Unity plays no sound at all (room music)
             camera.clearFlags = CameraClearFlags.Skybox;
             var cameraController = cameraGo.AddComponent<CityCameraController>();
             var cameraData = cameraGo.AddComponent<UniversalAdditionalCameraData>();
