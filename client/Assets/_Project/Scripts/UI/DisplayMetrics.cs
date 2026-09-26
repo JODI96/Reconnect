@@ -26,8 +26,13 @@ namespace Reconnect.Client.UI
 
         public bool IsMobile { get; }
 
+        /// <summary>
+        /// UnityEngine.Device (not UnityEngine.Screen/Application): same values on a real device, but only these are
+        /// faked by the Device Simulator – otherwise the editor counts as desktop and the phone UI is tiny.
+        /// </summary>
         public static DisplayMetrics FromScreen() =>
-            new(Screen.width, Screen.height, Screen.dpi, Screen.safeArea, Application.isMobilePlatform);
+            new(UnityEngine.Device.Screen.width, UnityEngine.Device.Screen.height, UnityEngine.Device.Screen.dpi,
+                UnityEngine.Device.Screen.safeArea, UnityEngine.Device.Application.isMobilePlatform);
 
         /// <summary>
         /// Pixels per UI unit. On phones and tablets UI sizes are points (iOS) / dp (Android): 160 dpi = 1 pixel
