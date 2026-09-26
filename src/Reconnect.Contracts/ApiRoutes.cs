@@ -32,6 +32,27 @@ namespace Reconnect.Contracts
             public const string Group = Version + Path;
             public static string ById(System.Guid id) => Group + "/" + id;
             public static string Layout(System.Guid id) => Group + "/" + id + "/layout";
+
+            /// <summary>Floors of a tower building with live occupancy (GET).</summary>
+            public static string Tower(System.Guid buildingId) => Group + "/tower/" + buildingId;
+        }
+
+        public static class Wallet
+        {
+            public const string Path = "/wallet";
+            public const string Group = Version + Path;
+
+            /// <summary>GET: my balance and recent transactions.</summary>
+            public const string Me = Group;
+        }
+
+        public static class RealEstate
+        {
+            public const string Path = "/realestate";
+            public const string Group = Version + Path;
+            public static string Units(System.Guid buildingId) => Group + "/buildings/" + buildingId + "/units";
+            public static string Buy(System.Guid unitId) => Group + "/units/" + unitId + "/buy";
+            public static string Sell(System.Guid unitId) => Group + "/units/" + unitId + "/sell";
         }
 
         public static class Buildings

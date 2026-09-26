@@ -19,6 +19,8 @@
     <ProjectReference Include="..\..\src\Modules\Social\Reconnect.Modules.Social\Reconnect.Modules.Social.csproj" />
     <ProjectReference Include="..\..\src\Modules\City\Reconnect.Modules.City\Reconnect.Modules.City.csproj" />
     <ProjectReference Include="..\..\src\Modules\Rooms\Reconnect.Modules.Rooms\Reconnect.Modules.Rooms.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Wallet\Reconnect.Modules.Wallet\Reconnect.Modules.Wallet.csproj" />
+    <ProjectReference Include="..\..\src\Modules\RealEstate\Reconnect.Modules.RealEstate\Reconnect.Modules.RealEstate.csproj" />
   </ItemGroup>
 
   <ItemGroup>

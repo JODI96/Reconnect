@@ -12,10 +12,13 @@ internal static class RoomThemes
     public const string Opera = "opera";
     public const string Library = "library";
     public const string SkyLounge = "skylounge";
+    public const string Lobby = "lobby";
+    public const string Coworking = "coworking";
+    public const string Conference = "conference";
 
     public const int MaxLength = 32;
 
-    public static readonly IReadOnlyList<string> All = [Cozy, Rooftop, Cafe, Atelier, Opera, Library, SkyLounge];
+    public static readonly IReadOnlyList<string> All = [Cozy, Rooftop, Cafe, Atelier, Opera, Library, SkyLounge, Lobby, Coworking, Conference];
 
     public static string Validate(string? theme)
     {

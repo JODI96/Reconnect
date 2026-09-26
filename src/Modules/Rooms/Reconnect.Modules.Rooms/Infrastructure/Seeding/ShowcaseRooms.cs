@@ -10,7 +10,7 @@ using Reconnect.Modules.Rooms.Domain;
 namespace Reconnect.Modules.Rooms.Infrastructure.Seeding;
 
 /// <summary>
-/// DEVELOPMENT ONLY: five fully furnished public rooms owned by the dev admin, so the app has
+/// DEVELOPMENT ONLY: four fully furnished public rooms owned by the dev admin, so the app has
 /// something to explore. Runs after the dev admin exists; re-running updates size, layout and theme.
 /// Coordinates in metres: (0,0) is the front corner the camera looks from, back walls at z = depth
 /// and x = width. Item ids = Kenney Furniture Kit models (client scale 0.2 ≈ real-life size),
@@ -20,10 +20,10 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Seeding;
 internal static partial class ShowcaseRooms
 {
     // Kenney models face -Z ("south", towards the camera side) at rotation 0.
-    private const float South = 0f;
-    private const float West = 90f;
-    private const float North = 180f;
-    private const float East = 270f;
+    internal const float South = 0f;
+    internal const float West = 90f;
+    internal const float North = 180f;
+    internal const float East = 270f;
     private const float PolyHavenForward = 180f;
 
     public static async Task SeedIfEnabledAsync(IServiceProvider services, CancellationToken ct)
@@ -78,97 +78,11 @@ internal static partial class ShowcaseRooms
 
     private static IEnumerable<Definition> Definitions() =>
     [
-        new("Rooftop Lounge", ZurichBuildings.PrimeTowerId, RoomThemes.SkyLounge, 22, 16, SkyLounge()),
         new("ETH Bibliothek", ZurichBuildings.EthHauptgebaeudeId, RoomThemes.Library, 22, 16, Library()),
         new("Opern-Foyer", ZurichBuildings.OpernhausId, RoomThemes.Opera, 20, 14, OperaFoyer()),
         new("Café Limmat", ZurichBuildings.GrossmuensterId, RoomThemes.Cafe, 14, 10, Cafe()),
         new("Kunst-Atelier", ZurichBuildings.KunsthausId, RoomThemes.Atelier, 14, 12, Atelier()),
     ];
-
-    /// <summary>
-    /// Glass top floor of the Prime Tower, modelled on the real "Clouds" (35th floor): cocktail bar with a
-    /// back bar along the north facade, open kitchen with a bistro in front, restaurant tables, a sunset
-    /// lounge facing the Uetliberg (west), a Prive with the quiz screen behind a glass partition, a DJ booth,
-    /// panorama viewers at the glass and – the futuristic touch – a Prime Tower hologram in the middle.
-    /// Glass facade, luminous "sky" ceiling and LED lines come from the skylounge theme (client).
-    /// Furniture: realistic Poly Haven models ("ph-*") plus custom pieces built by the client.
-    /// </summary>
-    private static List<RoomItem> SkyLounge()
-    {
-        var items = new List<RoomItem>
-        {
-            // Cocktail bar (north-east): back bar against the glass, backlit counter, pendants above.
-            Item("custom-backbar", 16f, 15.5f),
-            Item("custom-skybar", 16f, 13.6f),
-            Item("custom-pendant", 14.5f, 13.5f), Item("custom-pendant", 17.5f, 13.5f),
-
-            // Open kitchen along the east facade, bistro high tables in front of the pass.
-            Item("custom-openkitchen", 20.9f, 9.2f, West),
-            Ph("side_table_tall_01", 17.8f, 8.2f), Ph("side_table_tall_01", 17.8f, 10.4f),
-            Ph("bar_chair_round_01", 16.9f, 8.2f, East), Ph("bar_chair_round_01", 18.7f, 8.2f, West),
-            Ph("bar_chair_round_01", 16.9f, 10.4f, East), Ph("bar_chair_round_01", 18.7f, 10.4f, West),
-
-            // Sunset lounge (north-west) looking towards the Uetliberg.
-            Item("custom-rug", 3.6f, 13.2f),
-            Ph("sofa_02", 3.6f, 15.1f, South),
-            Ph("mid_century_lounge_chair", 1.4f, 12.9f, East), Ph("mid_century_lounge_chair", 5.8f, 12.9f, West),
-            Ph("modern_coffee_table_01", 3.6f, 13.3f), Ph("tea_set_01", 3.6f, 13.3f),
-            Ph("Ottoman_01", 3.6f, 11.5f),
-            Item("custom-pendant", 3.6f, 13.3f),
-            Ph("side_table_tall_01", 0.8f, 10.6f), Ph("marble_bust_01", 0.8f, 10.6f),
-
-            // Second lounge at the west facade.
-            Item("custom-rug", 2.4f, 7f, West),
-            Ph("sofa_03", 0.9f, 7f, East),
-            Ph("coffee_table_round_01", 2.4f, 7f),
-            Ph("modern_arm_chair_01", 3.9f, 6.2f, West), Ph("modern_arm_chair_01", 3.9f, 7.8f, West),
-            Ph("potted_plant_02", 0.8f, 9.4f),
-
-            // DJ booth on the north side with an LED line in front.
-            Item("custom-djbooth", 9.8f, 15f),
-            Item("custom-ledstrip", 9.8f, 13.8f),
-
-            // Centrepiece: Prime Tower hologram on a round rug with ottomans around it.
-            Item("custom-ruground", 11f, 9f),
-            Item("custom-hologram", 11f, 9f),
-            Ph("Ottoman_01", 11f, 7.4f), Ph("Ottoman_01", 11f, 10.6f), Ph("Ottoman_01", 9.4f, 9f), Ph("Ottoman_01", 12.6f, 9f),
-
-            // Tic-tac-toe table.
-            Item("game-tictactoe", 7.2f, 9f),
-            Ph("dining_chair_02", 6.2f, 9f, East), Ph("dining_chair_02", 8.2f, 9f, West),
-
-            // Prive (south-east) behind a frosted glass partition: quiz screen with armchairs.
-            Item("custom-divider", 15.2f, 3f, West),
-            Item("custom-rug", 18.4f, 3f, West),
-            Item("game-quiz", 20.8f, 3f, West),
-            Ph("modern_arm_chair_01", 17.9f, 2f, East), Ph("modern_arm_chair_01", 17.9f, 4f, East),
-            Ph("side_table_01", 17.9f, 3f), Ph("ceramic_vase_01", 17.9f, 3f),
-
-            // Panorama viewers at the glass.
-            Item("custom-telescope", 7.2f, 15.3f),
-            Item("custom-telescope", 0.9f, 4.4f, East),
-            Item("custom-telescope", 21.2f, 5.6f, West),
-
-            // Plants.
-            Ph("pachira_aquatica_01", 0.9f, 15.2f), Ph("pachira_aquatica_01", 21.1f, 15.1f),
-            Ph("potted_plant_04", 0.8f, 0.8f), Ph("potted_plant_02", 21.2f, 0.8f),
-            Ph("potted_plant_04", 12.4f, 15.3f), Ph("potted_plant_02", 14.2f, 0.8f),
-            Ph("potted_plant_04", 19.6f, 6.3f),
-        };
-
-        // Bar stools in front of the counter.
-        items.AddRange(Enumerable.Range(0, 5).Select(i => Ph("bar_chair_round_01", 14f + i, 12.6f, North)));
-
-        // Restaurant along the south glass: three tables for two, a pendant above each.
-        foreach (var x in new[] { 2.4f, 5.4f, 8.4f })
-        {
-            items.Add(Ph("round_wooden_table_01", x, 2.4f));
-            items.Add(Ph("dining_chair_02", x - 0.85f, 2.4f, East));
-            items.Add(Ph("dining_chair_02", x + 0.85f, 2.4f, West));
-            items.Add(Item("custom-pendant", x, 2.4f));
-        }
-        return items;
-    }
 
     /// <summary>Reading room: shelf aisles, long reading tables with lamps, study desks, info desk, sofa corner.</summary>
     private static List<RoomItem> Library()
@@ -341,7 +255,7 @@ internal static partial class ShowcaseRooms
         return items;
     }
 
-    private static IEnumerable<RoomItem> Row(string itemId, float x, float z, float dx, float dz, int count,
+    internal static IEnumerable<RoomItem> Row(string itemId, float x, float z, float dx, float dz, int count,
         float rotation = South, float y = 0f) =>
         Enumerable.Range(0, count).Select(i => Item(itemId, x + dx * i, z + dz * i, rotation, y));
 
@@ -349,9 +263,9 @@ internal static partial class ShowcaseRooms
     /// Realistic Poly Haven model (client id "ph-" + name). <paramref name="facing"/> uses the same
     /// convention as Kenney models; Poly Haven models face +Z, hence the extra half turn.
     /// </summary>
-    private static RoomItem Ph(string model, float x, float z, float facing = South) =>
+    internal static RoomItem Ph(string model, float x, float z, float facing = South) =>
         Item("ph-" + model, x, z, (facing + PolyHavenForward) % 360f);
 
-    private static RoomItem Item(string itemId, float x, float z, float rotation = South, float y = 0f) =>
+    internal static RoomItem Item(string itemId, float x, float z, float rotation = South, float y = 0f) =>
         new() { ItemId = itemId, Position = new Position3 { X = x, Y = y, Z = z }, Rotation = rotation };
 }

@@ -8,6 +8,8 @@
     <ProjectReference Include="..\Modules\Social\Reconnect.Modules.Social\Reconnect.Modules.Social.csproj" />
     <ProjectReference Include="..\Modules\City\Reconnect.Modules.City\Reconnect.Modules.City.csproj" />
     <ProjectReference Include="..\Modules\Rooms\Reconnect.Modules.Rooms\Reconnect.Modules.Rooms.csproj" />
+    <ProjectReference Include="..\Modules\Wallet\Reconnect.Modules.Wallet\Reconnect.Modules.Wallet.csproj" />
+    <ProjectReference Include="..\Modules\RealEstate\Reconnect.Modules.RealEstate\Reconnect.Modules.RealEstate.csproj" />
     <ProjectReference Include="..\Reconnect.Contracts\Reconnect.Contracts.csproj" />
     <ProjectReference Include="..\Reconnect.ServiceDefaults\Reconnect.ServiceDefaults.csproj" />
   </ItemGroup>

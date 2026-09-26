@@ -5,9 +5,11 @@ using Reconnect.Contracts;
 using Reconnect.Modules.City;
 using Reconnect.Modules.Identity;
 using Reconnect.Modules.Profiles;
+using Reconnect.Modules.RealEstate;
 using Reconnect.Modules.Rooms;
 using Reconnect.Modules.Safety;
 using Reconnect.Modules.Social;
+using Reconnect.Modules.Wallet;
 using Reconnect.SharedKernel.Modules;
 using Reconnect.SharedKernel.Web;
 using Scalar.AspNetCore;
@@ -26,7 +28,9 @@ builder.AddModules(
     new SafetyModule(),
     new SocialModule(),
     new CityModule(),
-    new RoomsModule());
+    new WalletModule(),
+    new RoomsModule(),
+    new RealEstateModule());
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();

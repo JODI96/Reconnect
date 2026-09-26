@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -24,6 +24,8 @@ public sealed class RoomHubClient : IAsyncDisposable
         connection.On<EmoteDto>(RoomHubContract.Client.PlayerEmote, e => EmotesSeen.Add(e));
         connection.On<TicTacToeStateDto>(RoomHubContract.Client.TicTacToeUpdated, t => TicTacToe.Enqueue(t));
         connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => Quiz.Enqueue(q));
+        connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdates.Enqueue(q));
+        connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => Arrivals.Enqueue(s));
     }
 
     public TestUser User { get; }
@@ -34,6 +36,8 @@ public sealed class RoomHubClient : IAsyncDisposable
     public ConcurrentBag<EmoteDto> EmotesSeen { get; } = [];
     public ConcurrentQueue<TicTacToeStateDto> TicTacToe { get; } = new();
     public ConcurrentQueue<QuizStateDto> Quiz { get; } = new();
+    public ConcurrentQueue<QueueStatusDto> QueueUpdates { get; } = new();
+    public ConcurrentQueue<RoomSnapshotDto> Arrivals { get; } = new();
 
     public static async Task<RoomHubClient> ConnectAsync(ReconnectApiFactory factory, TestUser user)
     {
@@ -71,6 +75,11 @@ public sealed class RoomHubClient : IAsyncDisposable
     public Task<QuizStateDto> QuizAnswerAsync(int index) => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizAnswer, index);
 
     public Task<QuizStateDto> QuizNextAsync() => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizNext);
+
+    public Task<ElevatorResultDto> RideElevatorAsync(Guid targetRoomId) =>
+        _connection.InvokeAsync<ElevatorResultDto>(RoomHubContract.Server.RideElevator, targetRoomId);
+
+    public Task LeaveQueueAsync() => _connection.InvokeAsync(RoomHubContract.Server.LeaveQueue);
 
     public ValueTask DisposeAsync() => _connection.DisposeAsync();
 

@@ -15,12 +15,21 @@ internal interface IRoomPresenceStore
 {
     Task<IReadOnlyList<PresenceEntry>> GetPlayersAsync(Guid roomId);
 
-    /// <summary>Adds or replaces the user's entry. Returns the replaced entry (other connection), if any.</summary>
-    Task<PresenceEntry?> AddAsync(PresenceEntry entry);
+    Task<int> CountAsync(Guid roomId);
+
+    /// <summary>
+    /// Adds (or replaces) the user's entry if the room has space – checked and written atomically, so
+    /// parallel joins can never exceed <paramref name="capacity"/>. A user already in the room always fits.
+    /// </summary>
+    /// <returns>Added = false when full; Replaced = the user's entry from another connection, if any.</returns>
+    Task<(bool Added, PresenceEntry? Replaced)> TryAddAsync(PresenceEntry entry, int capacity);
 
     Task<PresenceEntry?> GetByConnectionAsync(string connectionId);
 
     Task UpdateTileAsync(PresenceEntry entry, int x, int z);
+
+    /// <summary>Removes the user from a room they left by taking the lift (the connection now belongs to the new room).</summary>
+    Task RemoveFromRoomAsync(Guid roomId, Guid userId);
 
     /// <summary>Removes the connection's entry (if it is still the user's current one) and returns it.</summary>
     Task<PresenceEntry?> RemoveByConnectionAsync(string connectionId);
@@ -37,6 +46,15 @@ internal sealed class RedisRoomPresenceStore(IConnectionMultiplexer redis) : IRo
 {
     private static readonly TimeSpan ConnectionTtl = TimeSpan.FromDays(1);
 
+    // Capacity check and write in one step (Redis runs scripts atomically).
+    private const string TryAddScript = """
+        if redis.call('HEXISTS', KEYS[1], ARGV[1]) == 1 or redis.call('HLEN', KEYS[1]) < tonumber(ARGV[3]) then
+            redis.call('HSET', KEYS[1], ARGV[1], ARGV[2])
+            return 1
+        end
+        return 0
+        """;
+
     private IDatabase Db => redis.GetDatabase();
 
     public async Task<IReadOnlyList<PresenceEntry>> GetPlayersAsync(Guid roomId)
@@ -45,17 +63,26 @@ internal sealed class RedisRoomPresenceStore(IConnectionMultiplexer redis) : IRo
         return values.Select(v => JsonSerializer.Deserialize<PresenceEntry>(v.ToString())!).ToList();
     }
 
-    public async Task<PresenceEntry?> AddAsync(PresenceEntry entry)
+    public async Task<int> CountAsync(Guid roomId) => (int)await Db.HashLengthAsync(RoomKey(roomId));
+
+    public async Task<(bool Added, PresenceEntry? Replaced)> TryAddAsync(PresenceEntry entry, int capacity)
     {
         var previous = await GetAsync(entry.RoomId, entry.UserId);
-        if (previous is not null && previous.ConnectionId != entry.ConnectionId)
+        var result = await Db.ScriptEvaluateAsync(TryAddScript,
+            [RoomKey(entry.RoomId)],
+            [entry.UserId.ToString(), JsonSerializer.Serialize(entry), capacity]);
+        if ((int)result != 1)
         {
-            await Db.KeyDeleteAsync(ConnectionKey(previous.ConnectionId));
+            return (false, null);
         }
 
-        await Db.HashSetAsync(RoomKey(entry.RoomId), entry.UserId.ToString(), JsonSerializer.Serialize(entry));
+        var replaced = previous is not null && previous.ConnectionId != entry.ConnectionId ? previous : null;
+        if (replaced is not null)
+        {
+            await Db.KeyDeleteAsync(ConnectionKey(replaced.ConnectionId));
+        }
         await Db.StringSetAsync(ConnectionKey(entry.ConnectionId), $"{entry.RoomId}|{entry.UserId}", ConnectionTtl);
-        return previous is not null && previous.ConnectionId != entry.ConnectionId ? previous : null;
+        return (true, replaced);
     }
 
     public async Task<PresenceEntry?> GetByConnectionAsync(string connectionId)
@@ -73,6 +100,8 @@ internal sealed class RedisRoomPresenceStore(IConnectionMultiplexer redis) : IRo
 
     public Task UpdateTileAsync(PresenceEntry entry, int x, int z) =>
         Db.HashSetAsync(RoomKey(entry.RoomId), entry.UserId.ToString(), JsonSerializer.Serialize(entry with { X = x, Z = z }));
+
+    public Task RemoveFromRoomAsync(Guid roomId, Guid userId) => Db.HashDeleteAsync(RoomKey(roomId), userId.ToString());
 
     public async Task<PresenceEntry?> RemoveByConnectionAsync(string connectionId)
     {

@@ -9,6 +9,10 @@ internal sealed class Room : IAuditable
     public const int MinSize = 6;
     public const int MaxSize = 40;
     public const int DefaultSize = 10;
+    public const int MinCapacity = 1;
+    public const int MaxCapacity = 200;
+    public const int DefaultCapacity = 25;
+    public const int MaxFloor = 200;
 
     private Room() { }
 
@@ -22,6 +26,12 @@ internal sealed class Room : IAuditable
     /// <summary>Floor size in 1 m tiles (x = width, z = depth).</summary>
     public int Width { get; private set; } = DefaultSize;
     public int Depth { get; private set; } = DefaultSize;
+
+    /// <summary>Storey in a tower (0 = ground floor / lobby); null for ordinary rooms.</summary>
+    public int? Floor { get; private set; }
+
+    /// <summary>How many people may be in the room at once (enforced by the room hub, with a lift queue for towers).</summary>
+    public int Capacity { get; private set; } = DefaultCapacity;
 
     /// <summary>Furniture layout, stored as jsonb.</summary>
     public List<RoomItem> Layout { get; private set; } = [];
@@ -44,6 +54,21 @@ internal sealed class Room : IAuditable
     }
 
     public bool IsOwnedBy(Guid userId) => OwnerId == userId;
+
+    /// <summary>Puts the room on a storey of its building with a maximum number of people.</summary>
+    public void PlaceOnFloor(int? floor, int capacity)
+    {
+        if (floor is < 0 or > MaxFloor)
+        {
+            throw new DomainException($"Floor must be 0-{MaxFloor}.");
+        }
+        if (capacity is < MinCapacity or > MaxCapacity)
+        {
+            throw new DomainException($"Capacity must be {MinCapacity}-{MaxCapacity}.");
+        }
+        Floor = floor;
+        Capacity = capacity;
+    }
 
     public void ChangeTheme(string theme) => Theme = RoomThemes.Validate(theme);
 

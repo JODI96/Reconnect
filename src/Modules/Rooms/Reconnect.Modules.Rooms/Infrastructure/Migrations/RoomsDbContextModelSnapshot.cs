@@ -34,6 +34,12 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("building_id");
 
+                    b.Property<int>("Capacity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(25)
+                        .HasColumnName("capacity");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -43,6 +49,10 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(10)
                         .HasColumnName("depth");
+
+                    b.Property<int?>("Floor")
+                        .HasColumnType("integer")
+                        .HasColumnName("floor");
 
                     b.Property<bool>("IsPublic")
                         .HasColumnType("boolean")
@@ -81,6 +91,9 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Migrations
 
                     b.HasIndex("OwnerId")
                         .HasDatabaseName("ix_rooms_owner_id");
+
+                    b.HasIndex("BuildingId", "Floor")
+                        .HasDatabaseName("ix_rooms_building_id_floor");
 
                     b.HasIndex("BuildingId", "IsPublic")
                         .HasDatabaseName("ix_rooms_building_id_is_public");

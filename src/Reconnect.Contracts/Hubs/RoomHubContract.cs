@@ -44,6 +44,15 @@ namespace Reconnect.Contracts.Hubs
 
             /// <summary>() → QuizStateDto. Reveals the answer, then moves to the next question.</summary>
             public const string QuizNext = "QuizNext";
+
+            /// <summary>
+            /// (Guid targetRoomId) → ElevatorResultDto. Rides to another floor of the same tower: arrives at once if
+            /// there is room (and nobody waiting), otherwise joins the queue and rides up automatically.
+            /// </summary>
+            public const string RideElevator = "RideElevator";
+
+            /// <summary>() → nothing. Leaves the lift queue.</summary>
+            public const string LeaveQueue = "LeaveQueue";
         }
 
         /// <summary>Events the server pushes to clients in the same room (never between blocked users).</summary>
@@ -69,6 +78,12 @@ namespace Reconnect.Contracts.Hubs
 
             /// <summary>Payload: QuizStateDto</summary>
             public const string QuizUpdated = "QuizUpdated";
+
+            /// <summary>Payload: QueueStatusDto – my place in the lift queue changed (Position 0 = left the queue).</summary>
+            public const string QueueUpdated = "QueueUpdated";
+
+            /// <summary>Payload: RoomSnapshotDto – it was my turn: the lift brought me to the floor I waited for.</summary>
+            public const string ElevatorArrived = "ElevatorArrived";
         }
     }
 }

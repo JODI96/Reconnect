@@ -51,7 +51,8 @@ internal static class RoomEndpoints
         // Owner names come from the Profiles module – one batched call per page.
         var names = await profiles.GetDisplayNamesAsync(rooms.Select(r => r.OwnerId), ct);
         var items = rooms
-            .Select(r => new RoomSummaryDto(r.Id, r.Name, r.BuildingId, r.OwnerId, names.GetValueOrDefault(r.OwnerId, ""), r.IsPublic, r.UpdatedAt))
+            .Select(r => new RoomSummaryDto(r.Id, r.Name, r.BuildingId, r.OwnerId,
+                TowerOwners.NameOf(r.OwnerId) ?? names.GetValueOrDefault(r.OwnerId, ""), r.IsPublic, r.UpdatedAt, r.Floor))
             .ToList();
 
         return TypedResults.Ok(new PagedResponse<RoomSummaryDto>(items, p, size, total));

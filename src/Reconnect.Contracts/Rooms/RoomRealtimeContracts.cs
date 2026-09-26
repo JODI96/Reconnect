@@ -8,6 +8,7 @@ namespace Reconnect.Contracts.Rooms
     {
         public const int Width = 10;
         public const int Depth = 10;
+        /// <summary>Default capacity of a room; tower floors have their own.</summary>
         public const int MaxPlayers = 25;
         public const int MaxChatLength = 200;
     }
@@ -28,6 +29,28 @@ namespace Reconnect.Contracts.Rooms
         QuizStateDto? Quiz = null);
 
     public sealed record PlayerMovedDto(Guid UserId, TilePosition Tile);
+
+    /// <summary>A floor of a tower (public floor or my own office) with live occupancy.</summary>
+    /// <param name="Floor">0 = ground floor (lobby).</param>
+    /// <param name="QueueLength">People waiting in the lift for this floor.</param>
+    public sealed record TowerFloorDto(
+        Guid RoomId, int Floor, string Name, string Theme, int Capacity, int Occupancy, int QueueLength, bool IsPublic, bool IsMine);
+
+    public sealed record TowerDto(Guid BuildingId, IReadOnlyList<TowerFloorDto> Floors);
+
+    public static class ElevatorStatus
+    {
+        /// <summary>You are on the target floor (snapshot included).</summary>
+        public const string Arrived = "arrived";
+
+        /// <summary>The floor is full: you wait in the queue and ride up automatically when it's your turn.</summary>
+        public const string Queued = "queued";
+    }
+
+    public sealed record ElevatorResultDto(string Status, RoomSnapshotDto? Snapshot, QueueStatusDto? Queue);
+
+    /// <param name="Position">1 = next. 0 = not queued (any more).</param>
+    public sealed record QueueStatusDto(Guid RoomId, int Floor, string FloorName, int Position);
 
     public sealed record RoomChatMessageDto(Guid UserId, string DisplayName, string Text, DateTimeOffset SentAt);
 }

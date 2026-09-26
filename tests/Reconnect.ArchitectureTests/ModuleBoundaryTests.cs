@@ -3,9 +3,11 @@ using NetArchTest.Rules;
 using Reconnect.Modules.City;
 using Reconnect.Modules.Identity;
 using Reconnect.Modules.Profiles;
+using Reconnect.Modules.RealEstate;
 using Reconnect.Modules.Rooms;
 using Reconnect.Modules.Safety;
 using Reconnect.Modules.Social;
+using Reconnect.Modules.Wallet;
 using Reconnect.SharedKernel.Modules;
 
 namespace Reconnect.ArchitectureTests;
@@ -25,6 +27,8 @@ public sealed class ModuleBoundaryTests
         ["Social"] = typeof(SocialModule).Assembly,
         ["City"] = typeof(CityModule).Assembly,
         ["Rooms"] = typeof(RoomsModule).Assembly,
+        ["Wallet"] = typeof(WalletModule).Assembly,
+        ["RealEstate"] = typeof(RealEstateModule).Assembly,
     };
 
     private static readonly Dictionary<string, string[]> AllowedDependencies = new()
@@ -35,6 +39,8 @@ public sealed class ModuleBoundaryTests
         ["Profiles"] = ["Identity", "Safety"],
         ["Social"] = ["Profiles", "Safety"],
         ["Rooms"] = ["Identity", "Profiles", "Safety", "City"],
+        ["Wallet"] = [],
+        ["RealEstate"] = ["Wallet", "Rooms", "City"],
     };
 
     public static TheoryData<string> ModuleNames => [.. Modules.Keys];

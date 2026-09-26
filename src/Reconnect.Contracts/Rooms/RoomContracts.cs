@@ -16,7 +16,8 @@ namespace Reconnect.Contracts.Rooms
         Guid OwnerId,
         string OwnerDisplayName,
         bool IsPublic,
-        DateTimeOffset UpdatedAt);
+        DateTimeOffset UpdatedAt,
+        int? Floor = null);
 
     public sealed record RoomDto(
         Guid Id,
@@ -30,9 +31,11 @@ namespace Reconnect.Contracts.Rooms
         DateTimeOffset UpdatedAt,
         string Theme,
         int Width,
-        int Depth);
+        int Depth,
+        int? Floor = null,
+        int Capacity = RoomGrid.MaxPlayers);
 
-    /// <param name="Theme">Optional: cozy (default), rooftop, cafe, atelier, opera, library.</param>
+    /// <param name="Theme">Optional: cozy (default), rooftop, cafe, atelier, opera, library, skylounge, lobby, coworking, conference.</param>
     public sealed record CreateRoomRequest(Guid BuildingId, string Name, bool IsPublic, string? Theme = null);
 
     public sealed record UpdateRoomLayoutRequest(IReadOnlyList<RoomItemDto> Items);

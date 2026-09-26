@@ -10,9 +10,11 @@
     <Project Path="src/Modules/City/Reconnect.Modules.City/Reconnect.Modules.City.csproj" />
     <Project Path="src/Modules/Identity/Reconnect.Modules.Identity/Reconnect.Modules.Identity.csproj" />
     <Project Path="src/Modules/Profiles/Reconnect.Modules.Profiles/Reconnect.Modules.Profiles.csproj" />
+    <Project Path="src/Modules/RealEstate/Reconnect.Modules.RealEstate/Reconnect.Modules.RealEstate.csproj" />
     <Project Path="src/Modules/Rooms/Reconnect.Modules.Rooms/Reconnect.Modules.Rooms.csproj" />
     <Project Path="src/Modules/Safety/Reconnect.Modules.Safety/Reconnect.Modules.Safety.csproj" />
     <Project Path="src/Modules/Social/Reconnect.Modules.Social/Reconnect.Modules.Social.csproj" />
+    <Project Path="src/Modules/Wallet/Reconnect.Modules.Wallet/Reconnect.Modules.Wallet.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Reconnect.Api.Tests/Reconnect.Api.Tests.csproj" />

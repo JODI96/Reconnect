@@ -20,6 +20,7 @@ internal sealed class RoomsDbContext(DbContextOptions<RoomsDbContext> options) :
             room.Property(r => r.Theme).HasMaxLength(RoomThemes.MaxLength).HasDefaultValue(RoomThemes.Cozy);
             room.Property(r => r.Width).HasDefaultValue(Room.DefaultSize);
             room.Property(r => r.Depth).HasDefaultValue(Room.DefaultSize);
+            room.Property(r => r.Capacity).HasDefaultValue(Room.DefaultCapacity);
 
             // Layout is stored as a single jsonb column: [{ ItemId, Position: { X, Y, Z }, Rotation }, ...]
             room.OwnsMany(r => r.Layout, item =>
@@ -31,6 +32,7 @@ internal sealed class RoomsDbContext(DbContextOptions<RoomsDbContext> options) :
             // OwnerId / BuildingId point into other modules: no foreign keys across module boundaries.
             room.HasIndex(r => r.OwnerId);
             room.HasIndex(r => new { r.BuildingId, r.IsPublic });
+            room.HasIndex(r => new { r.BuildingId, r.Floor });
         });
     }
 }

@@ -24,14 +24,19 @@ internal sealed class RoomReader(RoomsDbContext db, IBlockQueries blocks, IProfi
     }
 
     public async Task<RoomDto> ToDtoAsync(Room room, CancellationToken ct) =>
-        room.ToDto(await profiles.GetDisplayNameAsync(room.OwnerId, ct) ?? "");
+        room.ToDto(await OwnerNameAsync(room.OwnerId, ct));
+
+    /// <summary>Display name of an owner; rooms of a building itself (tower floors) show the building.</summary>
+    public async Task<string> OwnerNameAsync(Guid ownerId, CancellationToken ct) =>
+        TowerOwners.NameOf(ownerId) ?? await profiles.GetDisplayNameAsync(ownerId, ct) ?? "";
 }
 
 internal static class RoomMappings
 {
     public static RoomDto ToDto(this Room room, string ownerDisplayName) =>
         new(room.Id, room.Name, room.BuildingId, room.OwnerId, ownerDisplayName, room.IsPublic,
-            room.Layout.Select(ToDto).ToList(), room.CreatedAt, room.UpdatedAt, room.Theme, room.Width, room.Depth);
+            room.Layout.Select(ToDto).ToList(), room.CreatedAt, room.UpdatedAt, room.Theme, room.Width, room.Depth,
+            room.Floor, room.Capacity);
 
     public static RoomItemDto ToDto(this RoomItem item) =>
         new(item.ItemId, new Vector3Dto(item.Position.X, item.Position.Y, item.Position.Z), item.Rotation);
