@@ -46,12 +46,14 @@ namespace Reconnect.Client.Editor
         private const string AvatarMaterialPath = MaterialsDir + "/Avatar.mat";
         private const string GlassMaterialPath = MaterialsDir + "/Glass.mat";
         private const string WaterMaterialPath = MaterialsDir + "/Water.mat";
+        private const string BuildingsMaterialPath = MaterialsDir + "/Buildings.mat";
         private const string ItemCatalogPath = SettingsDir + "/ItemCatalog.asset";
         private const string AvatarCatalogPath = SettingsDir + "/AvatarCatalog.asset";
         private const string PostProcessingPath = SettingsDir + "/PostProcessing.asset";
         private const string AnimationDir = Root + "/Animation";
         private const string AvatarControllerPath = AnimationDir + "/Avatar.controller";
         private const string KenneyFurnitureDir = "Assets/ThirdParty/Kenney/Furniture";
+        private const string PolyHavenDir = "Assets/ThirdParty/PolyHaven";
         private const string KenneyCharactersDir = "Assets/ThirdParty/Kenney/Characters";
 
         // swisstopo (OGD, commercial use allowed with attribution "© swisstopo").
@@ -145,26 +147,51 @@ namespace Reconnect.Client.Editor
             var glass = Transparent(LoadOrCreateMaterial(GlassMaterialPath, lit), new Color(0.75f, 0.9f, 1f, 0.28f), 0.95f);
             var water = Transparent(LoadOrCreateMaterial(WaterMaterialPath, lit), new Color(0.2f, 0.75f, 0.95f, 0.55f), 0.97f);
 
-            foreach (var material in roomMaterials.Concat(new[] { marker, selected, sky, glass, water }))
+            // swissBUILDINGS3D comes untextured with raw classification colours (red roofs, yellow walls).
+            // A plain lit material replaces them: a calm, light "architectural model" look; the sun shapes the volumes.
+            var buildings = Colored(BuildingsMaterialPath, lit, new Color32(226, 222, 214, 255));
+            buildings.SetFloat("_Smoothness", 0.15f);
+
+            foreach (var material in roomMaterials.Concat(new[] { marker, selected, sky, glass, water, buildings }))
             {
                 EditorUtility.SetDirty(material);
             }
         }
 
-        /// <summary>ItemId = model file name, e.g. "loungeSofa" (Kenney Furniture Kit, CC0).</summary>
+        /// <summary>
+        /// ItemId = model file name, e.g. "loungeSofa" (Kenney Furniture Kit, CC0), plus "ph-" + name for the
+        /// realistic Poly Haven models (CC0, glTF via glTFast, already in metres – see tools/fetch_polyhaven.py).
+        /// </summary>
         private static void CreateItemCatalog()
         {
             var catalog = LoadOrCreate<ItemCatalog>(ItemCatalogPath);
             catalog.modelScale = 0.2f;   // ≈ real-life size (table 65 cm, door 2 m)
-            catalog.items = AssetDatabase.FindAssets("t:Model", new[] { KenneyFurnitureDir })
+            var kenney = AssetDatabase.FindAssets("t:Model", new[] { KenneyFurnitureDir })
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .OrderBy(path => path)
                 .Select(path => new ItemCatalog.Entry
                 {
                     itemId = Path.GetFileNameWithoutExtension(path),
                     model = AssetDatabase.LoadAssetAtPath<GameObject>(path),
-                })
-                .ToList();
+                });
+            var polyHaven = Directory.Exists(PolyHavenDir)
+                ? Directory.GetFiles(PolyHavenDir, "*.gltf", SearchOption.AllDirectories)
+                    .Select(path => path.Replace('\\', '/'))
+                    .OrderBy(path => path)
+                    .Select(path => new ItemCatalog.Entry
+                    {
+                        itemId = "ph-" + Path.GetFileNameWithoutExtension(path),
+                        model = AssetDatabase.LoadAssetAtPath<GameObject>(path),
+                        scale = 1f,
+                    })
+                : Enumerable.Empty<ItemCatalog.Entry>();
+            catalog.items = kenney.Concat(polyHaven).ToList();
+
+            var missing = catalog.items.Where(e => e.model == null).Select(e => e.itemId).ToList();
+            if (missing.Count > 0)
+            {
+                throw new InvalidOperationException("Models not imported: " + string.Join(", ", missing));
+            }
             EditorUtility.SetDirty(catalog);
         }
 
@@ -349,6 +376,7 @@ namespace Reconnect.Client.Editor
             ConfigureOverlay(map, MapUrl, maximumLevel: 19);
 
             var buildings = CreateTileset(georeference.transform, "Buildings (swissBUILDINGS3D)", BuildingsUrl);
+            buildings.opaqueMaterial = Load<Material>(BuildingsMaterialPath);
 
             var cityGo = new GameObject("City");
             var cityView = cityGo.AddComponent<CityView>();
