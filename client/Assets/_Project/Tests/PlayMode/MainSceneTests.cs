@@ -31,6 +31,20 @@ namespace Reconnect.Client.PlayModeTests
             Assert.IsNotNull(Root().Q<Button>("login"), "login screen visible");
         }
 
+        /// <summary>The room in the scene has the pictures for every item of the build catalog.</summary>
+        [UnityTest]
+        public IEnumerator Build_catalog_has_a_picture_for_every_item()
+        {
+            yield return null;
+            var room = UnityEngine.Object.FindFirstObjectByType<Reconnect.Client.Rooms.RoomView>(FindObjectsInactive.Include);
+            Assert.IsNotNull(room, "RoomView in scene");
+            Assert.IsNotNull(room.BuildIcons, "RoomView.buildIcons is set in Main.unity (run Setup Project and commit the scene)");
+            foreach (var item in Reconnect.Contracts.Rooms.ItemDefinitions.All)
+            {
+                Assert.IsNotNull(room.BuildIcons.Find(item.Id), "picture for " + item.Id);
+            }
+        }
+
         /// <summary>
         /// Streams the real swisstopo 3D city (terrain + aerial + swissBUILDINGS3D) via Cesium and
         /// renders three views into client/Logs: city-preview.png (overview), city-street.png
