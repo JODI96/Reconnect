@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Reconnect.Modules.Identity.Domain;
 using Reconnect.Modules.Identity.Features;
 using Reconnect.Modules.Identity.Infrastructure;
 using Reconnect.Modules.Identity.Public;

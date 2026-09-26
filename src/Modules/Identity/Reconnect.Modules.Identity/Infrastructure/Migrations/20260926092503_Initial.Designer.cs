@@ -12,7 +12,7 @@ using Reconnect.Modules.Identity.Infrastructure;
 namespace Reconnect.Modules.Identity.Infrastructure.Migrations
 {
     [DbContext(typeof(IdentityDbContext))]
-    [Migration("20260926092205_Initial")]
+    [Migration("20260926092503_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -188,7 +188,7 @@ namespace Reconnect.Modules.Identity.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens", "identity");
                 });
 
-            modelBuilder.Entity("Reconnect.Modules.Identity.Domain.AppUser", b =>
+            modelBuilder.Entity("Reconnect.Modules.Identity.Infrastructure.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -273,7 +273,7 @@ namespace Reconnect.Modules.Identity.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", "identity");
                 });
 
-            modelBuilder.Entity("Reconnect.Modules.Identity.Domain.RefreshToken", b =>
+            modelBuilder.Entity("Reconnect.Modules.Identity.Infrastructure.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -327,7 +327,7 @@ namespace Reconnect.Modules.Identity.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("Reconnect.Modules.Identity.Domain.AppUser", null)
+                    b.HasOne("Reconnect.Modules.Identity.Infrastructure.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -337,7 +337,7 @@ namespace Reconnect.Modules.Identity.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("Reconnect.Modules.Identity.Domain.AppUser", null)
+                    b.HasOne("Reconnect.Modules.Identity.Infrastructure.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -354,7 +354,7 @@ namespace Reconnect.Modules.Identity.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_asp_net_user_roles_asp_net_roles_role_id");
 
-                    b.HasOne("Reconnect.Modules.Identity.Domain.AppUser", null)
+                    b.HasOne("Reconnect.Modules.Identity.Infrastructure.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -364,7 +364,7 @@ namespace Reconnect.Modules.Identity.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("Reconnect.Modules.Identity.Domain.AppUser", null)
+                    b.HasOne("Reconnect.Modules.Identity.Infrastructure.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -372,9 +372,9 @@ namespace Reconnect.Modules.Identity.Infrastructure.Migrations
                         .HasConstraintName("fk_asp_net_user_tokens_asp_net_users_user_id");
                 });
 
-            modelBuilder.Entity("Reconnect.Modules.Identity.Domain.RefreshToken", b =>
+            modelBuilder.Entity("Reconnect.Modules.Identity.Infrastructure.RefreshToken", b =>
                 {
-                    b.HasOne("Reconnect.Modules.Identity.Domain.AppUser", null)
+                    b.HasOne("Reconnect.Modules.Identity.Infrastructure.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

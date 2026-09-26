@@ -7,7 +7,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Reconnect.Contracts.Auth;
-using Reconnect.Modules.Identity.Domain;
 using Reconnect.Modules.Identity.Infrastructure;
 
 namespace Reconnect.Modules.Identity.Features;

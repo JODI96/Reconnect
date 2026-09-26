@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Reconnect.Modules.Identity.Domain;
 using Reconnect.SharedKernel.Persistence;
 
 namespace Reconnect.Modules.Identity.Infrastructure;

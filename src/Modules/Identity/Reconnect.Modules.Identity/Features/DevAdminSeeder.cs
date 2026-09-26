@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Reconnect.Modules.Identity.Domain;
+using Reconnect.Modules.Identity.Infrastructure;
 using Reconnect.Modules.Identity.Public;
 using Reconnect.SharedKernel.Events;
 

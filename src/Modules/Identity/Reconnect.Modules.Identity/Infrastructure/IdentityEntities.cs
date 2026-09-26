@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Reconnect.Modules.Identity.Domain;
+namespace Reconnect.Modules.Identity.Infrastructure;
 
 /// <summary>Login account (email + password). Public profile data lives in the Profiles module, same id.</summary>
 internal sealed class AppUser : IdentityUser<Guid>

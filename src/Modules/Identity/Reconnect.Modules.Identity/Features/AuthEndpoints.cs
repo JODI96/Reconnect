@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Routing;
 using Reconnect.Contracts;
 using Reconnect.Contracts.Auth;
-using Reconnect.Modules.Identity.Domain;
+using Reconnect.Modules.Identity.Infrastructure;
 using Reconnect.Modules.Identity.Public;
 using Reconnect.SharedKernel.Domain;
 using Reconnect.SharedKernel.Events;
