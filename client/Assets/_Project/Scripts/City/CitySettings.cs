@@ -29,6 +29,8 @@ namespace Reconnect.Client.City
         [Tooltip("Google uses heights above the WGS84 ellipsoid, swisstopo heights above sea level. Google tiles are lowered by the geoid height (Zurich: 47.75 m, EGM2008) so both line up.")]
         public float googleHeightOffset = -47.75f;
         [Range(1, 64)] public float googleScreenSpaceError = 12f;
+        [Tooltip("Google's model has roof superstructures (ventilation, lift machinery) that swisstopo lacks. Rooms on roofs are lifted by this much; their 4 m base closes the gap.")]
+        [Range(0, 4)] public float googleRoofClearance = 4f;
 
         [Header("Camera (orbit around a point on the ground)")]
         [Min(5)] public float minDistance = 20f;

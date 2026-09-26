@@ -181,7 +181,9 @@ namespace Reconnect.Client.City
                     highest = Mathf.Max(highest, ToUnity(p.y, p.x, p.z).y);
                 }
             }
-            return new Vector3(center.x, highest + 0.15f, center.z);
+            // Google shows roof superstructures swisstopo doesn't know – lift the room above them.
+            var clearance = IsGoogle ? _settings.googleRoofClearance : 0f;
+            return new Vector3(center.x, highest + 0.15f + clearance, center.z);
         }
 
         public void SetLayer(MapLayer layer)
