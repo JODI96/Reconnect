@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Reconnect.Client.Networking;
@@ -26,6 +27,9 @@ namespace Reconnect.Client.Auth
 
         public bool IsLoggedIn => _session != null;
         public Guid? UserId => _session?.UserId;
+
+        /// <summary>Admins may build in every room (the server checks it again).</summary>
+        public bool IsAdmin => _session?.Roles?.Contains("Admin") == true;
         public string AccessToken => _session?.AccessToken;
 
         public async Task<ApiResult<AuthResponse>> LoginAsync(string email, string password, CancellationToken ct = default)

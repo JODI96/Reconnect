@@ -35,16 +35,6 @@ namespace Reconnect.Client.Rooms
         private const float FacadeHeight = 3.4f;         // glass top floor: floor-to-ceiling glass
         private const float HallHeight = 10f;            // tower lobby (Prime Tower: 10 m serpentine walls)
 
-        private static readonly string[] StackableItems =
-        {
-            "laptop", "books", "computerScreen", "computerKeyboard", "computerMouse", "kitchenCoffeeMachine",
-            "kitchenBlender", "kitchenMicrowave", "toaster", "lampSquareTable", "lampRoundTable", "plantSmall",
-            "radio", "televisionModern", "televisionVintage", "speakerSmall", "pillow", "cardboardBox",
-            "ph-tea_set_01", "ph-ceramic_vase_01", "ph-throw_pillows_01", "ph-marble_bust_01", "ph-desk_lamp_arm_01",
-            "ph-chess_set", "ph-book_encyclopedia_set_01", "ph-mantel_clock_01", "ph-brass_candleholders", "ph-ceramic_vase_03",
-            "ph-antique_ceramic_vase_01", "ph-standing_picture_frame_01", "ph-bronze_ray_statue",
-        };
-
         [SerializeField] private Camera roomCamera;
         [SerializeField] private Material floorMaterial;
         [SerializeField] private Material wallMaterial;
@@ -66,6 +56,10 @@ namespace Reconnect.Client.Rooms
         private readonly List<Bounds> _obstacles = new();   // everything that blocks tiles (counters for stools)
         private readonly List<string> _missingItems = new();
         private Transform _content;
+        private Transform _floorRoot;       // floor and slab (rebuilt with the layout: pools cut holes into it)
+        private Transform _furnitureRoot;   // everything from the layout
+        private IReadOnlyList<RoomItemDto> _layout = Array.Empty<RoomItemDto>();
+        private string _themeId;
         private CameraState _savedCamera;
         private RoomTheme _theme;
         private CustomItems _custom;
@@ -85,6 +79,7 @@ namespace Reconnect.Client.Rooms
         private Vector2 _lastPointer;
         private bool _pressed;
         private bool _dragging;
+        private bool _buildDrag;
         private float _lastPinchDistance;
 
         /// <summary>Tapped floor tile (only when <see cref="IsPointerOverUi"/> is false).</summary>
@@ -97,6 +92,30 @@ namespace Reconnect.Client.Rooms
         public event Action<Seat, int> SeatTapped;
 
         public IReadOnlyCollection<Seat> Seats => _seats.Values;
+
+        /// <summary>The layout on display (index = the server's item index, seats refer to it).</summary>
+        public IReadOnlyList<RoomItemDto> Layout => _layout;
+
+        public int Width => _width;
+
+        /// <summary>See-through material (glass) for build helpers.</summary>
+        public Material TransparentMaterial => glassMaterial;
+
+        /// <summary>Point on the floor in the middle of the view (local room coordinates).</summary>
+        public Vector3 Focus => _focus;
+        public int Depth => _depth;
+
+        /// <summary>Build rules of this room: walls, entrance and lift zones (<see cref="RoomZones"/>).</summary>
+        public RoomLayoutContext BuildContext(IReadOnlyList<RoomItemDto> layout) => RoomZones.ContextFor(_themeId, _width, _depth, layout);
+
+        /// <summary>Local room point → point in world space (e.g. to put build helpers onto the floor).</summary>
+        public Transform Content => _content;
+
+        /// <summary>Build mode: taps and drags go to <see cref="BuildPointer"/> instead of walking/panning.</summary>
+        public bool BuildMode { get; set; }
+
+        /// <summary>Build mode pointer: (phase, local floor point). Return true to consume a drag (no camera pan).</summary>
+        public Func<BuildPointerPhase, Vector3, bool> BuildPointer { get; set; }
 
         public Func<Vector2, bool> IsPointerOverUi { get; set; } = _ => false;
         public Camera Camera => roomCamera;
@@ -121,6 +140,7 @@ namespace Reconnect.Client.Rooms
             _localUserId = localUserId;
             _width = snapshot.Width;
             _depth = snapshot.Depth;
+            _themeId = snapshot.Room.Theme;
             _theme = RoomTheme.For(snapshot.Room.Theme);
             _custom = new CustomItems(wallMaterial, waterMaterial, glassMaterial, _theme);
             _lampLights = 0;
@@ -134,8 +154,6 @@ namespace Reconnect.Client.Rooms
             _content = new GameObject("Room " + snapshot.Room.Name).transform;
             _content.SetParent(transform, false);
 
-            FindPools(snapshot.Room.Layout);
-            BuildFloor();
             switch (_theme.Enclosure)
             {
                 case Enclosure.Railing: BuildRailing(); break;
@@ -143,20 +161,8 @@ namespace Reconnect.Client.Rooms
                 case Enclosure.StoneHall: BuildStoneHall(); break;
                 default: BuildWalls(); break;
             }
-            BuildFurniture(snapshot.Room.Layout);
             BuildLighting();
-            Pathfinder = new RoomPathfinder(_width, _depth, _blocked);
-            foreach (var seat in _seats.Values)
-            {
-                if ((!seat.HasBackrest || IsStool(seat.name)) && NearestCounter(seat) is { } counter)
-                {
-                    // Knees under the counter only if there is room; a closed cabinet front gets the back instead.
-                    var point = seat.Points[0];
-                    var gap = Vector2.Distance(new Vector2(counter.x, counter.z), new Vector2(point.x, point.z));
-                    seat.FaceTowards(gap >= 0.8f ? counter : point + (point - counter));   // legs reach ~0.75 m forward
-                }
-                seat.ResolveApproaches(Pathfinder);
-            }
+            BuildLayout(snapshot.Room.Layout);
             if (groundAnchor.HasValue && Mathf.Abs(yaw) > 0.01f)
             {
                 var rotation = Quaternion.Euler(0f, yaw, 0f);
@@ -181,14 +187,69 @@ namespace Reconnect.Client.Rooms
             enabled = true;
         }
 
-        public void Hide()
+        /// <summary>
+        /// Shows a new layout (build editor, or someone else saved one): floor and furniture are rebuilt, people stay
+        /// where they are and stand up (seats are addressed by layout index).
+        /// </summary>
+        public void ApplyLayout(IReadOnlyList<RoomItemDto> layout)
         {
-            if (_content != null)
+            if (_content == null)
             {
-                Destroy(_content.gameObject);
-                _content = null;
+                return;
             }
-            _avatars.Clear();
+            foreach (var userId in _occupied.Values.ToList())
+            {
+                UnseatPlayer(userId);
+            }
+            // Furniture is measured with world-space boxes: build axis-aligned, then turn back.
+            var rotation = transform.rotation;
+            var centre = transform.TransformPoint(new Vector3(_width / 2f, 0f, _depth / 2f));
+            transform.SetPositionAndRotation(centre - new Vector3(_width / 2f, 0f, _depth / 2f), Quaternion.identity);
+            BuildLayout(layout);
+            transform.SetPositionAndRotation(centre - rotation * new Vector3(_width / 2f, 0f, _depth / 2f), rotation);
+        }
+
+        private void BuildLayout(IReadOnlyList<RoomItemDto> layout)
+        {
+            ClearLayout();
+            _layout = layout ?? Array.Empty<RoomItemDto>();
+            _floorRoot = new GameObject("Floor").transform;
+            _floorRoot.SetParent(_content, false);
+            _furnitureRoot = new GameObject("Furniture").transform;
+            _furnitureRoot.SetParent(_content, false);
+
+            FindPools(_layout);
+            BuildFloor();
+            BuildFurniture(_layout);
+            foreach (var (x, z) in RoomLayout.BlockedTiles(_layout))
+            {
+                _blocked.Add(new Vector2Int(x, z));
+            }
+            Pathfinder = new RoomPathfinder(_width, _depth, _blocked);
+            foreach (var seat in _seats.Values)
+            {
+                if ((!seat.HasBackrest || IsStool(seat.name)) && NearestCounter(seat) is { } counter)
+                {
+                    // Knees under the counter only if there is room; a closed cabinet front gets the back instead.
+                    var point = seat.Points[0];
+                    var gap = Vector2.Distance(new Vector2(counter.x, counter.z), new Vector2(point.x, point.z));
+                    seat.FaceTowards(gap >= 0.8f ? counter : point + (point - counter));   // legs reach ~0.75 m forward
+                }
+                seat.ResolveApproaches(Pathfinder);
+            }
+        }
+
+        private void ClearLayout()
+        {
+            if (_floorRoot != null)
+            {
+                Destroy(_floorRoot.gameObject);
+            }
+            if (_furnitureRoot != null)
+            {
+                Destroy(_furnitureRoot.gameObject);
+            }
+            _floorRoot = _furnitureRoot = null;
             _stations.Clear();
             _seats.Clear();
             _occupied.Clear();
@@ -198,6 +259,19 @@ namespace Reconnect.Client.Rooms
             _surfaces.Clear();
             _obstacles.Clear();
             _missingItems.Clear();
+            _lampLights = 0;
+        }
+
+        public void Hide()
+        {
+            ClearLayout();
+            if (_content != null)
+            {
+                Destroy(_content.gameObject);
+                _content = null;
+            }
+            _layout = Array.Empty<RoomItemDto>();
+            _avatars.Clear();
             _savedCamera?.Restore(roomCamera);
             _savedCamera = null;
             if (Music != null)
@@ -250,28 +324,17 @@ namespace Reconnect.Client.Rooms
         public bool IsWater(Vector2Int tile) => _water.Contains(tile);
 
         /// <summary>Pools are sunk into the floor, so the floor needs holes there: collect them before building it.</summary>
-        private void FindPools(IEnumerable<RoomItemDto> layout)
+        private void FindPools(IReadOnlyList<RoomItemDto> layout)
         {
-            foreach (var item in layout ?? Enumerable.Empty<RoomItemDto>())
+            foreach (var item in layout.Where(i => ItemDefinitions.IsPool(i.ItemId)))
             {
-                if (!CustomItems.TryPoolSize(item.ItemId, out var size))
-                {
-                    continue;
-                }
-                var quarterTurn = Mathf.RoundToInt(item.Rotation / 90f) % 2 != 0;
-                var extent = quarterTurn ? new Vector2(size.y, size.x) : size;
-                var rect = new Rect(item.Position.X - extent.x / 2f, item.Position.Z - extent.y / 2f, extent.x, extent.y);
-                _pools.Add(rect);
-                for (var x = Mathf.FloorToInt(rect.xMin); x <= Mathf.CeilToInt(rect.xMax); x++)
-                {
-                    for (var z = Mathf.FloorToInt(rect.yMin); z <= Mathf.CeilToInt(rect.yMax); z++)
-                    {
-                        if (rect.Contains(new Vector2(x + 0.5f, z + 0.5f)))
-                        {
-                            _water.Add(new Vector2Int(x, z));
-                        }
-                    }
-                }
+                var cells = RoomLayout.Footprint(item, ItemDefinitions.Find(item.ItemId));
+                _pools.Add(new Rect(cells.X * BuildGrid.CellSize, cells.Z * BuildGrid.CellSize,
+                    cells.Width * BuildGrid.CellSize, cells.Depth * BuildGrid.CellSize));
+            }
+            foreach (var (x, z) in RoomLayout.WaterTiles(layout))
+            {
+                _water.Add(new Vector2Int(x, z));
             }
         }
 
@@ -437,6 +500,7 @@ namespace Reconnect.Client.Rooms
             {
                 _pressed = !IsPointerOverUi(position);
                 _dragging = false;
+                _buildDrag = false;
                 _pressPosition = _lastPointer = position;
                 return;
             }
@@ -451,6 +515,18 @@ namespace Reconnect.Client.Rooms
                 {
                     _dragging = true;
                     _follow = false;
+                    // Build mode: a drag that starts on the selected item moves it instead of the camera.
+                    _buildDrag = BuildMode && BuildPointer != null && TryFloorPoint(_pressPosition, out var start)
+                        && BuildPointer(BuildPointerPhase.DragStart, start);
+                }
+                if (_buildDrag)
+                {
+                    if (TryFloorPoint(position, out var at))
+                    {
+                        BuildPointer(BuildPointerPhase.Drag, at);
+                    }
+                    _lastPointer = position;
+                    return;
                 }
                 if (_dragging && TryFloorPoint(_lastPointer, out var from) && TryFloorPoint(position, out var to))
                 {
@@ -463,8 +539,25 @@ namespace Reconnect.Client.Rooms
 
             // Released.
             _pressed = false;
+            if (_buildDrag)
+            {
+                _buildDrag = false;
+                if (TryFloorPoint(position, out var end))
+                {
+                    BuildPointer(BuildPointerPhase.DragEnd, end);
+                }
+                return;
+            }
             if (_dragging)
             {
+                return;
+            }
+            if (BuildMode)
+            {
+                if (BuildPointer != null && TryFloorPoint(position, out var tapped))
+                {
+                    BuildPointer(BuildPointerPhase.Tap, tapped);
+                }
                 return;
             }
             var ray = roomCamera.ScreenPointToRay(position);
@@ -549,7 +642,7 @@ namespace Reconnect.Client.Rooms
                 {
                     mainTextureScale = new Vector2(piece.width / FloorTextures.MetersPerTexture, piece.height / FloorTextures.MetersPerTexture),
                     mainTextureOffset = new Vector2(piece.xMin / FloorTextures.MetersPerTexture, piece.yMin / FloorTextures.MetersPerTexture),
-                });
+                }, _floorRoot);
                 floor.transform.localPosition = new Vector3(piece.center.x, -0.05f, piece.center.y);
                 floor.transform.localScale = new Vector3(piece.width, 0.1f, piece.height);
             }
@@ -566,14 +659,14 @@ namespace Reconnect.Client.Rooms
             var margin = _theme.Outdoor ? 0.3f : 0f;
             foreach (var piece in WithoutPools(new Rect(-margin, -margin, _width + 2 * margin, _depth + 2 * margin)))
             {
-                var slab = Primitive(PrimitiveType.Cube, "Floor Base", slabMaterial);
+                var slab = Primitive(PrimitiveType.Cube, "Floor Base", slabMaterial, _floorRoot);
                 slab.transform.localPosition = new Vector3(piece.center.x, -0.1f - thickness / 2f, piece.center.y);
                 slab.transform.localScale = new Vector3(piece.width, thickness, piece.height);
             }
             foreach (var pool in _pools)
             {
                 // Under the basin the slab continues.
-                var below = Primitive(PrimitiveType.Cube, "Floor Base", slabMaterial);
+                var below = Primitive(PrimitiveType.Cube, "Floor Base", slabMaterial, _floorRoot);
                 var rest = thickness + 0.1f - CustomItems.PoolDepth - 0.1f;
                 below.transform.localPosition = new Vector3(pool.center.x, -CustomItems.PoolDepth - 0.1f - rest / 2f, pool.center.y);
                 below.transform.localScale = new Vector3(pool.width, Mathf.Max(0.05f, rest), pool.height);
@@ -593,20 +686,12 @@ namespace Reconnect.Client.Rooms
                 var piece = i == northPieces / 2 ? "wallDoorway" : i % 2 == 1 ? "wallWindow" : "wall";
                 var position = new Vector3(i * WallPieceWidth + WallPieceWidth / 2f, 0f, _depth + 0.06f);
                 PlaceWallPiece(piece, position, 0f, wallTint);
-                if (piece == "wall" && i % 4 == 0)
-                {
-                    Picture(new Vector3(position.x, 1.5f, _depth - 0.01f), new Vector3(1.0f, 0.75f, 0.03f), trim);
-                }
             }
             for (var i = 0; i < eastPieces; i++)
             {
                 var piece = i % 2 == 0 ? "wallWindow" : "wall";
                 var position = new Vector3(_width + 0.06f, 0f, i * WallPieceWidth + WallPieceWidth / 2f);
                 PlaceWallPiece(piece, position, 90f, wallTint);
-                if (piece == "wall" && i % 4 == 1)
-                {
-                    Picture(new Vector3(_width - 0.01f, 1.5f, position.z), new Vector3(0.03f, 0.75f, 1.0f), trim);
-                }
             }
 
             Box("Skirting North", trim, new Vector3(_width / 2f, 0.07f, _depth - 0.02f), new Vector3(_width, 0.14f, 0.04f));
@@ -649,13 +734,6 @@ namespace Reconnect.Client.Rooms
                 }
                 renderer.sharedMaterials = materials;
             }
-        }
-
-        private void Picture(Vector3 position, Vector3 size, Material frame)
-        {
-            Box("Picture Frame", frame, position, size + new Vector3(size.x > 0.05f ? 0.1f : 0f, 0.1f, size.z > 0.05f ? 0.1f : 0f));
-            var canvas = Tinted(wallMaterial, Color.Lerp(_theme.WallTrim, Color.white, 0.55f));
-            Box("Picture", canvas, position + new Vector3(size.x > 0.05f ? 0f : -0.01f, 0f, size.z > 0.05f ? 0f : -0.01f), size);
         }
 
         /// <summary>Roof terrace edge: stone coping, metal posts, glass panels and a handrail on all four sides.</summary>
@@ -814,21 +892,18 @@ namespace Reconnect.Client.Rooms
 
         // ---------- Furniture ----------
 
-        private void BuildFurniture(IEnumerable<RoomItemDto> layout)
+        private void BuildFurniture(IReadOnlyList<RoomItemDto> layout)
         {
-            // Big pieces first, so small items can be stacked onto them.
+            // What stands on the floor first, so small things find the table under them.
             // The server knows seats by their index in the layout, so keep it through the sorting.
-            var items = (layout ?? Enumerable.Empty<RoomItemDto>())
-                .Select((item, index) => (Item: item, Index: index))
-                .OrderBy(i => IsStackable(i.Item.ItemId) ? 1 : 0)
+            var items = layout
+                .Select((item, index) => (Item: item, Index: index, Definition: ItemDefinitions.Find(item.ItemId)))
+                .OrderBy(i => i.Definition?.Kind == ItemKind.Decor ? 1 : 0)
                 .ToList();
-            foreach (var (item, index) in items)
+            var context = BuildContext(layout);
+            foreach (var (item, index, definition) in items)
             {
-                var pivot = new GameObject(item.ItemId).transform;
-                pivot.SetParent(_content, false);
-                pivot.localPosition = new Vector3(item.Position.X, item.Position.Y, item.Position.Z);
-                pivot.localRotation = Quaternion.Euler(0f, item.Rotation, 0f);
-
+                var pivot = PlaceItem(_furnitureRoot, item, definition, context);
                 if (item.ItemId == TicTacToeItem)
                 {
                     BuildStation(pivot, "tictactoe", "table", BuildTicTacToeBoard);
@@ -841,40 +916,38 @@ namespace Reconnect.Client.Rooms
                 }
                 if (item.ItemId == CustomItems.ElevatorItem && _custom.TryBuild(item.ItemId, pivot, out _))
                 {
-                    BuildElevatorStation(pivot);
+                    BuildElevatorStation(pivot, item);
                     continue;
                 }
                 if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks))
                 {
                     if (blocks)
                     {
-                        BlockTiles(Bounds(pivot));
+                        _obstacles.Add(Bounds(pivot));
                     }
                     if (RoomSeats.PlacesFor(item.ItemId) is var loungerPlaces and > 0)
                     {
                         _seats[index] = Seat.Build(pivot, _content, Bounds(pivot), index, loungerPlaces);
                     }
+                    if (definition is { HasSurface: true })
+                    {
+                        _surfaces.Add(Bounds(pivot));
+                    }
                     continue;
                 }
 
-                var stackable = IsStackable(item.ItemId);
-                if (stackable && item.Position.Y <= 0f)
-                {
-                    pivot.localPosition = new Vector3(item.Position.X, SurfaceHeightAt(pivot.position), item.Position.Z);
-                }
-
                 var bounds = Spawn(pivot, item.ItemId);
+                MountOnWall(pivot, definition, ref bounds, context);
                 if (RoomSeats.PlacesFor(item.ItemId) is var places and > 0)
                 {
                     _seats[index] = Seat.Build(pivot, _content, bounds, index, places);
                 }
-                // Only furniture standing on the floor carries small items; hanging lamps don't.
-                if (!stackable && item.Position.Y <= 0f)
+                if (definition?.Kind == ItemKind.Floor)
                 {
-                    _surfaces.Add(bounds);
-                    if (!IsFlat(item.ItemId, bounds))
+                    _obstacles.Add(bounds);
+                    if (definition.HasSurface)
                     {
-                        BlockTiles(bounds);
+                        _surfaces.Add(bounds);
                     }
                 }
                 if (IsLamp(item.ItemId) && _lampLights++ < MaxLampLights)
@@ -884,7 +957,81 @@ namespace Reconnect.Client.Rooms
             }
         }
 
-        private static bool IsStackable(string itemId) => StackableItems.Any(itemId.StartsWith);
+        /// <summary>
+        /// Pivot of a layout item: centre of its build-grid footprint; small things on the table under them, paintings at
+        /// their height on the wall, lamps under the ceiling. Also used by the build editor for its preview.
+        /// </summary>
+        public Transform PlaceItem(Transform parent, RoomItemDto item, ItemDefinition definition, RoomLayoutContext context)
+        {
+            var pivot = new GameObject(item.ItemId).transform;
+            pivot.SetParent(parent, false);
+            var position = new Vector3(item.Position.X, 0f, item.Position.Z);
+            if (definition != null)
+            {
+                var (x, z) = RoomLayout.Centre(RoomLayout.Footprint(item, definition));
+                position = new Vector3(x, definition.Kind switch
+                {
+                    ItemKind.Wall or ItemKind.Ceiling => definition.MountHeight,
+                    _ => 0f,
+                }, z);
+            }
+            pivot.localPosition = position;
+            pivot.localRotation = Quaternion.Euler(0f, item.Rotation, 0f);
+            if (definition?.Kind == ItemKind.Decor)
+            {
+                pivot.localPosition = new Vector3(position.x, SurfaceHeightAt(pivot.position), position.z);
+            }
+            return pivot;
+        }
+
+        /// <summary>
+        /// The model of a layout item without anything interactive (seats, stations, lights) – for the build editor's
+        /// ghost. <paramref name="surfaceHeight"/> overrides the table height for small things carried with their table.
+        /// Returns the world bounds.
+        /// </summary>
+        public Bounds BuildGhost(Transform parent, RoomItemDto item, ItemDefinition definition, RoomLayoutContext context, float? surfaceHeight = null)
+        {
+            var pivot = PlaceItem(parent, item, definition, context);
+            if (surfaceHeight is { } height)
+            {
+                pivot.localPosition = new Vector3(pivot.localPosition.x, height, pivot.localPosition.z);
+            }
+            if (item.ItemId == TicTacToeItem || item.ItemId == QuizItem)
+            {
+                return Spawn(pivot, item.ItemId == TicTacToeItem ? "table" : "cabinetTelevision");
+            }
+            if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out _))
+            {
+                return Bounds(pivot);
+            }
+            var bounds = Spawn(pivot, item.ItemId);
+            MountOnWall(pivot, definition, ref bounds, context);
+            return bounds;
+        }
+
+        /// <summary>Paintings and wall cabinets hang flat against the wall their footprint touches.</summary>
+        private void MountOnWall(Transform pivot, ItemDefinition definition, ref Bounds bounds, RoomLayoutContext context)
+        {
+            if (definition?.Kind != ItemKind.Wall)
+            {
+                return;
+            }
+            var wall = RoomLayout.WallOf(context, RoomLayout.Footprint(RoomItemAt(pivot), definition));
+            var inner = transform.TransformPoint(new Vector3(_width, 0f, _depth));
+            var shift = wall switch
+            {
+                WallSides.North => new Vector3(0f, 0f, inner.z - 0.01f - bounds.max.z),
+                WallSides.East => new Vector3(inner.x - 0.01f - bounds.max.x, 0f, 0f),
+                WallSides.South => new Vector3(0f, 0f, transform.position.z + 0.01f - bounds.min.z),
+                WallSides.West => new Vector3(transform.position.x + 0.01f - bounds.min.x, 0f, 0f),
+                _ => Vector3.zero,
+            };
+            pivot.position += shift;
+            bounds.center += shift;
+        }
+
+        private RoomItemDto RoomItemAt(Transform pivot) =>
+            new(pivot.name, new Vector3Dto(pivot.localPosition.x, 0f, pivot.localPosition.z), pivot.localEulerAngles.y);
 
         private static bool IsLamp(string itemId) => itemId.StartsWith("lamp") || itemId.Contains("_lamp");
 
@@ -955,7 +1102,7 @@ namespace Reconnect.Client.Rooms
         {
             var bounds = Spawn(pivot, baseModel);
             decorate(pivot);
-            BlockTiles(bounds);
+            _obstacles.Add(bounds);
             bounds = Bounds(pivot);
 
             var station = pivot.gameObject.AddComponent<GameStation>();
@@ -973,14 +1120,14 @@ namespace Reconnect.Client.Rooms
             ring.transform.localScale = new Vector3(2.4f, 0.003f, 2.4f);
         }
 
-        /// <summary>The lift bank: blocks its tiles, tapping it opens the lift panel; you walk to the doors.</summary>
-        private void BuildElevatorStation(Transform pivot)
+        /// <summary>The lift bank: tapping it opens the lift panel; you walk to the doors (same landing as the server).</summary>
+        private void BuildElevatorStation(Transform pivot, RoomItemDto item)
         {
             var bounds = Bounds(pivot);
-            BlockTiles(bounds);
-            var inFront = pivot.localPosition - pivot.localRotation * Vector3.forward * (CustomItems.ElevatorDepth / 2f + 0.8f);
+            _obstacles.Add(bounds);
+            var (x, z) = RoomZones.ElevatorLanding(item);
             var station = pivot.gameObject.AddComponent<GameStation>();
-            station.Initialize(ElevatorStation, WorldToTile(inFront));
+            station.Initialize(ElevatorStation, new Vector2Int(x, z));
             var collider = pivot.gameObject.AddComponent<BoxCollider>();
             collider.center = pivot.InverseTransformPoint(bounds.center);
             var size = pivot.InverseTransformVector(bounds.size);
@@ -1053,23 +1200,6 @@ namespace Reconnect.Client.Rooms
 
         // ---------- Tiles & helpers ----------
 
-        private static bool IsFlat(string itemId, Bounds bounds) => itemId.StartsWith("rug") || bounds.size.y < 0.06f;
-
-        private void BlockTiles(Bounds worldBounds)
-        {
-            _obstacles.Add(worldBounds);
-            var min = transform.InverseTransformPoint(worldBounds.min);
-            var max = transform.InverseTransformPoint(worldBounds.max);
-            // Shrink a little so furniture that barely touches a neighbouring tile doesn't block it.
-            var from = WorldToTile(new Vector3(Mathf.Min(min.x, max.x) + 0.25f, 0f, Mathf.Min(min.z, max.z) + 0.25f));
-            var to = WorldToTile(new Vector3(Mathf.Max(min.x, max.x) - 0.25f, 0f, Mathf.Max(min.z, max.z) - 0.25f));
-            for (var x = from.x; x <= to.x; x++)
-            for (var z = from.y; z <= to.y; z++)
-            {
-                _blocked.Add(new Vector2Int(x, z));
-            }
-        }
-
         private static Bounds Bounds(Transform root)
         {
             var renderers = root.GetComponentsInChildren<Renderer>();
@@ -1081,11 +1211,11 @@ namespace Reconnect.Client.Rooms
             return bounds;
         }
 
-        private GameObject Primitive(PrimitiveType type, string name, Material material)
+        private GameObject Primitive(PrimitiveType type, string name, Material material, Transform parent = null)
         {
             var go = GameObject.CreatePrimitive(type);
             go.name = name;
-            go.transform.SetParent(_content, false);
+            go.transform.SetParent(parent != null ? parent : _content, false);
             go.GetComponent<Renderer>().sharedMaterial = material;
             Destroy(go.GetComponent<Collider>());
             return go;
@@ -1221,5 +1351,14 @@ namespace Reconnect.Client.Rooms
             var level = 1.1f + 0.45f * Mathf.PerlinNoise(_phase, Time.time * 0.25f);
             _material.SetColor("_EmissionColor", _color * level);
         }
+    }
+
+    /// <summary>What the pointer does in build mode (points are local floor coordinates of the room).</summary>
+    public enum BuildPointerPhase
+    {
+        Tap,
+        DragStart,
+        Drag,
+        DragEnd,
     }
 }

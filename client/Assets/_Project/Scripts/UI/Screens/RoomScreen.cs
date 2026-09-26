@@ -28,6 +28,9 @@ namespace Reconnect.Client.UI.Screens
         private readonly CityView _city;
         private readonly IRoomSession _session;
         private readonly TowerService _tower;
+        private readonly RoomService _rooms;
+        private readonly bool _isAdmin;
+        private BuildPanel _build;
         private Guid _roomId;
         private RoomDto _current;
         private readonly Guid _localUserId;
@@ -46,8 +49,10 @@ namespace Reconnect.Client.UI.Screens
         private bool _riding;
 
         public RoomScreen(VisualTreeAsset template, RoomView room, CityView city, IRoomSession session, TowerService tower,
-            Guid roomId, Guid localUserId, Action leave)
+            RoomService rooms, Guid roomId, Guid localUserId, bool isAdmin, Action leave)
         {
+            _rooms = rooms;
+            _isAdmin = isAdmin;
             _template = template;
             _room = room;
             _city = city;
@@ -79,6 +84,8 @@ namespace Reconnect.Client.UI.Screens
             _liftPanel = Q<VisualElement>("lift-panel");
             _queueBanner = Q<VisualElement>("queue-banner");
             Q<Button>("lift").clicked += OpenLift;
+            _build = new BuildPanel(Root, _room, _room.TransparentMaterial, _isAdmin, SaveLayoutAsync, OnBuildClosed);
+            Q<Button>("build").clicked += OpenBuild;
             var music = Q<Button>("music");
             ShowMusicState(music);
             music.clicked += () =>
@@ -119,6 +126,7 @@ namespace Reconnect.Client.UI.Screens
             _session.QuizUpdated += _quiz.Render;
             _session.QueueUpdated += OnQueueUpdated;
             _session.ElevatorArrived += OnElevatorArrived;
+            _session.LayoutChanged += OnLayoutChanged;
             _room.TileTapped += OnTileTapped;
             _room.StationTapped += OnStationTapped;
             _room.IsPointerOverUi = IsPointerOverUi;
@@ -129,6 +137,11 @@ namespace Reconnect.Client.UI.Screens
 
         protected override void OnHide()
         {
+            if (_build.IsOpen)
+            {
+                _build.Close(_current?.Layout);
+            }
+            _session.LayoutChanged -= OnLayoutChanged;
             _session.PlayerJoined -= OnPlayerJoined;
             _session.PlayerLeft -= OnPlayerLeft;
             _session.PlayerMoved -= OnPlayerMoved;
@@ -174,8 +187,13 @@ namespace Reconnect.Client.UI.Screens
         /// <summary>Builds the room (again, after a lift ride) and the name labels of everyone in it.</summary>
         private async Task ShowSnapshotAsync(RoomSnapshotDto snapshot)
         {
+            if (_build.IsOpen)
+            {
+                _build.Close(snapshot.Room.Layout);
+            }
             _current = snapshot.Room;
             _roomId = snapshot.Room.Id;
+            Q<Button>("build").style.display = CanBuild ? DisplayStyle.Flex : DisplayStyle.None;
             Q<Label>("room-name").text = snapshot.Room.Name;
             Q<Label>("room-owner").text = (snapshot.Room.Floor is { } floor ? FloorLabel(floor) + " · " : "") + "von " + snapshot.Room.OwnerDisplayName;
             Q<Button>("lift").style.display = snapshot.Room.Floor != null ? DisplayStyle.Flex : DisplayStyle.None;
@@ -234,6 +252,61 @@ namespace Reconnect.Client.UI.Screens
             button.EnableInClassList("button--off", muted);
         }
 
+        // ---------- Build editor ----------
+
+        /// <summary>Owners build in their own rooms, admins everywhere.</summary>
+        private bool CanBuild => _current != null && (_current.OwnerId == _localUserId || _isAdmin);
+
+        internal BuildPanel Build => _build;
+
+        internal void OpenBuild()
+        {
+            if (!CanBuild || _build.IsOpen)
+            {
+                return;
+            }
+            OpenGame(null);
+            CloseLift();
+            _pendingSeat = null;
+            Q<Button>("build").style.display = DisplayStyle.None;
+            Q<VisualElement>("emote-bar").style.display = DisplayStyle.None;
+            Q<VisualElement>("chat-bar").style.display = DisplayStyle.None;
+            _build.Open(_current.Theme);
+        }
+
+        private void OnBuildClosed()
+        {
+            Q<Button>("build").style.display = CanBuild ? DisplayStyle.Flex : DisplayStyle.None;
+            Q<VisualElement>("chat-bar").style.display = DisplayStyle.Flex;
+            UpdateEmoteBar();
+        }
+
+        private async Task<(bool Ok, string Error)> SaveLayoutAsync(IReadOnlyList<RoomItemDto> layout)
+        {
+            var result = await _rooms.UpdateLayoutAsync(_roomId, layout, Lifetime);
+            if (result.IsSuccess)
+            {
+                _current = result.Value;
+                return (true, null);
+            }
+            var problems = result.Error.FieldErrors.Values.SelectMany(v => v).Distinct().ToList();
+            return (false, problems.Count > 0 ? string.Join(" ", problems.Take(2)) : result.Error.Message);
+        }
+
+        /// <summary>Someone (the owner, an admin) saved a new layout: rebuild, unless I'm building right now.</summary>
+        private void OnLayoutChanged(RoomLayoutChangedDto change)
+        {
+            if (change.RoomId != _roomId || _current == null)
+            {
+                return;
+            }
+            _current = _current with { Layout = change.Layout };
+            if (!_build.IsOpen)
+            {
+                _room.ApplyLayout(change.Layout);
+            }
+        }
+
         // ---------- Lift ----------
 
         internal void OpenLift()
@@ -261,7 +334,8 @@ namespace Reconnect.Client.UI.Screens
         /// <summary>On a phone there is no room for emotes next to an open lift or game panel.</summary>
         private void UpdateEmoteBar()
         {
-            var panelOpen = _liftPanel.style.display == DisplayStyle.Flex || _gamePanel.style.display == DisplayStyle.Flex;
+            var panelOpen = _liftPanel.style.display == DisplayStyle.Flex || _gamePanel.style.display == DisplayStyle.Flex
+                || (_build != null && _build.IsOpen);
             Q<VisualElement>("emote-bar").style.display = panelOpen ? DisplayStyle.None : DisplayStyle.Flex;
         }
 

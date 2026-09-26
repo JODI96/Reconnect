@@ -185,6 +185,22 @@ namespace Reconnect.Contracts.Rooms
             return WallSides.None;
         }
 
+        /// <summary>
+        /// Rotation that turns an item's front into the room when it hangs on <paramref name="wall"/>. Kenney models face
+        /// -Z at rotation 0, Poly Haven models ("ph-") +Z.
+        /// </summary>
+        public static float FacingIntoRoom(string itemId, WallSides wall)
+        {
+            var rotation = wall switch
+            {
+                WallSides.East => 90f,
+                WallSides.South => 180f,
+                WallSides.West => 270f,
+                _ => 0f,
+            };
+            return itemId != null && itemId.StartsWith("ph-", StringComparison.Ordinal) ? (rotation + 180f) % 360f : rotation;
+        }
+
         /// <summary>Walking tiles covered by floor furniture (pools are water: one swims there).</summary>
         public static HashSet<(int X, int Z)> BlockedTiles(IReadOnlyList<RoomItemDto> items)
         {

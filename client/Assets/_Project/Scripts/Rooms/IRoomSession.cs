@@ -31,6 +31,9 @@ namespace Reconnect.Client.Rooms
         event Action<RoomSnapshotDto> ElevatorArrived;
 
         /// <summary>Connection lost (argument: reason). The room is left implicitly.</summary>
+        /// <summary>The owner or an admin saved a new layout (everyone stands up).</summary>
+        event Action<RoomLayoutChangedDto> LayoutChanged;
+
         event Action<string> Disconnected;
 
         /// <summary>Enters the room (leaving the previous one). Returns everyone present, including me.</summary>

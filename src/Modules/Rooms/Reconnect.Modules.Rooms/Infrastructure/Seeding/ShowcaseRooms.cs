@@ -105,18 +105,21 @@ internal static partial class ShowcaseRooms
         Cell("game-tictactoe", 4, 6, 0),   // Tic-Tac-Toe-Tisch
         Cell("chairCushion", 3, 7, 270),   // Polsterstuhl
         Cell("chairCushion", 8, 7, 90),   // Polsterstuhl
+        // Sun deck: pairs of loungers sharing a parasol, 4 m between the parasols so the shades don't overlap.
         Cell("custom-lounger", 12, 3, 180),   // Sonnenliege
-        Cell("custom-parasol", 15, 4, 0),   // Sonnenschirm
-        Cell("custom-lounger", 17, 3, 180),   // Sonnenliege
-        Cell("custom-parasol", 19, 4, 0),   // Sonnenschirm
-        Cell("custom-lounger", 22, 3, 180),   // Sonnenliege
-        Cell("custom-parasol", 24, 4, 0),   // Sonnenschirm
-        Cell("custom-lounger", 26, 3, 180),   // Sonnenliege
-        Cell("custom-parasol", 28, 4, 0),   // Sonnenschirm
-        Cell("custom-lounger", 31, 3, 180),   // Sonnenliege
-        Cell("custom-lounger", 15, 25, 0),   // Sonnenliege
-        Cell("custom-lounger", 19, 25, 0),   // Sonnenliege
+        Cell("custom-parasol", 14, 4, 0),   // Sonnenschirm
+        Cell("custom-lounger", 16, 3, 180),   // Sonnenliege
+        Cell("custom-lounger", 20, 3, 180),   // Sonnenliege
+        Cell("custom-parasol", 22, 4, 0),   // Sonnenschirm
+        Cell("custom-lounger", 24, 3, 180),   // Sonnenliege
+        Cell("custom-lounger", 28, 3, 180),   // Sonnenliege
+        Cell("custom-parasol", 30, 4, 0),   // Sonnenschirm
+        Cell("custom-lounger", 32, 3, 180),   // Sonnenliege
+        Cell("custom-lounger", 14, 25, 0),   // Sonnenliege
+        Cell("custom-parasol", 16, 26, 0),   // Sonnenschirm
+        Cell("custom-lounger", 18, 25, 0),   // Sonnenliege
         Cell("custom-lounger", 24, 25, 0),   // Sonnenliege
+        Cell("custom-parasol", 26, 26, 0),   // Sonnenschirm
         Cell("custom-lounger", 28, 25, 0),   // Sonnenliege
     ];
 
@@ -290,39 +293,52 @@ internal static partial class ShowcaseRooms
         Cell("rugSquare", 14, 16, 0),   // Rug Square
         Cell("rugSquare", 18, 16, 0),   // Rug Square
         Cell("rugSquare", 22, 16, 0),   // Rug Square
+        // Foyer bar right of the entrance: back bar, 1 m behind the counter, counter with stools (none in front of the column).
         Cell("kitchenCabinet", 24, 26, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 24, 24, 0),   // Küchenschrank
         Cell("kitchenCabinet", 26, 26, 0),   // Küchenschrank
         Cell("kitchenCabinet", 28, 26, 0),   // Küchenschrank
         Cell("kitchenCabinet", 30, 26, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 30, 24, 0),   // Küchenschrank
         Cell("kitchenCabinet", 32, 26, 0),   // Küchenschrank
         Cell("kitchenCoffeeMachine", 24, 26, 0),   // Kaffeemaschine
         Cell("ph-brass_candleholders", 26, 26, 180),   // Kerzenständer
         Cell("ph-ceramic_vase_03", 31, 26, 180),   // Vase hell
-        Cell("kitchenBar", 22, 23, 0),   // Theke
         Cell("kitchenBar", 24, 23, 0),   // Theke
-        Cell("kitchenBar", 26, 24, 0),   // Theke
-        Cell("kitchenBar", 27, 23, 0),   // Theke
-        Cell("kitchenBar", 28, 24, 0),   // Theke
+        Cell("kitchenBar", 26, 23, 0),   // Theke
+        Cell("kitchenBar", 28, 23, 0),   // Theke
         Cell("kitchenBar", 30, 23, 0),   // Theke
-        Cell("kitchenBar", 32, 24, 0),   // Theke
-        Cell("ph-brass_candleholders", 26, 24, 180),   // Kerzenständer
-        Cell("ph-bar_chair_round_01", 23, 22, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 25, 22, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 27, 22, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 29, 22, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 31, 22, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 33, 22, 0),   // Barstuhl
+        Cell("kitchenBar", 32, 23, 0),   // Theke
+        Cell("ph-brass_candleholders", 28, 23, 180),   // Kerzenständer
+        Cell("ph-bar_chair_round_01", 24, 21, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 26, 21, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 28, 21, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 32, 21, 0),   // Barstuhl
     ];
 
     /// <summary>Bistro: counter with back bar and bar chairs, marble bistro tables, bench corner, coffee cart, menu board, quiz TV.</summary>
     private static List<RoomItem> Cafe() =>
     [
-        Cell("kitchenFridgeLarge", 9, 18, 0),   // Kühlschrank
+        // Counter: kitchen along the north wall right of the entrance, 1 m for the barista, bar with four stools.
+        Cell("kitchenCabinet", 16, 18, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 18, 18, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 20, 18, 0),   // Küchenschrank
+        Cell("kitchenCabinet", 22, 18, 0),   // Küchenschrank
+        Cell("kitchenFridgeLarge", 24, 18, 0),   // Kühlschrank
         Cell("kitchenCoffeeMachine", 16, 18, 0),   // Kaffeemaschine
         Cell("toaster", 19, 18, 0),   // Toaster
-        Cell("ph-ceramic_vase_03", 21, 18, 180),   // Vase hell
+        Cell("ph-ceramic_vase_03", 22, 18, 180),   // Vase hell
+        Cell("kitchenCabinetUpper", 16, 19, 0),   // Hängeschrank
+        Cell("kitchenCabinetUpper", 18, 19, 0),   // Hängeschrank
+        Cell("kitchenCabinetUpper", 20, 19, 0),   // Hängeschrank
+        Cell("kitchenCabinetUpper", 22, 19, 0),   // Hängeschrank
+        Cell("kitchenBar", 16, 15, 0),   // Theke
+        Cell("kitchenBar", 18, 15, 0),   // Theke
+        Cell("kitchenBar", 20, 15, 0),   // Theke
+        Cell("kitchenBar", 22, 15, 0),   // Theke
+        Cell("ph-brass_candleholders", 20, 15, 180),   // Kerzenständer
+        Cell("ph-bar_chair_round_01", 16, 13, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 18, 13, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 20, 13, 0),   // Barstuhl
+        Cell("ph-bar_chair_round_01", 22, 13, 0),   // Barstuhl
         Cell("game-quiz", 27, 8, 90),   // Quiz-TV
         Cell("ph-painted_wooden_bench", 23, 7, 90),   // Holzbank bemalt
         Cell("ph-painted_wooden_bench", 23, 10, 90),   // Holzbank bemalt
@@ -338,29 +354,6 @@ internal static partial class ShowcaseRooms
         Cell("lampRoundFloor", 0, 9, 0),   // Stehlampe
         Cell("lampRoundFloor", 20, 0, 0),   // Stehlampe
         Cell("ph-hanging_picture_frame_03", 27, 4, 270),   // Kleines Bild
-        Cell("kitchenCabinet", 10, 16, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 16, 18, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 16, 16, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 18, 18, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 20, 18, 0),   // Küchenschrank
-        Cell("kitchenCabinet", 20, 16, 0),   // Küchenschrank
-        Cell("kitchenCabinetUpper", 12, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 14, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 16, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 18, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 20, 19, 0),   // Hängeschrank
-        Cell("kitchenCabinetUpper", 22, 19, 0),   // Hängeschrank
-        Cell("kitchenBar", 12, 15, 0),   // Theke
-        Cell("kitchenBar", 14, 15, 0),   // Theke
-        Cell("kitchenBar", 16, 15, 0),   // Theke
-        Cell("kitchenBar", 18, 16, 0),   // Theke
-        Cell("kitchenBar", 19, 15, 0),   // Theke
-        Cell("kitchenBar", 21, 15, 0),   // Theke
-        Cell("ph-bar_chair_round_01", 13, 14, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 15, 14, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 17, 14, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 19, 14, 0),   // Barstuhl
-        Cell("ph-bar_chair_round_01", 21, 14, 0),   // Barstuhl
         Cell("ph-gallinera_table", 3, 14, 180),   // Bistrotisch
         Cell("ph-ceramic_vase_03", 3, 14, 180),   // Vase hell
         Cell("ph-gallinera_chair", 2, 14, 90),   // Bistrostuhl

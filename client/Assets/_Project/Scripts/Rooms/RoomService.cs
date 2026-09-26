@@ -34,6 +34,10 @@ namespace Reconnect.Client.Rooms
         public Task<ApiResult<RoomDto>> GetRoomAsync(Guid id, CancellationToken ct = default) =>
             _api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(id), ct);
 
+        /// <summary>Saves a layout from the build editor (owner or admin; 400 lists every broken build rule).</summary>
+        public Task<ApiResult<RoomDto>> UpdateLayoutAsync(Guid id, System.Collections.Generic.IReadOnlyList<RoomItemDto> items, CancellationToken ct = default) =>
+            _api.PutAsync<RoomDto>(ApiRoutes.Rooms.Layout(id), new UpdateRoomLayoutRequest(items), ct);
+
         public Task<ApiResult<RoomDto>> CreateRoomAsync(Guid buildingId, string name, bool isPublic, CancellationToken ct = default) =>
             _api.PostAsync<RoomDto>(ApiRoutes.Rooms.Group, new CreateRoomRequest(buildingId, name.Trim(), isPublic), ct);
     }

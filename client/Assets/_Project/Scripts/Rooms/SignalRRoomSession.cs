@@ -31,6 +31,7 @@ namespace Reconnect.Client.Rooms
         public event Action<QuizStateDto> QuizUpdated;
         public event Action<QueueStatusDto> QueueUpdated;
         public event Action<RoomSnapshotDto> ElevatorArrived;
+        public event Action<RoomLayoutChangedDto> LayoutChanged;
         public event Action<string> Disconnected;
 
         public async Task<RoomSnapshotDto> JoinAsync(Guid roomId, CancellationToken ct)
@@ -112,6 +113,7 @@ namespace Reconnect.Client.Rooms
             connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => QuizUpdated?.Invoke(q));
             connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdated?.Invoke(q));
             connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => ElevatorArrived?.Invoke(s));
+            connection.On<RoomLayoutChangedDto>(RoomHubContract.Client.RoomLayoutChanged, l => LayoutChanged?.Invoke(l));
             connection.Closed += reason =>
             {
                 if (_connection == connection)

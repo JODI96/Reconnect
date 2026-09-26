@@ -310,3 +310,39 @@
 }
 .menu-panel > .button { margin: 3px 0; min-height: 46px; -unity-text-align: middle-left; padding-left: 14px; }
 .heading--screen { margin: 0 0 8px 0; flex-grow: 0; flex-shrink: 0; }
+
+/* Build editor */
+.build-panel {
+    background-color: rgba(20, 18, 32, 0.95);
+    border-radius: var(--radius);
+    padding: 8px;
+    border-width: 2px;
+    border-color: rgba(255, 92, 138, 0.35);
+    flex-shrink: 0;
+}
+.build-hint { color: var(--color-text-muted); font-size: 14px; white-space: normal; margin: 0 4px 6px 4px; }
+.build-hint--error { color: var(--color-error); }
+.build-actions { flex-direction: row; justify-content: center; margin-bottom: 6px; }
+.build-actions > .button { margin: 0 3px; padding: 0 10px; }
+.build-categories { flex-shrink: 0; margin-bottom: 6px; }
+.build-categories .unity-scroll-view__content-container { flex-direction: row; }
+.build-chip {
+    min-height: 36px; margin: 0 4px 0 0; padding: 0 12px; flex-shrink: 0;
+    border-radius: 18px; border-width: 0; font-size: 14px;
+    background-color: var(--color-surface); color: var(--color-text);
+}
+.build-chip--selected { background-color: var(--color-primary); color: rgb(255, 255, 255); }
+.build-items { flex-shrink: 0; margin-bottom: 6px; }
+.build-items .unity-scroll-view__content-container { flex-direction: row; }
+.build-card {
+    width: 112px; min-height: 64px; margin: 0 6px 0 0; padding: 6px 8px; flex-shrink: 0;
+    border-radius: 12px; border-width: 2px; border-color: rgba(0, 0, 0, 0);
+    background-color: var(--color-surface);
+    -unity-text-align: upper-left; white-space: normal;
+}
+.build-card--selected { border-color: var(--color-primary); }
+.build-card__name { font-size: 14px; -unity-font-style: bold; color: var(--color-text); white-space: normal; }
+.build-card__size { font-size: 12px; color: var(--color-text-muted); margin-top: 2px; }
+.build-footer { flex-direction: row; align-items: center; }
+.build-footer > .button { margin: 0 0 0 6px; padding: 0 10px; }
+.build-footer > .button:first-child { margin-left: 0; }

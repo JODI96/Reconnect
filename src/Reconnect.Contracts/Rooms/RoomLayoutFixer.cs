@@ -136,7 +136,8 @@ namespace Reconnect.Contracts.Rooms
                 .Select(s => new CellRect(start.X + s.Dx, start.Z + s.Dz, start.Width, start.Depth));
         }
 
-        private static CellRect OntoNearestWall(RoomLayoutContext room, CellRect cells)
+        /// <summary>The footprint moved against the nearest wall of the room (unchanged in rooms without walls).</summary>
+        public static CellRect OntoNearestWall(RoomLayoutContext room, CellRect cells)
         {
             var options = new List<(int Distance, CellRect Cells)>();
             var bounds = room.Cells;

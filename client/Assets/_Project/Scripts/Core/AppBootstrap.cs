@@ -111,6 +111,6 @@ namespace Reconnect.Client.Core
             _navigator.Show(new RoomDetailScreen(ui.roomDetail, _rooms, roomId, back, enter: EnterRoom));
 
         private void EnterRoom(Guid roomId) =>
-            _navigator.Show(new RoomScreen(ui.room, room, city, _roomSession, _tower, roomId, _auth.UserId!.Value, leave: ShowCity));
+            _navigator.Show(new RoomScreen(ui.room, room, city, _roomSession, _tower, _rooms, roomId, _auth.UserId!.Value, _auth.IsAdmin, leave: ShowCity));
     }
 }

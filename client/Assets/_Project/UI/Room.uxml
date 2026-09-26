@@ -8,6 +8,7 @@
                 <ui:Label name="room-owner" class="muted ellipsis pass-through" />
             </ui:VisualElement>
             <ui:Button name="lift" text="Lift" class="button button--small" style="display: none;" />
+            <ui:Button name="build" text="Bauen" class="button button--small" style="display: none;" />
             <ui:Button name="music" text="Ton" class="button button--small" />
             <ui:Button name="leave" text="Verlassen" class="button button--small" />
         </ui:VisualElement>
@@ -72,6 +73,25 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
+        <!-- Build editor (owner or admin): item in hand, catalog, save. -->
+        <ui:VisualElement name="build-panel" class="build-panel" style="display: none;">
+            <ui:Label name="build-hint" class="build-hint" />
+            <ui:VisualElement name="build-actions" class="build-actions">
+                <ui:Button name="build-rotate" text="Drehen" class="button button--small" />
+                <ui:Button name="build-delete" text="Entfernen" class="button button--small" />
+                <ui:Button name="build-cancel" text="Zurück" class="button button--small" />
+                <ui:Button name="build-place" text="Setzen" class="button button--primary button--small" />
+            </ui:VisualElement>
+            <ui:ScrollView name="build-categories" mode="Horizontal" class="build-categories" />
+            <ui:ScrollView name="build-items" mode="Horizontal" class="build-items" />
+            <ui:VisualElement class="build-footer">
+                <ui:Button name="build-undo" text="Rückgängig" class="button button--small" />
+                <ui:VisualElement class="pass-through" style="flex-grow: 1;" />
+                <ui:Button name="build-discard" text="Verwerfen" class="button button--small" />
+                <ui:Button name="build-save" text="Speichern" class="button button--primary button--small" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
         <ui:VisualElement name="emote-bar" class="emote-bar">
             <ui:Button name="emote-wave" text="Winken" class="button button--small emote" />
             <ui:Button name="emote-yes" text="Ja" class="button button--small emote" />
@@ -80,7 +100,7 @@
             <ui:Button name="emote-sit" text="Sitzen" class="button button--small emote" />
         </ui:VisualElement>
         <ui:Label name="tower-credit" text="Gebäudeumriss © OpenStreetMap-Mitwirkende · Unabhängiges Spiel, nicht verbunden mit den Eigentümern des Gebäudes" class="attribution pass-through" style="display: none; align-self: flex-end;" />
-        <ui:VisualElement class="chat-bar">
+        <ui:VisualElement name="chat-bar" class="chat-bar">
             <ui:TextField name="chat-input" class="field chat-bar__input" />
             <ui:Button name="send" text="Senden" class="button button--primary button--small" />
         </ui:VisualElement>

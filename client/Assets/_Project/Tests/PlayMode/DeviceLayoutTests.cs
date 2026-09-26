@@ -161,7 +161,8 @@ namespace Reconnect.Client.PlayModeTests
                 navigator.Show(new OfficesScreen(ui.offices, realEstate, wallet, PrimeTowerId, () => { }));
                 yield return Capture("offices", 2f);
 
-                var roomScreen = new RoomScreen(ui.room, roomView, city, session, tower, skyLounge, auth.UserId!.Value, () => { });
+                var roomScreen = new RoomScreen(ui.room, roomView, city, session, tower, rooms, skyLounge, auth.UserId!.Value,
+                    isAdmin: true, () => { });
                 navigator.Show(roomScreen);
                 yield return Capture("room", 4f);
                 roomScreen.OpenLift();
@@ -170,6 +171,11 @@ namespace Reconnect.Client.PlayModeTests
                 yield return Capture("room-tictactoe");
                 roomScreen.OpenGame("quiz");
                 yield return Capture("room-quiz");
+                roomScreen.OpenGame(null);
+                roomScreen.OpenBuild();
+                yield return Capture("room-build", 1f);
+                roomScreen.Build.Editor.Pick("ph-sofa_02", roomView.Focus.x, roomView.Focus.z);
+                yield return Capture("room-build-item", 1f);
 
                 navigator.Show(new LoginScreen(ui.login, auth, () => { }));   // leaves the room
                 yield return null;
