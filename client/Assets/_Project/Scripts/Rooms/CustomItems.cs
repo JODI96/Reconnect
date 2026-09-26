@@ -41,6 +41,15 @@ namespace Reconnect.Client.Rooms
             return true;
         }
 
+        /// <summary>Every custom item id (pools come in any size: see <see cref="TryPoolSize"/>).</summary>
+        public static readonly string[] Ids =
+        {
+            "custom-lounger", "custom-parasol", "custom-firepit", "custom-planter", "custom-column", "custom-easel",
+            "custom-lightstring", "custom-skybar", "custom-backbar", "custom-openkitchen", "custom-hologram", "custom-djbooth",
+            "custom-telescope", "custom-divider", "custom-pendant", "custom-ledstrip", ElevatorItem, "custom-turnstiles",
+            "custom-reception", "custom-screenwall", "custom-queuelane", "custom-rug", "custom-ruground",
+        };
+
         private readonly Material _litBase;
         private readonly Material _water;
         private readonly Material _glass;
@@ -663,8 +672,21 @@ namespace Reconnect.Client.Rooms
             go.transform.localPosition = position;
             go.transform.localScale = size;
             go.GetComponent<Renderer>().sharedMaterial = material;
-            UnityEngine.Object.Destroy(go.GetComponent<Collider>());
+            DestroyNow(go.GetComponent<Collider>());
             return go;
+        }
+
+        /// <summary>Destroy that also works in the editor (the build catalog measures the items outside play mode).</summary>
+        private static void DestroyNow(Object target)
+        {
+            if (Application.isPlaying)
+            {
+                Object.Destroy(target);
+            }
+            else
+            {
+                Object.DestroyImmediate(target);
+            }
         }
 
         private static Light AddLight(Transform parent, Vector3 position, Color color, float intensity, float range)

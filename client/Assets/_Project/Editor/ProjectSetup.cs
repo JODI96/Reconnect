@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using CesiumForUnity;
@@ -79,6 +80,7 @@ namespace Reconnect.Client.Editor
             CreatePanelSettings();
             CreateCityMaterials();
             CreateItemCatalog();
+            CreateBuildCatalog();
             CreateAvatarCatalog();
             CreateMusicCatalog();
             CreatePostProcessing();
@@ -166,6 +168,22 @@ namespace Reconnect.Client.Editor
         /// ItemId = model file name, e.g. "loungeSofa" (Kenney Furniture Kit, CC0), plus "ph-" + name for the
         /// realistic Poly Haven models (CC0, glTF via glTFast, already in metres – see tools/fetch_polyhaven.py).
         /// </summary>
+        /// <summary>The Kenney kit is not to one scale: these models get their real height (metres) instead of ×0.2.</summary>
+        private static readonly Dictionary<string, float> KenneyRealHeights = new()
+        {
+            ["laptop"] = 0.24f, ["trashcan"] = 0.6f, ["toilet"] = 0.8f, ["shower"] = 2.2f, ["speakerSmall"] = 0.35f,
+            ["radio"] = 0.22f, ["tableCross"] = 0.75f, ["tableCrossCloth"] = 0.75f, ["bathtub"] = 0.6f,
+        };
+
+        private static float RealSizeScale(GameObject model, float baseScale, float height)
+        {
+            var instance = (GameObject)Object.Instantiate(model);
+            instance.transform.localScale = Vector3.one * baseScale;
+            var measured = BuildCatalogGenerator.Bounds(instance).size.y;
+            Object.DestroyImmediate(instance);
+            return measured > 0.01f ? baseScale * height / measured : baseScale;
+        }
+
         private static void CreateItemCatalog()
         {
             var catalog = LoadOrCreate<ItemCatalog>(ItemCatalogPath);
@@ -190,6 +208,10 @@ namespace Reconnect.Client.Editor
                     })
                 : Enumerable.Empty<ItemCatalog.Entry>();
             catalog.items = kenney.Concat(polyHaven).ToList();
+            foreach (var entry in catalog.items.Where(e => e.model != null && KenneyRealHeights.ContainsKey(e.itemId)))
+            {
+                entry.scale = RealSizeScale(entry.model, catalog.modelScale, KenneyRealHeights[entry.itemId]);
+            }
 
             var missing = catalog.items.Where(e => e.model == null).Select(e => e.itemId).ToList();
             if (missing.Count > 0)
@@ -197,6 +219,14 @@ namespace Reconnect.Client.Editor
                 throw new InvalidOperationException("Models not imported: " + string.Join(", ", missing));
             }
             EditorUtility.SetDirty(catalog);
+        }
+
+        /// <summary>Footprints of all buildable items → Contracts (ItemCatalogData.cs); then <c>dotnet build</c>.</summary>
+        private static void CreateBuildCatalog()
+        {
+            var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            var custom = new CustomItems(material, material, material, RoomTheme.For("default"));
+            BuildCatalogGenerator.Generate(Load<ItemCatalog>(ItemCatalogPath), custom);
         }
 
         /// <summary>One CC0 track per room theme: file name = theme id (tools/fetch_music.py), "default" for the rest.</summary>

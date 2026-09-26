@@ -31,7 +31,7 @@ MonoBehaviour:
     scale: 0
   - itemId: bathtub
     model: {fileID: 919132149155446097, guid: 77a31fc62a6ed0444b97a018030be7ce, type: 3}
-    scale: 0
+    scale: 0.14285715
   - itemId: bear
     model: {fileID: 919132149155446097, guid: deb84a77a7448174bb654f7732bcde02, type: 3}
     scale: 0
@@ -244,7 +244,7 @@ MonoBehaviour:
     scale: 0
   - itemId: laptop
     model: {fileID: 919132149155446097, guid: 110ce9e9715fd5f4f9d50ce2aeb49812, type: 3}
-    scale: 0
+    scale: 0.065261975
   - itemId: loungeChair
     model: {fileID: 919132149155446097, guid: 6492a0c382a47a7428446db6c045841a, type: 3}
     scale: 0
@@ -301,7 +301,7 @@ MonoBehaviour:
     scale: 0
   - itemId: radio
     model: {fileID: 919132149155446097, guid: c83ab5f39155d3a44b0f09fe259d3c4c, type: 3}
-    scale: 0
+    scale: 0.09641042
   - itemId: rugDoormat
     model: {fileID: 919132149155446097, guid: 0f1e554949105b449bfe71feb9cfc6ef, type: 3}
     scale: 0
@@ -319,7 +319,7 @@ MonoBehaviour:
     scale: 0
   - itemId: shower
     model: {fileID: 919132149155446097, guid: dde3a100f785d9846a380cc40eb9a8ee, type: 3}
-    scale: 0
+    scale: 0.08825874
   - itemId: showerRound
     model: {fileID: 919132149155446097, guid: 9819af9551c7595468ce03292cdd0a51, type: 3}
     scale: 0
@@ -334,7 +334,7 @@ MonoBehaviour:
     scale: 0
   - itemId: speakerSmall
     model: {fileID: 919132149155446097, guid: cb075584fc14f08428e791d16b8be721, type: 3}
-    scale: 0
+    scale: 0.11745771
   - itemId: stairs
     model: {fileID: 919132149155446097, guid: ec794c4a6bae9914cb96c930d055c952, type: 3}
     scale: 0
@@ -373,10 +373,10 @@ MonoBehaviour:
     scale: 0
   - itemId: tableCross
     model: {fileID: 919132149155446097, guid: cc557a14a8803ca4cb15990a0ec17281, type: 3}
-    scale: 0
+    scale: 0.090670094
   - itemId: tableCrossCloth
     model: {fileID: 919132149155446097, guid: 001ce192d19141140963cab19f7638bf, type: 3}
-    scale: 0
+    scale: 0.090670094
   - itemId: tableGlass
     model: {fileID: 919132149155446097, guid: 4d076dbd01c37c1418e68ac88a92c14c, type: 3}
     scale: 0
@@ -397,13 +397,13 @@ MonoBehaviour:
     scale: 0
   - itemId: toilet
     model: {fileID: 919132149155446097, guid: f13a4fc73dc457e4bb8e7e3dc33fdac2, type: 3}
-    scale: 0
+    scale: 0.08426374
   - itemId: toiletSquare
     model: {fileID: 919132149155446097, guid: e20257c4a12a0434a9a896c3b822ad1b, type: 3}
     scale: 0
   - itemId: trashcan
     model: {fileID: 919132149155446097, guid: 98409a78b70a18a4cb53721aafb9c956, type: 3}
-    scale: 0
+    scale: 0.06619325
   - itemId: wall
     model: {fileID: 919132149155446097, guid: 44bda9482ca12b74c96fac631c5f63c5, type: 3}
     scale: 0

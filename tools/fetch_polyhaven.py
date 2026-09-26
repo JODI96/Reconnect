@@ -48,6 +48,24 @@ def save(url, path):
         file.write(get(url))
 
 
+# Some Poly Haven files hold several variants side by side; keep one (node-name suffix) and move it to the origin.
+VARIANTS = {"pachira_aquatica_01": "_d"}
+
+
+def keep_variant(path, suffix):
+    with open(path, encoding="utf-8") as file:
+        gltf = json.load(file)
+    scene = gltf["scenes"][gltf.get("scene", 0)]
+    keep = [i for i in scene["nodes"] if gltf["nodes"][i].get("name", "").endswith(suffix)]
+    if not keep or keep == scene["nodes"]:
+        return
+    scene["nodes"] = keep
+    for i in keep:
+        gltf["nodes"][i]["translation"] = [0, gltf["nodes"][i].get("translation", [0, 0, 0])[1], 0]
+    with open(path, "w", encoding="utf-8") as file:
+        json.dump(gltf, file, indent=1)
+
+
 def main():
     for model in MODELS:
         files = json.loads(get(f"https://api.polyhaven.com/files/{model}"))
@@ -59,6 +77,8 @@ def main():
         save(gltf["url"], os.path.join(folder, f"{model}.gltf"))
         for relative, include in gltf.get("include", {}).items():
             save(include["url"], os.path.join(folder, *relative.split("/")))
+        if model in VARIANTS:
+            keep_variant(os.path.join(folder, f"{model}.gltf"), VARIANTS[model])
         print("ok", model)
 
     with open(os.path.join(ROOT, "License.txt"), "w", encoding="utf-8") as file:
