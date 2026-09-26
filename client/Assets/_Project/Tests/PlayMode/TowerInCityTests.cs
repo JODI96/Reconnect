@@ -18,7 +18,7 @@ using UnityEngine.TestTools;
 namespace Reconnect.Client.PlayModeTests
 {
     /// <summary>
-    /// Measures the real Prime Tower from swisstopo and shows lobby, coworking (12th) and Clouds (35th) at their
+    /// Measures the real Prime Tower from swisstopo and shows lobby, coworking (12th) and the sky lounge (35th) at their
     /// real height in the cut-away tower, with the streamed city around → client/Logs/tower-city-*.png.
     /// swisstopo only (no Google session). Needs the local backend and internet.
     /// </summary>

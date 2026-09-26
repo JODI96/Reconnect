@@ -16,7 +16,7 @@ using UnityEngine.TestTools;
 namespace Reconnect.Client.PlayModeTests
 {
     /// <summary>
-    /// Renders every public floor of the Prime Tower (lobby, coworking, sky office, conference, Clouds) into
+    /// Renders every public floor of the Prime Tower (lobby, coworking, sky office, conference, sky lounge) into
     /// client/Logs/tower-&lt;floor&gt;.png and checks that every item has a model. Needs the local backend.
     /// </summary>
     [Category("Integration")]

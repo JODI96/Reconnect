@@ -283,3 +283,6 @@
 .office-floor-header { color: rgb(92, 225, 255); font-size: 16px; -unity-font-style: bold; margin: 12px 0 2px 4px; }
 .sheet__actions { flex-direction: column; margin: 8px 0; }
 .sheet__actions > .button { margin: 4px 0; }
+
+/* Notice that real buildings are only used as locations */
+.disclaimer { color: var(--color-text-muted); font-size: 13px; white-space: normal; margin-top: 8px; -unity-text-align: middle-left; }

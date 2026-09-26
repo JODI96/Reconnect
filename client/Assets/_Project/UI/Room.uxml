@@ -78,7 +78,7 @@
             <ui:Button name="emote-jump" text="Hüpfen" class="button button--small emote" />
             <ui:Button name="emote-sit" text="Sitzen" class="button button--small emote" />
         </ui:VisualElement>
-        <ui:Label name="tower-credit" text="Gebäudeumriss © OpenStreetMap-Mitwirkende" class="attribution pass-through" style="display: none; align-self: flex-end;" />
+        <ui:Label name="tower-credit" text="Gebäudeumriss © OpenStreetMap-Mitwirkende · Unabhängiges Spiel, nicht verbunden mit den Eigentümern des Gebäudes" class="attribution pass-through" style="display: none; align-self: flex-end;" />
         <ui:VisualElement class="chat-bar">
             <ui:TextField name="chat-input" class="field chat-bar__input" />
             <ui:Button name="send" text="Senden" class="button button--primary button--small" />

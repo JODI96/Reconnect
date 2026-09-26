@@ -50,7 +50,7 @@ namespace Reconnect.Client.City
 
         /// <summary>
         /// Where a room of the given size stands on a storey: in the corner the camera looks at, so its back glass
-        /// walls are the tower's facade with the city right behind them (like the real Clouds).
+        /// walls are the tower's facade with the city right behind them (like the real top floor).
         /// </summary>
         public Vector3 RoomAnchor(int floor, float width, float depth)
         {

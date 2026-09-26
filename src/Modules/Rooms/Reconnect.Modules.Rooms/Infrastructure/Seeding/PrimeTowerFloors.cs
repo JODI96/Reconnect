@@ -10,7 +10,8 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Seeding;
 /// <summary>
 /// The public floors of the Prime Tower (all environments – they are part of the game, not dev data).
 /// Real building: 36 storeys, 126 m; lobby with 10 m high walls of green Aosta serpentine, conference centre on
-/// the 34th, "Clouds" on the 35th floor, offices in between (some of them can be bought – RealEstate module).
+/// the 34th, a restaurant and bar on the 35th floor, offices in between (some can be bought – RealEstate module).
+/// Names are our own: real brand names (e.g. of the restaurant) are not used, see CLAUDE.md.
 /// Idempotent: floors are matched by storey and updated on every start.
 /// </summary>
 internal static class PrimeTowerFloors
@@ -25,7 +26,7 @@ internal static class PrimeTowerFloors
         new(12, "Coworking", RoomThemes.Coworking, 22, 16, 20, Coworking()),
         new(24, "Sky Office", RoomThemes.Coworking, 22, 16, 20, SkyOffice()),
         new(34, "Konferenzzentrum", RoomThemes.Conference, 24, 16, 25, Conference()),
-        new(35, "Clouds", RoomThemes.SkyLounge, 22, 16, 30, Clouds()),
+        new(35, "Sky Lounge", RoomThemes.SkyLounge, 22, 16, 30, SkyLounge()),
     ];
 
     public static async Task SeedAsync(IServiceProvider services, CancellationToken ct)
@@ -230,14 +231,14 @@ internal static class PrimeTowerFloors
     }
 
     /// <summary>
-    /// Clouds, 35th floor: modelled on the real "Clouds": cocktail bar with a
+    /// Sky Lounge, 35th floor: modelled on the real top-floor restaurant and bar: cocktail bar with a
     /// back bar along the north facade, open kitchen with a bistro in front, restaurant tables, a sunset
     /// lounge facing the Uetliberg (west), a Prive with the quiz screen behind a glass partition, a DJ booth,
     /// panorama viewers at the glass and the lift core in the middle.
     /// Glass facade, luminous "sky" ceiling and LED lines come from the skylounge theme (client).
     /// Furniture: realistic Poly Haven models ("ph-*") plus custom pieces built by the client.
     /// </summary>
-    private static List<RoomItem> Clouds()
+    private static List<RoomItem> SkyLounge()
     {
         var items = new List<RoomItem>
         {

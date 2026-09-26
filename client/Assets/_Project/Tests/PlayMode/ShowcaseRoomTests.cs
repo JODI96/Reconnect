@@ -48,7 +48,7 @@ namespace Reconnect.Client.PlayModeTests
             var list = api.GetAsync<PagedResponse<RoomSummaryDto>>(ApiRoutes.Rooms.Group + "?pageSize=50");
             yield return Wait(list);
             var showcase = list.Result.Value.Items.Where(r => r.OwnerDisplayName == "Admin" && r.Name != "Test").OrderBy(r => r.Name).ToList();
-            Assert.AreEqual(4, showcase.Count, "four showcase rooms (the sky lounge moved into the Prime Tower as Clouds)");
+            Assert.AreEqual(4, showcase.Count, "four showcase rooms (the sky lounge moved into the Prime Tower, 35th floor)");
 
             var view = UnityEngine.Object.FindFirstObjectByType<RoomView>();
             // Render into a portrait phone target from the start, so the camera frames the room for it.

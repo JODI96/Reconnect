@@ -48,7 +48,7 @@ namespace Reconnect.Client.PlayModeTests
             api.Tokens = new StaticToken(login.Result.Value.AccessToken);
             var list = api.GetAsync<PagedResponse<RoomSummaryDto>>(ApiRoutes.Rooms.Group + "?pageSize=50");
             yield return Wait(list);
-            var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(list.Result.Value.Items.Single(r => r.Name == "Clouds").Id));
+            var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(list.Result.Value.Items.Single(r => r.Name == "Sky Lounge").Id));
             yield return Wait(detail);
             var room = detail.Result.Value;
 

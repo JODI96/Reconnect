@@ -20,7 +20,7 @@ public sealed class TowerElevatorTests(ReconnectApiFactory factory)
         var lobby = tower.Floors.Single(f => f.Floor == 0);
         Assert.Equal("Lobby", lobby.Name);
         Assert.True(lobby.Capacity > tower.Floors.Where(f => f.Floor > 0).Max(f => f.Capacity), "the lobby holds the most people");
-        Assert.Equal("Clouds", tower.Floors.Single(f => f.Floor == 35).Name);
+        Assert.Equal("Sky Lounge", tower.Floors.Single(f => f.Floor == 35).Name);
     }
 
     [Fact]

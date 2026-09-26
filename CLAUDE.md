@@ -143,7 +143,7 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
 - **Räume:** eigene Grösse (6–40 m), Themes mit prozeduralem Boden (FloorTextures) und einer `Enclosure`:
   `Walls` (Kenney-Wände mit Fenstern/Tür), `Railing` (Dachterrasse, Glasgeländer) oder `GlassFacade` (verglastes
   Obergeschoss mit LED-Kante). `Railing`/`GlassFacade` stehen auf dem echten Gebäudedach in der 3D-Stadt
-  (`CityView.RoofAnchorAsync`). Die **Rooftop Lounge** (Theme `skylounge`) bildet das echte „Clouds“ im 35. Stock des
+  (`CityView.RoofAnchorAsync`). Die **Sky Lounge** (Theme `skylounge`, 35. OG) bildet das Restaurant/die Bar im obersten Stock des
   Prime Towers nach (Bar, offene Küche, Bistro, Restaurant, Lounge, Privé) mit futuristischen Custom-Items
   (Hologramm, schwebende Murano-Orbs, DJ-Pult mit Equalizer, Panorama-Fernrohre). Unbekannte ItemIds landen in
   `RoomView.MissingItems` – der Showcase-Test verlangt, dass die Liste leer ist.
@@ -160,7 +160,7 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   (nie in Code/Repo). Im Google-Cloud-Konto Key auf Map Tiles API + App-IDs beschränken und Tageslimit setzen.
   Automatische Tests starten nie eine Google-Sitzung.
 - **Prime Tower (Stockwerke):** öffentliche Stockwerke gehören dem Turm (`TowerOwners`, alle Umgebungen, `PrimeTowerFloors`):
-  Lobby EG (80 Personen, Warteschlangen-Ort), Coworking 12. OG, Sky Office 24. OG, Konferenzzentrum 34. OG, Clouds 35. OG.
+  Lobby EG (80 Personen, Warteschlangen-Ort), Coworking 12. OG, Sky Office 24. OG, Konferenzzentrum 34. OG, Sky Lounge 35. OG.
   Kapazität wird atomar in Redis geprüft (Lua), der Lift (`RideElevator`) fährt sofort oder stellt in eine FIFO-Warteschlange;
   wird ein Platz frei, fährt der Nächste automatisch (`ElevatorArrived`). Wer mit dem Lift kommt, steht vor der Liftbank
   (`custom-elevator`). Büros (RealEstate, 2.–33. OG) kosten CHF, Verkauf zurück an den Turm zum Kaufpreis; in Towers kann man
@@ -172,6 +172,11 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   `materialKey = "Clipping"` setzen!) und baut unser Turmmodell bis zum Stockwerk; der Raum steht an der Fassade
   (`RoomAnchor`, innerhalb des Grundrisses). swisstopo-Gebäude lassen sich nicht clippen (eigenes Material) und werden im
   swisstopo-Modus während der Schnittansicht ausgeblendet. Etage = 3,5 m.
+- **Echte Gebäude & Namen (rechtlich):** Gebäude dürfen als Ort genannt und von aussen dargestellt werden, aber
+  keine Marken/Namen von Betrieben (z. B. das Restaurant im Prime Tower heisst im Spiel „Sky Lounge“), keine Logos,
+  Schriftzüge oder Kunstwerke nachbauen, und überall wo ein echtes Gebäude bespielt wird der Hinweis „Unabhängiges Spiel –
+  nicht verbunden mit den Eigentümern …“ (Stadt-Panel, Büro-Markt, Tower-Stockwerke). Vor Echtgeld-Käufen von Büros:
+  Erlaubnis des Eigentümers (Swiss Prime Site) einholen oder den Tower neutral benennen.
 - **Gebäude in der Stadt:** swissBUILDINGS3D kommt ohne Textur mit Rohfarben (rote Dächer, gelbe Wände). Das Tileset
   nutzt deshalb `Materials/Buildings.mat` (helles „Architekturmodell“); Gelände behält Cesiums Material (Overlays).
 - **swisstopo-Daten** (OGD, kommerziell nutzbar): Quellenangabe „© swisstopo“ muss sichtbar bleiben.

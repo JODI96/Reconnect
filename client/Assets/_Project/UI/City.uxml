@@ -25,6 +25,7 @@
             <ui:VisualElement name="tower-actions" class="sheet__actions" style="display: none;">
                 <ui:Button name="tower-enter" class="button button--primary" />
                 <ui:Button name="tower-offices" text="Büros kaufen" class="button" />
+                <ui:Label text="Unabhängiges Spiel – nicht verbunden mit den Eigentümern oder Betreibern dieses Gebäudes. Der Name dient nur der Ortsangabe." class="disclaimer" />
             </ui:VisualElement>
             <ui:ScrollView name="sheet-scroll" class="sheet__rooms">
                 <ui:VisualElement name="sheet-rooms" />

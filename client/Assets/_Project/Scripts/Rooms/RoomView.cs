@@ -486,9 +486,9 @@ namespace Reconnect.Client.Rooms
         }
 
         /// <summary>
-        /// Glass top floor (modelled on the "Clouds" on top of Zurich's Prime Tower): floor-to-ceiling,
+        /// Glass top floor (modelled on the top floor of Zurich's Prime Tower): floor-to-ceiling,
         /// frameless green-tinted glass on the back sides, a low glass parapet on the camera sides so you
-        /// can look in, slim mullions and LED lines – the top edge breathes softly like the Clouds' light ceiling.
+        /// can look in, slim mullions and LED lines – the top edge breathes softly like a luminous ceiling.
         /// </summary>
         private void BuildGlassFacade()
         {

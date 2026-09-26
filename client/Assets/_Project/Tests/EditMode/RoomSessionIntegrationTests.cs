@@ -28,7 +28,7 @@ namespace Reconnect.Client.Tests
         private static readonly Guid PrimeTowerId = Guid.Parse("0199a000-0000-7000-8000-000000000003");
 
         [UnityTest]
-        public IEnumerator Lift_takes_a_player_from_the_lobby_to_clouds()
+        public IEnumerator Lift_takes_a_player_from_the_lobby_to_the_sky_lounge()
         {
             var anna = Player();
             var register = Register(anna, "Anna");
@@ -51,7 +51,7 @@ namespace Reconnect.Client.Tests
             yield return Wait(ride);
             Assert.AreEqual(ElevatorStatus.Arrived, ride.Result.Status);
             Assert.AreEqual(35, ride.Result.Snapshot.Room.Floor);
-            Assert.AreEqual("Clouds", ride.Result.Snapshot.Room.Name);
+            Assert.AreEqual("Sky Lounge", ride.Result.Snapshot.Room.Name);
             anna.Session.Dispose();
         }
 

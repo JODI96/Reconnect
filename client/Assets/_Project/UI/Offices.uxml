@@ -7,4 +7,5 @@
     <ui:Label text="Kaufe ein Büro mit Seesicht oder Blick über Zürich-West. Du erreichst es mit dem Lift; beim Verkaufen bekommst du den Kaufpreis zurück." class="muted" style="white-space: normal; margin-bottom: 8px;" />
     <ui:Label name="status" class="status" />
     <ui:ScrollView name="offices" style="flex-grow: 1;" />
+    <ui:Label text="Unabhängiges Spiel – nicht verbunden mit den Eigentümern oder Betreibern dieses Gebäudes. Der Name dient nur der Ortsangabe. Büros sind virtuell und haben keinen Bezug zu echten Mietflächen." class="disclaimer" />
 </ui:UXML>
