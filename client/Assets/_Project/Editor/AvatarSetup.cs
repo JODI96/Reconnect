@@ -142,6 +142,7 @@ namespace Reconnect.Client.Editor
             talk.motion = clips["Idle_Talking_Loop"];
             var walk = machine.AddState("Walk");
             walk.motion = clips["Walk_Loop"];
+            walk.speed = 1.5f;   // matches AvatarView's brisk walking pace (no sliding feet)
             Connect(idle, walk, AnimatorConditionMode.If, "Walking", 0.2f);
             Connect(talk, walk, AnimatorConditionMode.If, "Walking", 0.2f);
             Connect(walk, idle, AnimatorConditionMode.IfNot, "Walking", 0.25f);

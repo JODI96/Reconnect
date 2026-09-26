@@ -11,7 +11,7 @@ namespace Reconnect.Client.Rooms
     /// </summary>
     public sealed class AvatarView : MonoBehaviour
     {
-        private const float TilesPerSecond = 1.4f;   // walking pace of an adult (m/s), matches the walk clip
+        private const float TilesPerSecond = 2.2f;   // brisk game pace (m/s); the walk clip plays faster to match
         private const float TurnSpeed = 720f;
 
         private const string WalkingParameter = "Walking";

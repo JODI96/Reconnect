@@ -29,8 +29,8 @@ namespace Reconnect.Client.Rooms
         private const float TapMaxMovePixels = 12f;
         private const float CameraPitch = 38f;
         private const float CameraFieldOfView = 24f;
-        private const float MinViewWidth = 5f;
-        private const float StartViewWidthMax = 15f;
+        private const float MinViewWidth = 3.5f;
+        private const float StartViewWidth = 8f;     // metres of floor across the screen when entering: close to the people
         private const int MaxLampLights = 10;
         private const float FacadeHeight = 3.4f;         // glass top floor: floor-to-ceiling glass
         private const float HallHeight = 10f;            // tower lobby (Prime Tower: 10 m serpentine walls)
@@ -231,7 +231,7 @@ namespace Reconnect.Client.Rooms
             if (_follow && Avatar(_localUserId) is { } me)
             {
                 var target = me.transform.localPosition;
-                _focus = Vector3.Lerp(_focus, new Vector3(target.x, 0f, target.z), 1f - Mathf.Exp(-3f * Time.deltaTime));
+                _focus = Vector3.Lerp(_focus, new Vector3(target.x, 0f, target.z), 1f - Mathf.Exp(-6f * Time.deltaTime));
             }
             ApplyCamera();
         }
@@ -901,8 +901,8 @@ namespace Reconnect.Client.Rooms
                 roomCamera.backgroundColor = new Color32(20, 18, 32, 255);
             }
 
-            // Small rooms: show everything. Big rooms: start closer, centred on me.
-            _viewWidth = Mathf.Min(MaxViewWidth, StartViewWidthMax);
+            // Start close, centred on me; pinch out to see the whole room.
+            _viewWidth = Mathf.Min(MaxViewWidth, StartViewWidth);
             _follow = _viewWidth < MaxViewWidth;
             var me = Avatar(_localUserId);
             _focus = _follow && me != null
