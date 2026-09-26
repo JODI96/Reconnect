@@ -21,6 +21,15 @@ namespace Reconnect.Contracts.Hubs
             /// <summary>(int x, int z) → TilePosition actually used (clamped to the grid).</summary>
             public const string MoveTo = "MoveTo";
 
+            /// <summary>
+            /// (int item, int place) → bool. Sits down on a seat of the layout (<c>RoomSeats</c>); false when taken.
+            /// Walking (MoveTo) stands up again.
+            /// </summary>
+            public const string Sit = "Sit";
+
+            /// <summary>() → nothing. Stands up from the current seat.</summary>
+            public const string StandUp = "StandUp";
+
             /// <summary>(string text) → nothing. Max RoomGrid.MaxChatLength characters.</summary>
             public const string Say = "Say";
 
@@ -66,6 +75,9 @@ namespace Reconnect.Contracts.Hubs
 
             /// <summary>Payload: PlayerMovedDto</summary>
             public const string PlayerMoved = "PlayerMoved";
+
+            /// <summary>Payload: PlayerSeatDto – someone sat down or stood up (a move also stands up).</summary>
+            public const string PlayerSeated = "PlayerSeated";
 
             /// <summary>Payload: RoomChatMessageDto</summary>
             public const string ChatMessage = "ChatMessage";

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb8f555f28f77de4d8ce38c8675aaa0a, type: 3}
+  m_Name: MusicCatalog
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.MusicCatalog
+  entries:
+  - theme: atelier
+    clip: {fileID: 8300000, guid: 7bec4937a5559e542859223c32ce45cd, type: 3}
+  - theme: cafe
+    clip: {fileID: 8300000, guid: 7212284dad543be459402a41383c37e3, type: 3}
+  - theme: conference
+    clip: {fileID: 8300000, guid: 05fb9be8364e84744b0d8df25907cde0, type: 3}
+  - theme: coworking
+    clip: {fileID: 8300000, guid: 8de0effd5a981ec4f9ef8a3db5084a90, type: 3}
+  - theme: library
+    clip: {fileID: 8300000, guid: 28dd8842752d73d4cb4112dce36864a0, type: 3}
+  - theme: lobby
+    clip: {fileID: 8300000, guid: e5250c99b124b6c469c6a6a3e6154119, type: 3}
+  - theme: opera
+    clip: {fileID: 8300000, guid: cf803bbc7785c904d8d92a39a38b5224, type: 3}
+  - theme: rooftop
+    clip: {fileID: 8300000, guid: b896ad8b163a64d44ba3178d653603e7, type: 3}
+  - theme: skylounge
+    clip: {fileID: 8300000, guid: dfc679352f236bc44b8e7d05c12f0ef2, type: 3}
+  fallback: {fileID: 8300000, guid: 321cdfb110ed33c40833b576f537c5df, type: 3}

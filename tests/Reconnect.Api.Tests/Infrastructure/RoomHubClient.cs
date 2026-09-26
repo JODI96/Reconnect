@@ -22,6 +22,7 @@ public sealed class RoomHubClient : IAsyncDisposable
         connection.On<PlayerMovedDto>(RoomHubContract.Client.PlayerMoved, m => Moved.Add(m));
         connection.On<RoomChatMessageDto>(RoomHubContract.Client.ChatMessage, m => Chat.Add(m));
         connection.On<EmoteDto>(RoomHubContract.Client.PlayerEmote, e => EmotesSeen.Add(e));
+        connection.On<PlayerSeatDto>(RoomHubContract.Client.PlayerSeated, s => Seats.Enqueue(s));
         connection.On<TicTacToeStateDto>(RoomHubContract.Client.TicTacToeUpdated, t => TicTacToe.Enqueue(t));
         connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => Quiz.Enqueue(q));
         connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdates.Enqueue(q));
@@ -34,6 +35,7 @@ public sealed class RoomHubClient : IAsyncDisposable
     public ConcurrentBag<PlayerMovedDto> Moved { get; } = [];
     public ConcurrentBag<RoomChatMessageDto> Chat { get; } = [];
     public ConcurrentBag<EmoteDto> EmotesSeen { get; } = [];
+    public ConcurrentQueue<PlayerSeatDto> Seats { get; } = new();
     public ConcurrentQueue<TicTacToeStateDto> TicTacToe { get; } = new();
     public ConcurrentQueue<QuizStateDto> Quiz { get; } = new();
     public ConcurrentQueue<QueueStatusDto> QueueUpdates { get; } = new();
@@ -61,6 +63,10 @@ public sealed class RoomHubClient : IAsyncDisposable
         _connection.InvokeAsync<TilePosition>(RoomHubContract.Server.MoveTo, x, z);
 
     public Task SayAsync(string text) => _connection.InvokeAsync(RoomHubContract.Server.Say, text);
+
+    public Task<bool> SitAsync(int item, int place) => _connection.InvokeAsync<bool>(RoomHubContract.Server.Sit, item, place);
+
+    public Task StandUpAsync() => _connection.InvokeAsync(RoomHubContract.Server.StandUp);
 
     public Task LeaveAsync() => _connection.InvokeAsync(RoomHubContract.Server.LeaveRoom);
 

@@ -17,7 +17,9 @@ namespace Reconnect.Contracts.Rooms
     /// <param name="Z">Row, 0 … Depth-1 (Unity +Z).</param>
     public sealed record TilePosition(int X, int Z);
 
-    public sealed record RoomPlayerDto(Guid UserId, string DisplayName, TilePosition Tile);
+    /// <param name="Tile">Where the player stands (or stood before sitting down).</param>
+    /// <param name="Seat">The seat the player sits on, if any (see <see cref="RoomSeats"/>).</param>
+    public sealed record RoomPlayerDto(Guid UserId, string DisplayName, TilePosition Tile, SeatDto? Seat = null);
 
     /// <summary>Everything a client needs when entering: the room, who is already there (including the caller) and running games.</summary>
     public sealed record RoomSnapshotDto(

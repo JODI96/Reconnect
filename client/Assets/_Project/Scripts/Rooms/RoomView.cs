@@ -55,8 +55,11 @@ namespace Reconnect.Client.Rooms
 
         private readonly Dictionary<Guid, AvatarView> _avatars = new();
         private readonly List<GameStation> _stations = new();
+        private readonly Dictionary<int, Seat> _seats = new();
+        private readonly Dictionary<SeatDto, Guid> _occupied = new();
         private readonly HashSet<Vector2Int> _blocked = new();
         private readonly List<Bounds> _surfaces = new();
+        private readonly List<Bounds> _obstacles = new();   // everything that blocks tiles (counters for stools)
         private readonly List<string> _missingItems = new();
         private Transform _content;
         private CameraState _savedCamera;
@@ -85,6 +88,11 @@ namespace Reconnect.Client.Rooms
 
         /// <summary>Tapped minigame station (tic-tac-toe table, quiz TV).</summary>
         public event Action<GameStation> StationTapped;
+
+        /// <summary>Tapped a chair, stool or sofa (and which place on it).</summary>
+        public event Action<Seat, int> SeatTapped;
+
+        public IReadOnlyCollection<Seat> Seats => _seats.Values;
 
         public Func<Vector2, bool> IsPointerOverUi { get; set; } = _ => false;
         public Camera Camera => roomCamera;
@@ -133,6 +141,17 @@ namespace Reconnect.Client.Rooms
             BuildFurniture(snapshot.Room.Layout);
             BuildLighting();
             Pathfinder = new RoomPathfinder(_width, _depth, _blocked);
+            foreach (var seat in _seats.Values)
+            {
+                if ((!seat.HasBackrest || IsStool(seat.name)) && NearestCounter(seat) is { } counter)
+                {
+                    // Knees under the counter only if there is room; a closed cabinet front gets the back instead.
+                    var point = seat.Points[0];
+                    var gap = Vector2.Distance(new Vector2(counter.x, counter.z), new Vector2(point.x, point.z));
+                    seat.FaceTowards(gap >= 0.8f ? counter : point + (point - counter));   // legs reach ~0.75 m forward
+                }
+                seat.ResolveApproaches(Pathfinder);
+            }
             if (groundAnchor.HasValue && Mathf.Abs(yaw) > 0.01f)
             {
                 var rotation = Quaternion.Euler(0f, yaw, 0f);
@@ -142,10 +161,18 @@ namespace Reconnect.Client.Rooms
             foreach (var player in snapshot.Players)
             {
                 AddPlayer(player, player.UserId == localUserId);
+                if (player.Seat != null)
+                {
+                    SeatPlayer(player.UserId, player.Seat, instant: true);
+                }
             }
 
             _savedCamera = CameraState.Capture(roomCamera);
             SetupCamera();
+            if (Music != null)
+            {
+                Music.Play(snapshot.Room.Theme);
+            }
             enabled = true;
         }
 
@@ -158,11 +185,18 @@ namespace Reconnect.Client.Rooms
             }
             _avatars.Clear();
             _stations.Clear();
+            _seats.Clear();
+            _occupied.Clear();
             _blocked.Clear();
             _surfaces.Clear();
+            _obstacles.Clear();
             _missingItems.Clear();
             _savedCamera?.Restore(roomCamera);
             _savedCamera = null;
+            if (Music != null)
+            {
+                Music.Stop();
+            }
             enabled = false;
         }
 
@@ -177,6 +211,7 @@ namespace Reconnect.Client.Rooms
 
         public void RemovePlayer(Guid userId)
         {
+            FreeSeatOf(userId);
             if (_avatars.Remove(userId, out var avatar))
             {
                 Destroy(avatar.gameObject);
@@ -190,6 +225,7 @@ namespace Reconnect.Client.Rooms
             {
                 return;
             }
+            FreeSeatOf(userId);   // walking stands up
             var from = avatar.NextTile;
             var goal = Pathfinder.NearestWalkable(new Vector2Int(tile.X, tile.Z), from);
             avatar.WalkAlong(Pathfinder.FindPath(from, goal));
@@ -200,6 +236,87 @@ namespace Reconnect.Client.Rooms
         }
 
         public AvatarView Avatar(Guid userId) => _avatars.TryGetValue(userId, out var avatar) ? avatar : null;
+
+        // ---------- Seats ----------
+
+        public Seat SeatFor(int item) => _seats.TryGetValue(item, out var seat) ? seat : null;
+
+        public bool IsFree(SeatDto seat, Guid exceptUser = default) =>
+            !_occupied.TryGetValue(seat, out var user) || user == exceptUser;
+
+        /// <summary>Puts the player on the seat (animated, or at once for people already sitting when I enter).</summary>
+        public void SeatPlayer(Guid userId, SeatDto seat, bool instant = false)
+        {
+            if (!_avatars.TryGetValue(userId, out var avatar) || SeatFor(seat.Item) is not { } furniture || seat.Place >= furniture.Points.Count)
+            {
+                return;
+            }
+            FreeSeatOf(userId);
+            _occupied[seat] = userId;
+            avatar.SitOn(furniture.Points[seat.Place], furniture.Facings[seat.Place], instant);
+        }
+
+        public void UnseatPlayer(Guid userId)
+        {
+            FreeSeatOf(userId);
+            Avatar(userId)?.StandUp();
+        }
+
+        /// <summary>Nearest free place (by walking distance from <paramref name="from"/>), or null.</summary>
+        public SeatDto NearestFreeSeat(Vector2Int from, float maxDistance)
+        {
+            SeatDto best = null;
+            var bestDistance = maxDistance * maxDistance;
+            foreach (var seat in _seats.Values)
+            {
+                for (var place = 0; place < seat.Points.Count; place++)
+                {
+                    var candidate = new SeatDto(seat.Item, place);
+                    var distance = (seat.Approaches[place] - from).sqrMagnitude;
+                    if (distance <= bestDistance && IsFree(candidate))
+                    {
+                        best = candidate;
+                        bestDistance = distance;
+                    }
+                }
+            }
+            return best;
+        }
+
+        /// <summary>Bar stools and chairs: turned towards the bar (their footrests would pass for a backrest).</summary>
+        private static bool IsStool(string itemId) => itemId.Contains("stool") || itemId.Contains("bar_chair");
+
+        /// <summary>Closest bar counter / table next to a stool (within 1.2 m).</summary>
+        private Vector3? NearestCounter(Seat seat)
+        {
+            var point = _content.TransformPoint(seat.Points[0]);
+            Vector3? best = null;
+            var bestDistance = 1.2f;
+            foreach (var surface in _obstacles)
+            {
+                // Counters and tables: about as high as the seat or higher, and bigger than a stool.
+                if (surface.max.y < point.y - 0.1f || surface.size.x * surface.size.z < 0.25f || surface.Contains(point))
+                {
+                    continue;
+                }
+                var closest = surface.ClosestPoint(new Vector3(point.x, surface.center.y, point.z));
+                var distance = Vector2.Distance(new Vector2(closest.x, closest.z), new Vector2(point.x, point.z));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = _content.InverseTransformPoint(closest);
+                }
+            }
+            return best;
+        }
+
+        private void FreeSeatOf(Guid userId)
+        {
+            foreach (var entry in _occupied.Where(e => e.Value == userId).ToList())
+            {
+                _occupied.Remove(entry.Key);
+            }
+        }
 
         /// <summary>Zooms out so the whole room is visible (used for previews/screenshots).</summary>
         public void FrameWholeRoom()
@@ -212,7 +329,14 @@ namespace Reconnect.Client.Rooms
 
         private float MaxViewWidth => (_width + _depth) * 0.7071f * 1.05f;
 
-        private void Awake() => enabled = false;
+        /// <summary>Background music of the room (theme track, mute switch).</summary>
+        public RoomMusic Music { get; private set; }
+
+        private void Awake()
+        {
+            enabled = false;
+            Music = GetComponent<RoomMusic>();
+        }
 
         private void Update()
         {
@@ -283,6 +407,10 @@ namespace Reconnect.Client.Rooms
             if (Physics.Raycast(ray, out var hit, 500f) && hit.collider.GetComponentInParent<GameStation>() is { } station)
             {
                 StationTapped?.Invoke(station);
+            }
+            else if (hit.collider != null && hit.collider.GetComponentInParent<Seat>() is { } seat)
+            {
+                SeatTapped?.Invoke(seat, seat.NearestPlace(_content.InverseTransformPoint(hit.point)));
             }
             else if (TryTileAt(position, out var tile))
             {
@@ -600,8 +728,12 @@ namespace Reconnect.Client.Rooms
         private void BuildFurniture(IEnumerable<RoomItemDto> layout)
         {
             // Big pieces first, so small items can be stacked onto them.
-            var items = (layout ?? Enumerable.Empty<RoomItemDto>()).OrderBy(i => IsStackable(i.ItemId) ? 1 : 0).ToList();
-            foreach (var item in items)
+            // The server knows seats by their index in the layout, so keep it through the sorting.
+            var items = (layout ?? Enumerable.Empty<RoomItemDto>())
+                .Select((item, index) => (Item: item, Index: index))
+                .OrderBy(i => IsStackable(i.Item.ItemId) ? 1 : 0)
+                .ToList();
+            foreach (var (item, index) in items)
             {
                 var pivot = new GameObject(item.ItemId).transform;
                 pivot.SetParent(_content, false);
@@ -639,6 +771,10 @@ namespace Reconnect.Client.Rooms
                 }
 
                 var bounds = Spawn(pivot, item.ItemId);
+                if (RoomSeats.PlacesFor(item.ItemId) is var places and > 0)
+                {
+                    _seats[index] = Seat.Build(pivot, _content, bounds, index, places);
+                }
                 // Only furniture standing on the floor carries small items; hanging lamps don't.
                 if (!stackable && item.Position.Y <= 0f)
                 {
@@ -828,6 +964,7 @@ namespace Reconnect.Client.Rooms
 
         private void BlockTiles(Bounds worldBounds)
         {
+            _obstacles.Add(worldBounds);
             var min = transform.InverseTransformPoint(worldBounds.min);
             var max = transform.InverseTransformPoint(worldBounds.max);
             // Shrink a little so furniture that barely touches a neighbouring tile doesn't block it.

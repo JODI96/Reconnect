@@ -143,6 +143,14 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   `tools/polyhaven_mobile.py` (Blender) auf ≤ 3k Dreiecke pro Teil reduziert; der GPU Resident Drawer (Forward+) bündelt
   die Möbel. `CrowdPerformanceTests`: volle Lobby (80 Personen, ganzer Raum) ≤ 400 Draw Calls, ≤ 80 Set-Pass-Calls,
   ≤ 400k Dreiecke (SRP Batcher: Set-Pass-Wechsel sind der teure Teil).
+- **Sitzen:** welche Möbel Sitze sind und wie viele Plätze sie haben, steht in `RoomSeats` (Contracts, Server und Client).
+  Der Server merkt sich den Platz pro Person (`Sit(item, place)` → false wenn besetzt, `StandUp`, `MoveTo` steht auf;
+  `PlayerSeated`, Snapshot enthält `Seat`), adressiert über den Index im Layout. Der Client misst Sitzhöhe und Richtung
+  am Modell selbst (`Seat`: Lehne = höchste Seite, Sitzfläche per Strahl von oben), Hocker drehen sich zur Theke – oder
+  mit dem Rücken dazu, wenn kein Beinraum ist. `AvatarView.SitOn` schiebt die Figur nach der Animation so, dass die Hüfte
+  auf der Sitzfläche liegt. Antippen eines Stuhls/Sofas oder „Sitzen“ (nächster freier Platz). `SeatingTests` prüft alle Sitztypen.
+- **Musik:** ein CC0-Titel pro Raum-Theme (OpenGameArt, `tools/fetch_music.py` prüft die Lizenz, `Music/CREDITS.md`),
+  `RoomMusic` blendet ein/aus, „Ton“/„Stumm“ im Raum wird gemerkt; Import: Streaming + Vorbis.
 - **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney` (Low-Poly, Figuren nicht mehr genutzt), dazu
   realistische **Poly-Haven-Modelle** (CC0, kommerziell frei, keine Namensnennung nötig) in `Assets/ThirdParty/PolyHaven`
   als glTF (Import über `com.unity.cloud.gltfast`, 1k-Texturen für Mobile). Neue Poly-Haven-Modelle: Namen in

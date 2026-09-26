@@ -128,6 +128,42 @@ public sealed class RoomHubTests(ReconnectApiFactory factory)
         await Assert.ThrowsAsync<HubException>(() => hub.SayAsync(new string('x', RoomGrid.MaxChatLength + 1)));
     }
 
+    [Fact]
+    public async Task People_sit_on_seats_one_per_place_and_stand_up_by_walking()
+    {
+        var (room, anna, ben) = await RoomWithTwoUsersAsync();
+        // Layout: a table (no seat), a chair (1 place), a sofa (2 places).
+        var layout = new UpdateRoomLayoutRequest(new[]
+        {
+            new RoomItemDto("tableCoffee", new Vector3Dto(2, 0, 2), 0),
+            new RoomItemDto("chair", new Vector3Dto(4, 0, 2), 0),
+            new RoomItemDto("loungeSofa", new Vector3Dto(6, 0, 2), 0),
+        });
+        (await anna.Client.PutAsJsonAsync(ApiRoutes.Rooms.Layout(room.Id), layout, TestUsers.Json)).EnsureSuccessStatusCode();
+        await using var annaHub = await RoomHubClient.ConnectAsync(factory, anna);
+        await using var benHub = await RoomHubClient.ConnectAsync(factory, ben);
+        await annaHub.JoinAsync(room.Id);
+        await benHub.JoinAsync(room.Id);
+
+        Assert.True(await annaHub.SitAsync(1, 0));
+        await RoomHubClient.Eventually(() => benHub.Seats.Any(s => s.UserId == anna.Id && s.Seat == new SeatDto(1, 0)), "Ben sees Anna sit down");
+        Assert.False(await benHub.SitAsync(1, 0), "the chair is taken");
+        Assert.True(await benHub.SitAsync(2, 1), "a free place on the sofa");
+        await Assert.ThrowsAsync<HubException>(() => benHub.SitAsync(0, 0));   // a table is no seat
+        await Assert.ThrowsAsync<HubException>(() => benHub.SitAsync(2, 2));   // the sofa has two places
+
+        // Someone joining later sees who sits where.
+        await using var carlHub = await RoomHubClient.ConnectAsync(factory, await factory.RegisterAsync("Carl"));
+        var snapshot = await carlHub.JoinAsync(room.Id);
+        Assert.Equal(new SeatDto(1, 0), snapshot.Players.Single(p => p.UserId == anna.Id).Seat);
+
+        // Walking stands up and frees the chair.
+        await annaHub.MoveToAsync(3, 5);
+        Assert.True(await carlHub.SitAsync(1, 0));
+        await benHub.StandUpAsync();
+        await RoomHubClient.Eventually(() => annaHub.Seats.Any(s => s.UserId == ben.Id && s.Seat == null), "Anna sees Ben stand up");
+    }
+
     private async Task<(RoomDto Room, TestUser Anna, TestUser Ben)> RoomWithTwoUsersAsync()
     {
         var anna = await factory.RegisterAsync("Anna");

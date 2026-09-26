@@ -21,6 +21,7 @@ public interface IRoomClient
     Task PlayerMoved(PlayerMovedDto move);
     Task ChatMessage(RoomChatMessageDto message);
     Task PlayerEmote(EmoteDto emote);
+    Task PlayerSeated(PlayerSeatDto seat);
     Task TicTacToeUpdated(TicTacToeStateDto state);
     Task QuizUpdated(QuizStateDto state);
     Task QueueUpdated(QueueStatusDto status);
@@ -114,11 +115,47 @@ internal sealed class RoomHub(
         var me = await CurrentEntryAsync();
         x = Math.Clamp(x, 0, me.Width - 1);
         z = Math.Clamp(z, 0, me.Depth - 1);
-        await presence.UpdateTileAsync(me, x, z);
+        await presence.UpdateTileAsync(me, x, z);   // walking also stands up
 
         var tile = new TilePosition(x, z);
         await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).PlayerMoved(new PlayerMovedDto(me.UserId, tile));
         return tile;
+    }
+
+    /// <summary>
+    /// Sits down on place <paramref name="place"/> of layout item <paramref name="item"/> – if that item is a seat
+    /// (<see cref="RoomSeats"/>) and nobody else sits there. Returns false when the place is taken.
+    /// </summary>
+    public async Task<bool> Sit(int item, int place)
+    {
+        var me = await CurrentEntryAsync();
+        var room = await rooms.FindVisibleAsync(me.UserId, me.RoomId, Context.ConnectionAborted)
+            ?? throw new HubException("Room not found.");
+        if (item < 0 || item >= room.Layout.Count || place < 0 || place >= RoomSeats.PlacesFor(room.Layout[item].ItemId))
+        {
+            throw new HubException("Hier kann man nicht sitzen.");
+        }
+
+        var seat = new SeatDto(item, place);
+        var players = await presence.GetPlayersAsync(me.RoomId);
+        if (players.Any(p => p.UserId != me.UserId && p.Seat == seat))
+        {
+            return false;
+        }
+        await presence.UpdateSeatAsync(me, seat);
+        await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).PlayerSeated(new PlayerSeatDto(me.UserId, seat));
+        return true;
+    }
+
+    public async Task StandUp()
+    {
+        var me = await CurrentEntryAsync();
+        if (me.Seat is null)
+        {
+            return;
+        }
+        await presence.UpdateSeatAsync(me, null);
+        await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).PlayerSeated(new PlayerSeatDto(me.UserId, null));
     }
 
     public async Task Say(string text)
@@ -388,5 +425,5 @@ internal sealed class RoomHub(
     }
 
     private static RoomPlayerDto ToDto(PresenceEntry entry) =>
-        new(entry.UserId, entry.DisplayName, new TilePosition(entry.X, entry.Z));
+        new(entry.UserId, entry.DisplayName, new TilePosition(entry.X, entry.Z), entry.Seat);
 }

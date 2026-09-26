@@ -49,6 +49,8 @@ namespace Reconnect.Client.Editor
         private const string BuildingsMaterialPath = MaterialsDir + "/Buildings.mat";
         private const string ItemCatalogPath = SettingsDir + "/ItemCatalog.asset";
         private const string AvatarCatalogPath = SettingsDir + "/AvatarCatalog.asset";
+        private const string MusicCatalogPath = SettingsDir + "/MusicCatalog.asset";
+        private const string MusicDir = "Assets/ThirdParty/Music";
         private const string PostProcessingPath = SettingsDir + "/PostProcessing.asset";
         private const string AnimationDir = Root + "/Animation";
         private const string AvatarControllerPath = AnimationDir + "/Avatar.controller";
@@ -78,6 +80,7 @@ namespace Reconnect.Client.Editor
             CreateCityMaterials();
             CreateItemCatalog();
             CreateAvatarCatalog();
+            CreateMusicCatalog();
             CreatePostProcessing();
             AssetDatabase.SaveAssets();
 
@@ -193,6 +196,21 @@ namespace Reconnect.Client.Editor
             {
                 throw new InvalidOperationException("Models not imported: " + string.Join(", ", missing));
             }
+            EditorUtility.SetDirty(catalog);
+        }
+
+        /// <summary>One CC0 track per room theme: file name = theme id (tools/fetch_music.py), "default" for the rest.</summary>
+        private static void CreateMusicCatalog()
+        {
+            var clips = AssetDatabase.FindAssets("t:AudioClip", new[] { MusicDir })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .ToDictionary(path => Path.GetFileNameWithoutExtension(path), AssetDatabase.LoadAssetAtPath<AudioClip>);
+            var catalog = LoadOrCreate<MusicCatalog>(MusicCatalogPath);
+            catalog.entries = clips.Where(c => c.Key != "default")
+                .OrderBy(c => c.Key)
+                .Select(c => new MusicCatalog.Entry { theme = c.Key, clip = c.Value })
+                .ToArray();
+            catalog.fallback = clips.TryGetValue("default", out var fallback) ? fallback : null;
             EditorUtility.SetDirty(catalog);
         }
 
@@ -345,6 +363,8 @@ namespace Reconnect.Client.Editor
                 ("waterMaterial", Load<Material>(WaterMaterialPath)),
                 ("itemCatalog", Load<ItemCatalog>(ItemCatalogPath)),
                 ("avatarCatalog", Load<AvatarCatalog>(AvatarCatalogPath)));
+            roomView.gameObject.AddComponent<AudioSource>();
+            Assign(roomView.gameObject.AddComponent<RoomMusic>(), ("catalog", Load<MusicCatalog>(MusicCatalogPath)));
 
             var app = new GameObject("App");
             var document = app.AddComponent<UIDocument>();

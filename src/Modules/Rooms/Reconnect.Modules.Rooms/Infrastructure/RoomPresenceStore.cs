@@ -1,11 +1,14 @@
 using System.Text.Json;
+using Reconnect.Contracts.Rooms;
 using StackExchange.Redis;
 
 namespace Reconnect.Modules.Rooms.Infrastructure;
 
 /// <summary>A user standing in a room, reachable via one SignalR connection.</summary>
 /// <param name="Width">Room size, kept with the entry so moves can be validated without a database call.</param>
-internal sealed record PresenceEntry(Guid RoomId, Guid UserId, string ConnectionId, string DisplayName, int X, int Z, int Width, int Depth);
+/// <param name="Seat">The seat the user sits on (cleared by walking).</param>
+internal sealed record PresenceEntry(
+    Guid RoomId, Guid UserId, string ConnectionId, string DisplayName, int X, int Z, int Width, int Depth, SeatDto? Seat = null);
 
 /// <summary>
 /// Who is in which room right now. Lives in Redis so that several API instances (and restarts)
@@ -26,7 +29,11 @@ internal interface IRoomPresenceStore
 
     Task<PresenceEntry?> GetByConnectionAsync(string connectionId);
 
+    /// <summary>Moves the user to a tile (standing up from a seat).</summary>
     Task UpdateTileAsync(PresenceEntry entry, int x, int z);
+
+    /// <summary>Sits the user down (or stands up with null).</summary>
+    Task UpdateSeatAsync(PresenceEntry entry, SeatDto? seat);
 
     /// <summary>Removes the user from a room they left by taking the lift (the connection now belongs to the new room).</summary>
     Task RemoveFromRoomAsync(Guid roomId, Guid userId);
@@ -99,7 +106,10 @@ internal sealed class RedisRoomPresenceStore(IConnectionMultiplexer redis) : IRo
     }
 
     public Task UpdateTileAsync(PresenceEntry entry, int x, int z) =>
-        Db.HashSetAsync(RoomKey(entry.RoomId), entry.UserId.ToString(), JsonSerializer.Serialize(entry with { X = x, Z = z }));
+        Db.HashSetAsync(RoomKey(entry.RoomId), entry.UserId.ToString(), JsonSerializer.Serialize(entry with { X = x, Z = z, Seat = null }));
+
+    public Task UpdateSeatAsync(PresenceEntry entry, SeatDto? seat) =>
+        Db.HashSetAsync(RoomKey(entry.RoomId), entry.UserId.ToString(), JsonSerializer.Serialize(entry with { Seat = seat }));
 
     public Task RemoveFromRoomAsync(Guid roomId, Guid userId) => Db.HashDeleteAsync(RoomKey(roomId), userId.ToString());
 

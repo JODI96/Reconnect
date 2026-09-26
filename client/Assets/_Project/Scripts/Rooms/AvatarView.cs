@@ -27,7 +27,19 @@ namespace Reconnect.Client.Rooms
             ["no"] = ("Head Gestures", 1.3f),
         };
 
+        private const float SitSeconds = 0.6f;   // sliding onto / off the seat
+        private const float HipsAboveSeat = 0.1f;
+
         private readonly Queue<Vector2Int> _path = new();
+        private readonly List<Vector2Int> _afterStandingUp = new();
+        private Transform _hips;
+        private GameObject _ring;
+        private bool _seated;
+        private Vector3 _seatPoint;
+        private float _seatYaw;
+        private float _seatBlend;
+        private Vector3 _standPosition;
+        private Quaternion _standRotation;
         private Animator _animator;
         private UprightPosture _posture;
         private bool _sitting;
@@ -40,6 +52,11 @@ namespace Reconnect.Client.Rooms
         public Guid UserId { get; private set; }
         public string DisplayName { get; private set; }
         public Vector2Int Tile { get; private set; }
+
+        public bool IsSeated => _seated;
+
+        /// <summary>Reached the end of a walk (e.g. the tile in front of a chair).</summary>
+        public event Action<AvatarView> Arrived;
 
         /// <summary>World position above the head – anchor for name label and speech bubble.</summary>
         public Vector3 LabelAnchor => transform.position + Vector3.up * 2.0f;
@@ -63,6 +80,7 @@ namespace Reconnect.Client.Rooms
                 }
                 avatar._animator.runtimeAnimatorController = catalog.animator;
                 avatar._posture = figure.GetComponent<UprightPosture>();
+                avatar._hips = avatar._animator.isHuman ? avatar._animator.GetBoneTransform(HumanBodyBones.Hips) : null;
                 avatar._animator.applyRootMotion = false;
                 foreach (var renderer in figure.GetComponentsInChildren<Renderer>())
                 {
@@ -86,6 +104,7 @@ namespace Reconnect.Client.Rooms
                 material.SetColor("_BaseColor", new Color(1f, 0.36f, 0.54f));
                 ring.GetComponent<Renderer>().sharedMaterial = material;
                 Destroy(ring.GetComponent<Collider>());
+                avatar._ring = ring;
             }
 
             avatar.UserId = player.UserId;
@@ -94,21 +113,11 @@ namespace Reconnect.Client.Rooms
             return avatar;
         }
 
-        /// <summary>Plays a gesture ("wave", "yes", "no"), jumps ("jump") or toggles sitting ("sit").</summary>
+        /// <summary>Plays a gesture ("wave", "yes", "no") or jumps ("jump"). Sitting happens on seats: <see cref="SitOn"/>.</summary>
         public void PlayEmote(string emote)
         {
-            if (_animator == null)
+            if (_animator == null || emote == "sit" || (_seated && emote == "jump"))
             {
-                return;
-            }
-            if (emote == "sit")
-            {
-                _sitting = !_sitting;
-                _animator.SetBool(SittingParameter, _sitting);
-                if (_posture != null)
-                {
-                    _posture.Sitting = _sitting;
-                }
                 return;
             }
             if (Gestures.TryGetValue(emote, out var gesture))
@@ -118,6 +127,69 @@ namespace Reconnect.Client.Rooms
                 _gestureUntil = Time.time + gesture.Seconds;
             }
             _animator.SetTrigger(emote);
+        }
+
+        /// <summary>
+        /// Sits down on a seat: turns to face <paramref name="yaw"/> and slides so the hips come to rest on
+        /// <paramref name="point"/> (room coordinates) – fits chairs, sofas and bar stools alike.
+        /// </summary>
+        /// <param name="instant">Already sitting when I enter the room.</param>
+        public void SitOn(Vector3 point, float yaw, bool instant = false)
+        {
+            _path.Clear();
+            _afterStandingUp.Clear();
+            _walking = false;
+            if (!_seated)
+            {
+                _standPosition = transform.localPosition;
+                _standRotation = transform.localRotation;
+            }
+            _seated = true;
+            _sitting = true;
+            _seatPoint = point;
+            _seatYaw = yaw;
+            if (_animator != null)
+            {
+                _animator.SetBool(WalkingParameter, false);
+                _animator.SetBool(TalkingParameter, false);
+                _animator.SetBool(SittingParameter, true);
+                if (instant)
+                {
+                    _animator.Play("Sitting", 0, 0f);
+                }
+            }
+            if (_posture != null)
+            {
+                _posture.Walking = false;
+                _posture.Sitting = true;
+            }
+            if (_ring != null)
+            {
+                _ring.SetActive(false);
+            }
+            if (instant)
+            {
+                _seatBlend = 1f;
+            }
+        }
+
+        /// <summary>Gets up and steps back to the tile in front of the seat.</summary>
+        public void StandUp()
+        {
+            if (!_seated)
+            {
+                return;
+            }
+            _seated = false;
+            _sitting = false;
+            if (_animator != null)
+            {
+                _animator.SetBool(SittingParameter, false);
+            }
+            if (_posture != null)
+            {
+                _posture.Sitting = false;
+            }
         }
 
         /// <summary>Talking body language for a few seconds (someone wrote in the chat).</summary>
@@ -185,6 +257,8 @@ namespace Reconnect.Client.Rooms
         public void Teleport(Vector2Int tile)
         {
             _path.Clear();
+            _seated = false;
+            _seatBlend = 0f;
             _walking = false;
             Tile = tile;
             transform.localPosition = RoomView.TileCenter(tile);
@@ -196,6 +270,14 @@ namespace Reconnect.Client.Rooms
         /// <summary>Walks through the given tiles (from the pathfinder), finishing the current step first.</summary>
         public void WalkAlong(IReadOnlyList<Vector2Int> path)
         {
+            if (_seated || _seatBlend > 0f)
+            {
+                // Get up first; the walk starts once standing (LateUpdate).
+                StandUp();
+                _afterStandingUp.Clear();
+                _afterStandingUp.AddRange(path);
+                return;
+            }
             _path.Clear();
             foreach (var tile in path)
             {
@@ -231,13 +313,42 @@ namespace Reconnect.Client.Rooms
             }
         }
 
+        private void LateUpdate()
+        {
+            if (_seatBlend <= 0f && !_seated)
+            {
+                return;
+            }
+            _seatBlend = Mathf.MoveTowards(_seatBlend, _seated ? 1f : 0f, Time.deltaTime / SitSeconds);
+            var t = Mathf.SmoothStep(0f, 1f, _seatBlend);
+            transform.localRotation = Quaternion.Slerp(_standRotation, Quaternion.Euler(0f, _seatYaw, 0f), t);
+            if (_hips != null && transform.parent != null)
+            {
+                // Where the root must be so that the animated hips rest on the seat.
+                var hipsFromRoot = transform.parent.InverseTransformVector(_hips.position - transform.position);
+                var onSeat = _seatPoint + Vector3.up * HipsAboveSeat - hipsFromRoot;
+                transform.localPosition = Vector3.Lerp(_standPosition, onSeat, t);
+            }
+            if (_seatBlend <= 0f)
+            {
+                transform.localPosition = _standPosition;
+                if (_ring != null)
+                {
+                    _ring.SetActive(true);
+                }
+                if (_afterStandingUp.Count > 0)
+                {
+                    var path = new List<Vector2Int>(_afterStandingUp);
+                    _afterStandingUp.Clear();
+                    WalkAlong(path);
+                }
+            }
+        }
+
         private void NextStep()
         {
+            var wasWalking = _walking;
             _walking = _path.Count > 0;
-            if (_walking && _sitting)
-            {
-                PlayEmote("sit");   // stand up before walking
-            }
             if (_animator != null)
             {
                 _animator.SetBool(WalkingParameter, _walking);
@@ -249,6 +360,10 @@ namespace Reconnect.Client.Rooms
             if (_walking)
             {
                 _stepTarget = RoomView.TileCenter(_path.Dequeue());
+            }
+            else if (wasWalking)
+            {
+                Arrived?.Invoke(this);
             }
         }
 

@@ -26,6 +26,7 @@ namespace Reconnect.Client.Rooms
         public event Action<PlayerMovedDto> PlayerMoved;
         public event Action<RoomChatMessageDto> ChatReceived;
         public event Action<EmoteDto> EmoteReceived;
+        public event Action<PlayerSeatDto> PlayerSeated;
         public event Action<TicTacToeStateDto> TicTacToeUpdated;
         public event Action<QuizStateDto> QuizUpdated;
         public event Action<QueueStatusDto> QueueUpdated;
@@ -44,6 +45,10 @@ namespace Reconnect.Client.Rooms
         public Task SayAsync(string text) => _connection.InvokeAsync(RoomHubContract.Server.Say, text);
 
         public Task EmoteAsync(string emote) => _connection.InvokeAsync(RoomHubContract.Server.Emote, emote);
+
+        public Task<bool> SitAsync(SeatDto seat) => _connection.InvokeAsync<bool>(RoomHubContract.Server.Sit, seat.Item, seat.Place);
+
+        public Task StandUpAsync() => _connection.InvokeAsync(RoomHubContract.Server.StandUp);
 
         public Task<TicTacToeStateDto> TicTacToeJoinAsync() => _connection.InvokeAsync<TicTacToeStateDto>(RoomHubContract.Server.TicTacToeJoin);
 
@@ -102,6 +107,7 @@ namespace Reconnect.Client.Rooms
             connection.On<PlayerMovedDto>(RoomHubContract.Client.PlayerMoved, m => PlayerMoved?.Invoke(m));
             connection.On<RoomChatMessageDto>(RoomHubContract.Client.ChatMessage, m => ChatReceived?.Invoke(m));
             connection.On<EmoteDto>(RoomHubContract.Client.PlayerEmote, e => EmoteReceived?.Invoke(e));
+            connection.On<PlayerSeatDto>(RoomHubContract.Client.PlayerSeated, s => PlayerSeated?.Invoke(s));
             connection.On<TicTacToeStateDto>(RoomHubContract.Client.TicTacToeUpdated, t => TicTacToeUpdated?.Invoke(t));
             connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => QuizUpdated?.Invoke(q));
             connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdated?.Invoke(q));

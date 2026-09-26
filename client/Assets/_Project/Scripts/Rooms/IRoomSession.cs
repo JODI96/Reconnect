@@ -18,6 +18,9 @@ namespace Reconnect.Client.Rooms
         event Action<PlayerMovedDto> PlayerMoved;
         event Action<RoomChatMessageDto> ChatReceived;
         event Action<EmoteDto> EmoteReceived;
+
+        /// <summary>Someone sat down (Seat) or stood up (Seat null). A move stands up as well.</summary>
+        event Action<PlayerSeatDto> PlayerSeated;
         event Action<TicTacToeStateDto> TicTacToeUpdated;
         event Action<QuizStateDto> QuizUpdated;
 
@@ -40,6 +43,11 @@ namespace Reconnect.Client.Rooms
 
         /// <summary>One of <c>Emotes.All</c>; shown to the others (play it locally yourself).</summary>
         Task EmoteAsync(string emote);
+
+        /// <summary>Sits down on a seat of the layout; false when someone else sits there.</summary>
+        Task<bool> SitAsync(SeatDto seat);
+
+        Task StandUpAsync();
 
         Task<TicTacToeStateDto> TicTacToeJoinAsync();
         Task<TicTacToeStateDto> TicTacToeMoveAsync(int cell);

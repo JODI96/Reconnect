@@ -79,6 +79,16 @@ namespace Reconnect.Client.UI.Screens
             _liftPanel = Q<VisualElement>("lift-panel");
             _queueBanner = Q<VisualElement>("queue-banner");
             Q<Button>("lift").clicked += OpenLift;
+            var music = Q<Button>("music");
+            ShowMusicState(music);
+            music.clicked += () =>
+            {
+                if (_room.Music != null)
+                {
+                    _room.Music.Muted = !_room.Music.Muted;
+                }
+                ShowMusicState(music);
+            };
             Q<Button>("lift-close").clicked += CloseLift;
             Q<Button>("queue-leave").clicked += () => RunAsync(async () =>
             {
@@ -103,6 +113,8 @@ namespace Reconnect.Client.UI.Screens
             _session.ChatReceived += OnChat;
             _session.Disconnected += OnDisconnected;
             _session.EmoteReceived += OnEmote;
+            _session.PlayerSeated += OnPlayerSeated;
+            _room.SeatTapped += OnSeatTapped;
             _session.TicTacToeUpdated += _ticTacToe.Render;
             _session.QuizUpdated += _quiz.Render;
             _session.QueueUpdated += OnQueueUpdated;
@@ -123,6 +135,12 @@ namespace Reconnect.Client.UI.Screens
             _session.ChatReceived -= OnChat;
             _session.Disconnected -= OnDisconnected;
             _session.EmoteReceived -= OnEmote;
+            _session.PlayerSeated -= OnPlayerSeated;
+            _room.SeatTapped -= OnSeatTapped;
+            if (_room.Avatar(_localUserId) is { } me)
+            {
+                me.Arrived -= OnArrived;
+            }
             _session.TicTacToeUpdated -= _ticTacToe.Render;
             _session.QuizUpdated -= _quiz.Render;
             _session.QueueUpdated -= OnQueueUpdated;
@@ -206,6 +224,14 @@ namespace Reconnect.Client.UI.Screens
             {
                 AddOverlay(player.UserId, player.DisplayName);
             }
+        }
+
+        /// <summary>"Ton" when music plays, crossed out look when muted.</summary>
+        private void ShowMusicState(Button button)
+        {
+            var muted = _room.Music == null || _room.Music.Muted;
+            button.text = muted ? "Stumm" : "Ton";
+            button.EnableInClassList("button--off", muted);
         }
 
         // ---------- Lift ----------
@@ -376,9 +402,21 @@ namespace Reconnect.Client.UI.Screens
 
         private void OnTileTapped(Vector2Int tile)
         {
+            _pendingSeat = null;
+            WalkTo(tile);
+        }
+
+        private void WalkTo(Vector2Int tile)
+        {
             var me = _room.Avatar(_localUserId);
             if (me == null)
             {
+                return;
+            }
+            if (me.IsSeated && me.Tile == tile)
+            {
+                _room.UnseatPlayer(_localUserId);   // tapped the floor right in front: just stand up
+                RunAsync(() => _session.StandUpAsync());
                 return;
             }
 
@@ -421,8 +459,108 @@ namespace Reconnect.Client.UI.Screens
             UpdateEmoteBar();
         }
 
+        // ---------- Sitting ----------
+
+        private SeatDto _pendingSeat;
+
+        /// <summary>Walks to the tile in front of the place, then sits down (if it is still free).</summary>
+        private void OnSeatTapped(Seat seat, int place)
+        {
+            var target = new SeatDto(seat.Item, place);
+            if (!_room.IsFree(target, _localUserId))
+            {
+                SetStatus(_status, "Hier sitzt schon jemand.", isError: false);
+                Root.schedule.Execute(() => SetStatus(_status, null)).StartingIn(2000);
+                return;
+            }
+            GoSit(target);
+        }
+
+        private void GoSit(SeatDto target)
+        {
+            var me = _room.Avatar(_localUserId);
+            var seat = _room.SeatFor(target.Item);
+            if (me == null || seat == null)
+            {
+                return;
+            }
+            _pendingSeat = target;
+            me.Arrived -= OnArrived;
+            me.Arrived += OnArrived;
+            var approach = seat.Approaches[target.Place];
+            if (me.Tile == approach && !me.IsSeated)
+            {
+                OnArrived(me);
+                return;
+            }
+            WalkTo(approach);
+        }
+
+        private void OnArrived(AvatarView me)
+        {
+            var target = _pendingSeat;
+            _pendingSeat = null;
+            if (target == null || me.IsSeated)
+            {
+                return;
+            }
+            RunAsync(async () =>
+            {
+                if (await _session.SitAsync(target))
+                {
+                    _room.SeatPlayer(_localUserId, target);
+                }
+                else
+                {
+                    SetStatus(_status, "Jemand war schneller – der Platz ist besetzt.", isError: false);
+                    Root.schedule.Execute(() => SetStatus(_status, null)).StartingIn(2500);
+                }
+            });
+        }
+
+        /// <summary>The "Sitzen" button: nearest free seat within a few metres.</summary>
+        private void SitNearby()
+        {
+            var me = _room.Avatar(_localUserId);
+            if (me == null)
+            {
+                return;
+            }
+            if (me.IsSeated)
+            {
+                _room.UnseatPlayer(_localUserId);
+                RunAsync(() => _session.StandUpAsync());
+                return;
+            }
+            var seat = _room.NearestFreeSeat(me.Tile, maxDistance: 8f);
+            if (seat == null)
+            {
+                SetStatus(_status, "Kein freier Sitzplatz in der Nähe – tippe auf einen Stuhl oder ein Sofa.", isError: false);
+                Root.schedule.Execute(() => SetStatus(_status, null)).StartingIn(3000);
+                return;
+            }
+            GoSit(seat);
+        }
+
+        private void OnPlayerSeated(PlayerSeatDto seated)
+        {
+            if (seated.Seat == null)
+            {
+                _room.UnseatPlayer(seated.UserId);
+            }
+            else
+            {
+                _room.SeatPlayer(seated.UserId, seated.Seat);
+            }
+        }
+
         private void PlayEmote(string emote)
         {
+            if (emote == Emotes.Sit)
+            {
+                SitNearby();
+                return;
+            }
             _room.Avatar(_localUserId)?.PlayEmote(emote);
             RunGameAction(() => _session.EmoteAsync(emote), null);
         }
