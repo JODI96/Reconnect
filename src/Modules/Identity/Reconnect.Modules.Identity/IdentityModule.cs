@@ -75,6 +75,7 @@ public sealed class IdentityModule : IModule
                 ValidAudience = jwt.Value.Audience,
                 IssuerSigningKey = TokenService.CreateSigningKey(jwt.Value.SigningKey),
                 NameClaimType = ClaimsPrincipalExtensions.SubjectClaim,
+                RoleClaimType = ClaimsPrincipalExtensions.RoleClaim,
                 ClockSkew = TimeSpan.FromSeconds(30),
             });
 

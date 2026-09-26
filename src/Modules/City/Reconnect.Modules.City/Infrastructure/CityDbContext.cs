@@ -10,6 +10,7 @@ internal sealed class CityDbContext(DbContextOptions<CityDbContext> options) : D
     public const string Schema = "city";
 
     public DbSet<Building> Buildings => Set<Building>();
+    public DbSet<MapUsage> MapUsage => Set<MapUsage>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -27,6 +28,13 @@ internal sealed class CityDbContext(DbContextOptions<CityDbContext> options) : D
             building.HasIndex(b => b.Location).HasMethod("gist");
 
             building.HasData(SampleBuildings);
+        });
+
+        builder.Entity<MapUsage>(usage =>
+        {
+            usage.ToTable("map_usage");
+            usage.HasKey(u => new { u.UserId, u.Month });
+            usage.HasIndex(u => new { u.Month, u.IsPremium });
         });
     }
 

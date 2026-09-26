@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Reconnect.Modules.Identity.Infrastructure;
 using Reconnect.Modules.Identity.Public;
 using Reconnect.SharedKernel.Events;
+using Reconnect.SharedKernel.Web;
 
 namespace Reconnect.Modules.Identity.Features;
 
@@ -17,7 +18,7 @@ namespace Reconnect.Modules.Identity.Features;
 /// </summary>
 internal static partial class DevAdminSeeder
 {
-    public const string AdminRole = "Admin";
+    private const string AdminRole = AppRoles.Admin;
 
     public static async Task SeedIfEnabledAsync(IServiceProvider services, CancellationToken ct)
     {

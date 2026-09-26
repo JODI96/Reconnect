@@ -12,6 +12,9 @@ namespace Reconnect.Api.Tests.Infrastructure;
 /// </summary>
 public sealed class ReconnectApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    public const string GoogleTestKey = "google-test-key";
+    public const int FreeGoogleSessions = 2;
+
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgis/postgis:17-3.5").Build();
     private readonly RedisContainer _redis = new RedisBuilder("redis:7-alpine").Build();
 
@@ -35,6 +38,9 @@ public sealed class ReconnectApiFactory : WebApplicationFactory<Program>, IAsync
         // Many test users share one client IP – the limits themselves are tested separately.
         builder.UseSetting("RateLimiting:AuthPerMinute", "100000");
         builder.UseSetting("RateLimiting:WritesPerMinute", "100000");
+        builder.UseSetting("Maps:Google:ApiKey", GoogleTestKey);
+        builder.UseSetting("Maps:FreeGoogleSessionsPerMonth", FreeGoogleSessions.ToString());
+        builder.UseSetting("Maps:MonthlyFreeGoogleSessionBudget", "100000");
     }
 }
 

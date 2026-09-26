@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Reconnect.Contracts.Auth;
 using Reconnect.Modules.Identity.Infrastructure;
+using Reconnect.SharedKernel.Web;
 
 namespace Reconnect.Modules.Identity.Features;
 
@@ -33,7 +34,7 @@ internal sealed class JwtOptions
     public TimeSpan RefreshTokenLifetime { get; set; } = TimeSpan.FromDays(30);
 }
 
-/// <summary>Issues JWT access tokens and rotating refresh tokens.</summary>
+/// <summary>Issues JWT access tokens (with the user's roles as "role" claims) and rotating refresh tokens.</summary>
 internal sealed class TokenService(IdentityDbContext db, IOptions<JwtOptions> options, TimeProvider time)
 {
     private readonly JwtOptions _options = options.Value;
@@ -43,6 +44,10 @@ internal sealed class TokenService(IdentityDbContext db, IOptions<JwtOptions> op
         var now = time.GetUtcNow();
         var accessExpires = now.Add(_options.AccessTokenLifetime);
         var refreshExpires = now.Add(_options.RefreshTokenLifetime);
+        var roles = await db.UserRoles
+            .Where(ur => ur.UserId == user.Id)
+            .Join(db.Roles, ur => ur.RoleId, r => r.Id, (_, r) => r.Name!)
+            .ToListAsync(ct);
 
         var accessToken = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
         {
@@ -56,6 +61,7 @@ internal sealed class TokenService(IdentityDbContext db, IOptions<JwtOptions> op
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                .. roles.Select(role => new Claim(ClaimsPrincipalExtensions.RoleClaim, role)),
             ]),
             SigningCredentials = new SigningCredentials(CreateSigningKey(_options.SigningKey), SecurityAlgorithms.HmacSha256),
         });

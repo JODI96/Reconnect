@@ -18,11 +18,19 @@ var redis = builder.AddRedis("redis");
 var storage = builder.AddAzureStorage("storage").RunAsEmulator(azurite => azurite.WithDataVolume());
 var blobs = storage.AddBlobs("blobs");
 
-builder.AddProject<Projects.Reconnect_Api>("api")
+var api = builder.AddProject<Projects.Reconnect_Api>("api")
     .WithReference(database).WaitFor(database)
     .WithReference(redis).WaitFor(redis)
     .WithReference(blobs).WaitFor(blobs)
     .WithEnvironment("Jwt__SigningKey", jwtSigningKey)
     .WithExternalHttpEndpoints();
+
+// Optional: Google Photorealistic 3D Tiles (without a key everyone gets swisstopo). Set once:
+// dotnet user-secrets set "Parameters:google-maps-api-key" "<key>" --project src/Reconnect.AppHost
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Parameters:google-maps-api-key"]))
+{
+    var googleMapsKey = builder.AddParameter("google-maps-api-key", secret: true);
+    api.WithEnvironment("Maps__Google__ApiKey", googleMapsKey);
+}
 
 builder.Build().Run();

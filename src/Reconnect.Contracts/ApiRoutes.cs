@@ -41,6 +41,15 @@ namespace Reconnect.Contracts
             public const string Nearby = Group + "/nearby";
         }
 
+        public static class Maps
+        {
+            public const string Path = "/maps";
+            public const string Group = Version + Path;
+
+            /// <summary>POST: which city map this app session gets (Google 3D or swisstopo).</summary>
+            public const string Session = Group + "/session";
+        }
+
         public static class Likes
         {
             public const string Path = "/likes";
