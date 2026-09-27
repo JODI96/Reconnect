@@ -18,8 +18,11 @@ namespace Reconnect.Client.Editor
     {
         private const string Dir = "Assets/_Project/Build/Merged";
 
-        /// <summary>Models whose parts are found by name (chess pieces for the piece pictures).</summary>
-        private static readonly HashSet<string> KeepParts = new() { "ph-chess_set" };
+        /// <summary>
+        /// Models whose parts are found by name: chess pieces for the piece pictures, potted plants whose own pot is hidden
+        /// when they stand in one of our planters.
+        /// </summary>
+        private static readonly HashSet<string> KeepParts = new() { "ph-chess_set", "ph-potted_plant_01", "ph-potted_plant_02" };
 
         /// <summary>The merged prefab for the model, or the model itself when it can't or needn't be merged.</summary>
         public static GameObject Merge(string itemId, GameObject model)

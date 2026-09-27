@@ -603,10 +603,10 @@ MonoBehaviour:
     model: {fileID: -6375022808265410148, guid: 50aa65a35166edc45ad13eae52f7dc8c, type: 3}
     scale: 1
   - itemId: ph-potted_plant_01
-    model: {fileID: 1273474595892133580, guid: 3308dac7fd0c1824c869173bb3f8d3b9, type: 3}
+    model: {fileID: 8771091787928289351, guid: b051a0a70a6d719418beff8878a59272, type: 3}
     scale: 1
   - itemId: ph-potted_plant_02
-    model: {fileID: 2799811282817360062, guid: 80c3c05a81bd4d140802a8325c759616, type: 3}
+    model: {fileID: 8771091787928289351, guid: f76f0c1c3b77a2847b87811d7be836d1, type: 3}
     scale: 1
   - itemId: ph-potted_plant_04
     model: {fileID: 8949493264931439018, guid: 16656ac08ba23cd40a612e98fa6775a3, type: 3}

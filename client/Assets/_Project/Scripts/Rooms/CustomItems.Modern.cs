@@ -1148,16 +1148,24 @@ namespace Reconnect.Client.Rooms
                 Sphere(pivot, Lit(new Color(0.25f, 0.45f, 0.22f), 0.1f), new Vector3(0f, height + 0.4f, 0f), Vector3.one * 0.7f);
                 return;
             }
-            // The model's own pot sinks right into ours (only the plant shows above the rim).
+            // Only the plant goes into our pot: the model's own pot, soil and pebbles are hidden, its soil level sits on ours.
+            foreach (var part in plant.GetComponentsInChildren<Renderer>(true))
+            {
+                var name = part.name;
+                if (name.EndsWith("_pot") || name.EndsWith("_dirt") || name.EndsWith("_pebbles"))
+                {
+                    part.enabled = false;
+                }
+            }
             var scale = type == "bush" ? radius / 0.3f * 1.2f : 1f;
             plant.transform.localScale = Vector3.one * scale;
-            var ownPot = type switch
+            var ownSoil = type switch
             {
-                "tall" => 0.3f,
-                "leafy" => 0.4f,
-                _ => 0.3f,
+                "tall" => 0.27f,     // no pot of its own: the trunk stands a little deeper
+                "leafy" => 0.52f,    // potted_plant_01: pebbles at 0.52 m
+                _ => 0.33f,          // potted_plant_02: soil at 0.33 m
             };
-            plant.transform.localPosition = new Vector3(0f, height - 0.03f - ownPot * scale, 0f);
+            plant.transform.localPosition = new Vector3(0f, height - 0.04f - ownSoil * scale, 0f);
         }
 
         private void PlanterBench(Transform pivot)
