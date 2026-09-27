@@ -37,6 +37,9 @@ namespace Reconnect.Client.UI.Screens
         private string _message;
         private bool _saving;
 
+        /// <summary>"Drehen" is on: dragging turns the item in hand towards the finger instead of moving it.</summary>
+        private bool _turning;
+
         public BuildPanel(VisualElement root, RoomView room, Material transparent, bool isAdmin,
             Func<IReadOnlyList<RoomItemDto>, Task<(bool Ok, string Error)>> save, Action closed)
         {
@@ -56,7 +59,11 @@ namespace Reconnect.Client.UI.Screens
                 scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
             }
 
-            _panel.Q<Button>("build-rotate").clicked += () => _editor?.Rotate();
+            _panel.Q<Button>("build-rotate").clicked += () =>
+            {
+                _turning = !_turning && _editor is { HasSelection: true };
+                Refresh();
+            };
             _panel.Q<Button>("build-delete").clicked += () => _editor?.Delete();
             _panel.Q<Button>("build-cancel").clicked += () => _editor?.CancelSelection();
             _panel.Q<Button>("build-place").clicked += Place;
@@ -118,6 +125,12 @@ namespace Reconnect.Client.UI.Screens
             {
                 return false;
             }
+            if (_turning && _editor.HasSelection)
+            {
+                // Turn mode: the item looks where the finger is (1° steps, snapping onto walls).
+                _editor.AimSelectionAt(point.x, point.z);
+                return true;
+            }
             switch (phase)
             {
                 case BuildPointerPhase.Tap:
@@ -163,6 +176,10 @@ namespace Reconnect.Client.UI.Screens
             if (!_editor.Place())
             {
                 _message = _editor.SelectionProblems.FirstOrDefault();
+            }
+            else
+            {
+                _turning = false;
             }
             Refresh();
         }
@@ -273,6 +290,10 @@ namespace Reconnect.Client.UI.Screens
             }
             _preview.Update(_editor);
             var hasSelection = _editor.HasSelection;
+            _turning &= hasSelection;
+            var rotate = _panel.Q<Button>("build-rotate");
+            rotate.text = _turning ? $"Drehen {Mathf.RoundToInt(_editor.Selection.Rotation) % 360}°" : "Drehen";
+            rotate.EnableInClassList("button--active", _turning);
             _actions.style.display = hasSelection ? DisplayStyle.Flex : DisplayStyle.None;
             _panel.Q<Button>("build-delete").style.display = hasSelection && !_editor.SelectionIsNew ? DisplayStyle.Flex : DisplayStyle.None;
             _panel.Q<Button>("build-place").SetEnabled(_editor.SelectionIsValid);
@@ -283,11 +304,13 @@ namespace Reconnect.Client.UI.Screens
             }
 
             var problem = hasSelection ? _editor.SelectionProblems.FirstOrDefault() : null;
-            var text = problem
-                ?? _message
-                ?? (hasSelection
-                    ? "Ziehen oder dorthin tippen, wo es hin soll – dann „Setzen“."
-                    : "Wähle unten etwas aus oder tippe auf einen Gegenstand, um ihn zu verschieben.");
+            var text = _turning
+                ? "Ziehe in die Richtung, in die es schauen soll – an Wänden rastet es parallel ein. „Drehen“ beendet."
+                : problem
+                  ?? _message
+                  ?? (hasSelection
+                      ? "Ziehen oder dorthin tippen, wo es hin soll – „Drehen“ zum Ausrichten, dann „Setzen“."
+                      : "Wähle unten etwas aus oder tippe auf einen Gegenstand, um ihn zu verschieben.");
             _hint.text = text;
             _hint.EnableInClassList("build-hint--error", problem != null);
         }

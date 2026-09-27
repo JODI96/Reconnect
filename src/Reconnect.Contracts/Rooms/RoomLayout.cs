@@ -104,6 +104,36 @@ namespace Reconnect.Contracts.Rooms
             return true;
         }
 
+        /// <summary>
+        /// A turned item's real shape lies on the floor (inside the room, or the outline): measured on the shape itself,
+        /// not its cells, so furniture can stand right up to a slanted facade.
+        /// </summary>
+        public bool IsInside(OrientedArea shape)
+        {
+            if (Outline == null)
+            {
+                var bounds = shape.Bounds;
+                return bounds.MinX >= -0.001f && bounds.MinZ >= -0.001f && bounds.MaxX <= Width + 0.001f && bounds.MaxZ <= Depth + 0.001f;
+            }
+            foreach (var (x, z) in shape.Corners())
+            {
+                if (!RoomOutline.Contains(Outline, x, z))
+                {
+                    return false;
+                }
+            }
+            // A concave corner of the outline must not reach into the shape.
+            var inner = shape.Grown(-0.001f);
+            foreach (var point in Outline)
+            {
+                if (inner.Contains(point.X, point.Z))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         /// <summary>A build cell lies fully inside the outline.</summary>
         public bool CellInside(int x, int z) => Cells.Contains(x, z) && (Outline == null || CellMask[x, z]);
 
@@ -183,16 +213,42 @@ namespace Reconnect.Contracts.Rooms
 
     /// <summary>
     /// The build rules, shared by server (validates every layout it stores) and client (editor preview, where furniture
-    /// stands, which tiles one can walk on). Item positions are the centre of the footprint in metres, rotations 0/90/180/270.
+    /// stands, which tiles one can walk on). Item positions are the centre of the footprint in metres. Furniture turns in
+    /// whole degrees (so it can stand parallel to slanted walls); paintings, pools and lifts in quarter turns. Items at a
+    /// quarter turn stand on the 25 cm grid by their footprint, turned ones by their centre on the 12.5 cm grid and cover
+    /// the cells under their turned footprint.
     /// </summary>
     public static class RoomLayout
     {
         private const float Tolerance = 0.02f;
 
+        /// <summary>A turned footprint covers a cell only if it reaches more than this far into it (metres).</summary>
+        private const float CellGrace = 0.03f;
+
         /// <summary>0–3 quarter turns of a rotation in degrees.</summary>
         public static int Quarter(float rotation) => (((int)Math.Round(rotation / 90f)) % 4 + 4) % 4;
 
         public static bool IsQuarterTurn(float rotation) => Math.Abs(rotation / 90f - Math.Round(rotation / 90f)) < 0.01f;
+
+        public static bool IsWholeDegree(float rotation) => Math.Abs(rotation - Math.Round(rotation)) < 0.01f;
+
+        /// <summary>Degrees in [0, 360).</summary>
+        public static float Normalize(float rotation)
+        {
+            var value = rotation % 360f;
+            return value < 0f ? value + 360f : value;
+        }
+
+        /// <summary>
+        /// Whether an item turns in whole degrees: everything standing or lying in the room. Paintings hang flat on a wall,
+        /// pools are cut into the floor and lifts belong to the building – they turn in quarter turns.
+        /// </summary>
+        public static bool TurnsFreely(ItemDefinition definition) =>
+            definition.Kind != ItemKind.Wall && !ItemDefinitions.IsPool(definition.Id) && !RoomZones.IsLift(definition.Id);
+
+        /// <summary>The nearest allowed rotation: whole degrees for free-turning items, else the nearest quarter turn.</summary>
+        public static float SnapRotation(ItemDefinition definition, float rotation) =>
+            TurnsFreely(definition) ? Normalize((float)Math.Round(Normalize(rotation))) : Quarter(rotation) * 90f;
 
         /// <summary>Footprint of a definition turned by <paramref name="quarter"/> quarter turns, centred at (x, z) metres.</summary>
         public static CellRect Footprint(ItemDefinition definition, float x, float z, int quarter)
@@ -203,8 +259,90 @@ namespace Reconnect.Contracts.Rooms
             return new CellRect(cellX, cellZ, width, depth);
         }
 
-        public static CellRect Footprint(RoomItemDto item, ItemDefinition definition) =>
-            Footprint(definition, item.Position.X, item.Position.Z, Quarter(item.Rotation));
+        /// <summary>
+        /// The cells an item stands on as a rectangle: exact at quarter turns; for turned items the rectangle around the
+        /// cells they cover (<see cref="Cells"/> has the exact set).
+        /// </summary>
+        public static CellRect Footprint(RoomItemDto item, ItemDefinition definition)
+        {
+            if (IsQuarterTurn(item.Rotation))
+            {
+                return Footprint(definition, item.Position.X, item.Position.Z, Quarter(item.Rotation));
+            }
+            int minX = int.MaxValue, minZ = int.MaxValue, maxX = int.MinValue, maxZ = int.MinValue;
+            foreach (var (x, z) in Cells(item, definition))
+            {
+                minX = Math.Min(minX, x);
+                minZ = Math.Min(minZ, z);
+                maxX = Math.Max(maxX, x);
+                maxZ = Math.Max(maxZ, z);
+            }
+            return minX > maxX
+                ? new CellRect((int)Math.Floor(item.Position.X / BuildGrid.CellSize), (int)Math.Floor(item.Position.Z / BuildGrid.CellSize), 1, 1)
+                : new CellRect(minX, minZ, maxX - minX + 1, maxZ - minZ + 1);
+        }
+
+        /// <summary>Where an item stands: its footprint (cells × 25 cm) turned with it, centred on the item.</summary>
+        public static OrientedArea Shape(RoomItemDto item, ItemDefinition definition)
+        {
+            if (IsQuarterTurn(item.Rotation))
+            {
+                var cells = Footprint(definition, item.Position.X, item.Position.Z, Quarter(item.Rotation));
+                var (x, z) = Centre(cells);
+                return new OrientedArea(x, z, cells.Width * BuildGrid.CellSize / 2f, cells.Depth * BuildGrid.CellSize / 2f, 0f);
+            }
+            return new OrientedArea(item.Position.X, item.Position.Z, definition.Width * BuildGrid.CellSize / 2f,
+                definition.Depth * BuildGrid.CellSize / 2f, item.Rotation);
+        }
+
+        /// <summary>The build cells an item covers (turned items: every cell its turned footprint reaches into).</summary>
+        public static IEnumerable<(int X, int Z)> Cells(RoomItemDto item, ItemDefinition definition)
+        {
+            if (IsQuarterTurn(item.Rotation))
+            {
+                var rect = Footprint(definition, item.Position.X, item.Position.Z, Quarter(item.Rotation));
+                for (var x = rect.X; x < rect.XMax; x++)
+                {
+                    for (var z = rect.Z; z < rect.ZMax; z++)
+                    {
+                        yield return (x, z);
+                    }
+                }
+                yield break;
+            }
+            var shape = Shape(item, definition).Grown(-CellGrace);
+            var bounds = shape.Bounds;
+            var size = BuildGrid.CellSize;
+            for (var x = (int)Math.Floor(bounds.MinX / size); x <= (int)Math.Floor(bounds.MaxX / size); x++)
+            {
+                for (var z = (int)Math.Floor(bounds.MinZ / size); z <= (int)Math.Floor(bounds.MaxZ / size); z++)
+                {
+                    var cell = new OrientedArea((x + 0.5f) * size, (z + 0.5f) * size, size / 2f, size / 2f, 0f);
+                    if (shape.Overlaps(cell))
+                    {
+                        yield return (x, z);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// The way an item faces (the side one sits looking at), any rotation: Kenney and our items face −Z at 0°,
+        /// Poly Haven +Z. Unity turns −Z by r degrees to (−sin r, −cos r).
+        /// </summary>
+        public static (float X, float Z) FrontVector(string itemId, float rotation)
+        {
+            var radians = rotation * Math.PI / 180.0;
+            var sign = itemId != null && itemId.StartsWith("ph-", StringComparison.Ordinal) ? 1f : -1f;
+            return ((float)Math.Sin(radians) * sign, (float)Math.Cos(radians) * sign);
+        }
+
+        /// <summary>The rotation that makes an item face (dx, dz) (inverse of <see cref="FrontVector"/>), in [0, 360).</summary>
+        public static float RotationFacing(string itemId, float dx, float dz)
+        {
+            var sign = itemId != null && itemId.StartsWith("ph-", StringComparison.Ordinal) ? 1f : -1f;
+            return Normalize((float)(Math.Atan2(dx * sign, dz * sign) * 180.0 / Math.PI));
+        }
 
         public static (int Width, int Depth) Size(ItemDefinition definition, int quarter) =>
             quarter % 2 == 0 ? (definition.Width, definition.Depth) : (definition.Depth, definition.Width);
@@ -221,35 +359,40 @@ namespace Reconnect.Contracts.Rooms
             {
                 return item;
             }
-            var quarter = Quarter(item.Rotation);
-            if (definition.Kind == ItemKind.Decor)
+            var rotation = SnapRotation(definition, item.Rotation);
+            if (definition.Kind == ItemKind.Decor || !IsQuarterTurn(rotation))
             {
-                return new RoomItemDto(item.ItemId, new Vector3Dto(SnapDecor(item.Position.X), 0f, SnapDecor(item.Position.Z)), quarter * 90f);
+                return new RoomItemDto(item.ItemId, new Vector3Dto(SnapDecor(item.Position.X), 0f, SnapDecor(item.Position.Z)), rotation);
             }
-            var (x, z) = Centre(Footprint(definition, item.Position.X, item.Position.Z, quarter));
-            return new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), quarter * 90f);
+            var (x, z) = Centre(Footprint(definition, item.Position.X, item.Position.Z, Quarter(rotation)));
+            return new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), rotation);
         }
 
         /// <summary>Small things stand on a finer grid (<see cref="BuildGrid.DecorStep"/>).</summary>
         public static float SnapDecor(float metres) => (float)Math.Round(metres / BuildGrid.DecorStep) * BuildGrid.DecorStep;
 
         /// <summary>Where a small thing stands (metres, its real size turned with it).</summary>
-        public static Area DecorArea(RoomItemDto item, ItemDefinition definition)
+        public static OrientedArea DecorShape(RoomItemDto item, ItemDefinition definition) =>
+            new OrientedArea(item.Position.X, item.Position.Z, definition.SizeX / 2f, definition.SizeZ / 2f, Normalize(item.Rotation));
+
+        /// <summary>The bounds of <see cref="DecorShape"/> (exact at quarter turns).</summary>
+        public static Area DecorArea(RoomItemDto item, ItemDefinition definition) => Snapped(DecorShape(item, definition).Bounds);
+
+        /// <summary>The table top of a surface item (metres), turned with it, centred on the item.</summary>
+        public static OrientedArea SurfaceShape(RoomItemDto item, ItemDefinition definition)
         {
-            var turned = Quarter(item.Rotation) % 2 == 1;
-            var halfX = (turned ? definition.SizeZ : definition.SizeX) / 2f;
-            var halfZ = (turned ? definition.SizeX : definition.SizeZ) / 2f;
-            return new Area(item.Position.X - halfX, item.Position.Z - halfZ, item.Position.X + halfX, item.Position.Z + halfZ);
+            var (x, z) = IsQuarterTurn(item.Rotation) ? Centre(Footprint(item, definition)) : (item.Position.X, item.Position.Z);
+            return new OrientedArea(x, z, definition.SurfaceWidth / 2f, definition.SurfaceDepth / 2f, Normalize(item.Rotation));
         }
 
-        /// <summary>The table top of a surface item (metres), turned with it, centred on its footprint.</summary>
-        public static Area SurfaceArea(RoomItemDto item, ItemDefinition definition)
+        /// <summary>The bounds of <see cref="SurfaceShape"/> (exact at quarter turns).</summary>
+        public static Area SurfaceArea(RoomItemDto item, ItemDefinition definition) => Snapped(SurfaceShape(item, definition).Bounds);
+
+        /// <summary>Removes float noise from cos/sin of quarter turns (bounds that should be exact).</summary>
+        private static Area Snapped(Area area)
         {
-            var (x, z) = Centre(Footprint(item, definition));
-            var turned = Quarter(item.Rotation) % 2 == 1;
-            var halfX = (turned ? definition.SurfaceDepth : definition.SurfaceWidth) / 2f;
-            var halfZ = (turned ? definition.SurfaceWidth : definition.SurfaceDepth) / 2f;
-            return new Area(x - halfX, z - halfZ, x + halfX, z + halfZ);
+            float Clean(float v) => (float)Math.Round(v * 10000f) / 10000f;
+            return new Area(Clean(area.MinX), Clean(area.MinZ), Clean(area.MaxX), Clean(area.MaxZ));
         }
 
         /// <summary>Checks every rule; empty = the layout can be stored.</summary>
@@ -262,7 +405,7 @@ namespace Reconnect.Contracts.Rooms
                 return problems;
             }
 
-            var placed = new List<(int Index, ItemDefinition Definition, CellRect Cells)>();
+            var placed = new List<(int Index, ItemDefinition Definition, CellRect Cells, List<(int X, int Z)> Covered)>();
             for (var i = 0; i < items.Count; i++)
             {
                 var item = items[i];
@@ -272,13 +415,15 @@ namespace Reconnect.Contracts.Rooms
                     problems.Add(new LayoutProblem(i, $"Unbekannter Gegenstand „{item.ItemId}“."));
                     continue;
                 }
-                if (!IsQuarterTurn(item.Rotation))
+                if (TurnsFreely(definition) ? !IsWholeDegree(item.Rotation) : !IsQuarterTurn(item.Rotation))
                 {
-                    problems.Add(new LayoutProblem(i, $"„{definition.Name}“ lässt sich nur in 90°-Schritten drehen."));
+                    problems.Add(new LayoutProblem(i, TurnsFreely(definition)
+                        ? $"„{definition.Name}“ lässt sich nur in ganzen Grad drehen."
+                        : $"„{definition.Name}“ lässt sich nur in 90°-Schritten drehen."));
                     continue;
                 }
                 var cells = Footprint(item, definition);
-                var (centreX, centreZ) = definition.Kind == ItemKind.Decor
+                var (centreX, centreZ) = definition.Kind == ItemKind.Decor || !IsQuarterTurn(item.Rotation)
                     ? (SnapDecor(item.Position.X), SnapDecor(item.Position.Z))
                     : Centre(cells);
                 if (Math.Abs(centreX - item.Position.X) > Tolerance || Math.Abs(centreZ - item.Position.Z) > Tolerance)
@@ -286,38 +431,59 @@ namespace Reconnect.Contracts.Rooms
                     problems.Add(new LayoutProblem(i, $"„{definition.Name}“ steht nicht auf dem Raster."));
                     continue;
                 }
-                if (!room.IsInside(cells))
+                var covered = Cells(item, definition).ToList();
+                if (!(IsQuarterTurn(item.Rotation) ? room.IsInside(cells) : room.IsInside(Shape(item, definition).Grown(-Tolerance))))
                 {
                     problems.Add(new LayoutProblem(i, $"„{definition.Name}“ ragt aus dem Raum."));
                     continue;
                 }
-                placed.Add((i, definition, cells));
+                placed.Add((i, definition, cells, covered));
             }
 
-            foreach (var (index, definition, cells) in placed)
+            // Overlaps per layer: who covers which cell (reported once, at the later item).
+            var owners = new Dictionary<(ItemKind Layer, int X, int Z), int>();
+            var reported = new HashSet<int>();
+            foreach (var (index, definition, _, covered) in placed)
+            {
+                if (definition.Kind == ItemKind.Decor)
+                {
+                    continue;
+                }
+                foreach (var (x, z) in covered)
+                {
+                    if (owners.TryGetValue((definition.Kind, x, z), out var first))
+                    {
+                        if (reported.Add(index))
+                        {
+                            problems.Add(new LayoutProblem(index, $"„{definition.Name}“ überlappt mit „{ItemDefinitions.Find(items[first].ItemId).Name}“."));
+                        }
+                    }
+                    else
+                    {
+                        owners[(definition.Kind, x, z)] = index;
+                    }
+                }
+            }
+
+            foreach (var (index, definition, cells, covered) in placed)
             {
                 switch (definition.Kind)
                 {
                     case ItemKind.Floor:
-                        if (room.Reserved.Any(r => r.Overlaps(cells)))
+                        if (covered.Any(c => room.Reserved.Any(r => r.Contains(c.X, c.Z))))
                         {
                             problems.Add(new LayoutProblem(index, $"„{definition.Name}“ steht im Eingang oder vor dem Lift – dort muss frei bleiben."));
                         }
-                        AddOverlaps(problems, placed, index, definition, cells, ItemKind.Floor);
-                        break;
-                    case ItemKind.Rug:
-                    case ItemKind.Ceiling:
-                        AddOverlaps(problems, placed, index, definition, cells, definition.Kind);
                         break;
                     case ItemKind.Decor:
-                        var area = DecorArea(items[index], definition);
+                        var area = DecorShape(items[index], definition);
                         if (!placed.Any(p => p.Definition.Kind == ItemKind.Floor && p.Definition.HasSurface
-                                             && SurfaceArea(items[p.Index], p.Definition).Contains(area, Tolerance)))
+                                             && SurfaceShape(items[p.Index], p.Definition).Contains(area, Tolerance)))
                         {
                             problems.Add(new LayoutProblem(index, $"„{definition.Name}“ muss ganz auf einem Tisch, Regal oder einer Theke stehen."));
                         }
                         var other = placed.FirstOrDefault(p => p.Index < index && p.Definition.Kind == ItemKind.Decor
-                                                               && DecorArea(items[p.Index], p.Definition).Overlaps(area, 0.01f));
+                                                               && DecorShape(items[p.Index], p.Definition).Overlaps(area, 0.01f));
                         if (other.Definition != null)
                         {
                             problems.Add(new LayoutProblem(index, $"„{definition.Name}“ überlappt mit „{other.Definition.Name}“."));
@@ -328,7 +494,6 @@ namespace Reconnect.Contracts.Rooms
                         {
                             problems.Add(new LayoutProblem(index, $"„{definition.Name}“ gehört an eine Wand."));
                         }
-                        AddOverlaps(problems, placed, index, definition, cells, ItemKind.Wall);
                         break;
                 }
             }
@@ -339,9 +504,9 @@ namespace Reconnect.Contracts.Rooms
                 var blocked = BlockedTiles(items);
                 blocked.UnionWith(OutsideTiles(room));
                 var reachable = Reachable(room, blocked);
-                foreach (var (index, definition, cells) in placed.Where(p => p.Definition.Seats > 0))
+                foreach (var (index, definition, _, covered) in placed.Where(p => p.Definition.Seats > 0))
                 {
-                    if (!Neighbours(cells).Any(reachable.Contains))
+                    if (!Neighbours(Tiles(covered)).Any(reachable.Contains))
                     {
                         problems.Add(new LayoutProblem(index, $"„{definition.Name}“ ist zugestellt – niemand kommt hin."));
                     }
@@ -417,7 +582,7 @@ namespace Reconnect.Contracts.Rooms
                 {
                     continue;
                 }
-                foreach (var tile in Tiles(Footprint(item, definition)))
+                foreach (var tile in Tiles(Cells(item, definition)))
                 {
                     blocked.Add(tile);
                 }
@@ -458,6 +623,18 @@ namespace Reconnect.Contracts.Rooms
                 }
             }
             return water;
+        }
+
+        /// <summary>Walking tiles (1 m) that some build cells touch.</summary>
+        public static HashSet<(int X, int Z)> Tiles(IEnumerable<(int X, int Z)> cells)
+        {
+            var per = BuildGrid.CellsPerTile;
+            var tiles = new HashSet<(int X, int Z)>();
+            foreach (var (x, z) in cells)
+            {
+                tiles.Add(((int)Math.Floor(x / (double)per), (int)Math.Floor(z / (double)per)));
+            }
+            return tiles;
         }
 
         /// <summary>Walking tiles (1 m) that a cell rectangle touches.</summary>
@@ -512,9 +689,8 @@ namespace Reconnect.Contracts.Rooms
             return best;
         }
 
-        private static IEnumerable<(int X, int Z)> Neighbours(CellRect cells)
+        private static IEnumerable<(int X, int Z)> Neighbours(HashSet<(int X, int Z)> tiles)
         {
-            var tiles = new HashSet<(int X, int Z)>(Tiles(cells));
             foreach (var (x, z) in tiles)
             {
                 foreach (var next in new[] { (x + 1, z), (x - 1, z), (x, z + 1), (x, z - 1) })
@@ -523,20 +699,6 @@ namespace Reconnect.Contracts.Rooms
                     {
                         yield return next;
                     }
-                }
-            }
-        }
-
-        private static void AddOverlaps(List<LayoutProblem> problems, List<(int Index, ItemDefinition Definition, CellRect Cells)> placed,
-            int index, ItemDefinition definition, CellRect cells, ItemKind layer)
-        {
-            foreach (var other in placed)
-            {
-                // Report each pair once (at the later item).
-                if (other.Index < index && other.Definition.Kind == layer && other.Cells.Overlaps(cells))
-                {
-                    problems.Add(new LayoutProblem(index, $"„{definition.Name}“ überlappt mit „{other.Definition.Name}“."));
-                    return;
                 }
             }
         }

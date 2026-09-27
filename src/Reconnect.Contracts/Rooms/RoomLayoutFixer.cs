@@ -55,6 +55,21 @@ namespace Reconnect.Contracts.Rooms
                     result[index] = onTable;
                     continue;
                 }
+                if (RoomLayout.TurnsFreely(definition) && !RoomLayout.IsQuarterTurn(RoomLayout.SnapRotation(definition, item.Rotation)))
+                {
+                    // Turned furniture stays where it is (on the fine grid) if it fits there.
+                    var turned = RoomLayout.Snap(item);
+                    var bounds = RoomLayout.Footprint(turned, definition);
+                    if (RoomLayout.Cells(turned, definition).All(c => room.CellInside(c.X, c.Z))
+                        && (definition.Kind != ItemKind.Floor || !room.Reserved.Any(r => r.Overlaps(bounds)))
+                        && !Collides(placed, bounds, definition.Kind))
+                    {
+                        placed.Add((definition, bounds));
+                        result[index] = turned;
+                        placedItems.Add((definition, turned));
+                        continue;
+                    }
+                }
                 var quarter = RoomLayout.Quarter(item.Rotation);
                 if (Place(room, definition, item, quarter, placed) is not CellRect found)
                 {
@@ -83,7 +98,7 @@ namespace Reconnect.Contracts.Rooms
             {
                 var item = items[i];
                 var definition = item == null ? null : ItemDefinitions.Find(item.ItemId);
-                if (definition == null || definition.Seats == 0 || definition.Kind != ItemKind.Floor
+                if (definition == null || definition.Seats == 0 || definition.Kind != ItemKind.Floor || !RoomLayout.IsQuarterTurn(item.Rotation)
                     || definition.Width > BuildGrid.CellsPerTile || definition.Depth > BuildGrid.CellsPerTile)
                 {
                     continue;
@@ -173,21 +188,22 @@ namespace Reconnect.Contracts.Rooms
         {
             var surfaces = placed
                 .Where(p => p.Definition.Kind == ItemKind.Floor && p.Definition.HasSurface)
-                .Select(p => RoomLayout.SurfaceArea(p.Item, p.Definition))
-                .Select(area => (Area: area, Distance: DistanceTo(area, item.Position.X, item.Position.Z)))
+                .Select(p => RoomLayout.SurfaceShape(p.Item, p.Definition))
+                .Select(shape => (Shape: shape, Distance: DistanceTo(shape.Bounds, item.Position.X, item.Position.Z)))
                 .Where(s => s.Distance <= 1f)
                 .OrderBy(s => s.Distance)
-                .Select(s => s.Area)
+                .Select(s => s.Shape)
                 .ToList();
-            var others = placed.Where(p => p.Definition.Kind == ItemKind.Decor).Select(p => RoomLayout.DecorArea(p.Item, p.Definition)).ToList();
-            foreach (var rotation in new[] { item.Rotation, (item.Rotation + 90f) % 360f })
+            var others = placed.Where(p => p.Definition.Kind == ItemKind.Decor).Select(p => RoomLayout.DecorShape(p.Item, p.Definition)).ToList();
+            var rotation0 = RoomLayout.SnapRotation(definition, item.Rotation);
+            foreach (var rotation in new[] { rotation0, RoomLayout.Normalize(rotation0 + 90f) })
             {
                 foreach (var surface in surfaces)
                 {
-                    foreach (var (x, z) in DecorSpots(surface, item.Position.X, item.Position.Z))
+                    foreach (var (x, z) in DecorSpots(surface.Bounds, item.Position.X, item.Position.Z))
                     {
-                        var candidate = new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), RoomLayout.Quarter(rotation) * 90f);
-                        var area = RoomLayout.DecorArea(candidate, definition);
+                        var candidate = new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), rotation);
+                        var area = RoomLayout.DecorShape(candidate, definition);
                         if (surface.Contains(area, 0.02f) && !others.Any(o => o.Overlaps(area, 0.01f)))
                         {
                             return candidate;

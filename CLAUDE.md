@@ -188,12 +188,18 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Fläche; runde Tische: Quadrat in der Platte). Dazu rendert er pro Item ein Katalogbild (`Build/Icons`, `BuildIcons.asset`).
   Poly-Haven-Dateien mit mehreren Varianten nebeneinander (Glückskastanie, Kerzenständer) werden in `fetch_polyhaven.py`
   (`VARIANTS`) auf eine reduziert. `RoomLayout.Validate` (Server bei jedem Speichern, Client
-  im Editor): Raster + 90°-Schritte, im Raum, keine Überlappung pro Ebene, Deko nur ganz auf einer Tischfläche, Wandobjekte
+  im Editor): Raster, im Raum, keine Überlappung pro Ebene, Deko nur ganz auf einer Tischfläche, Wandobjekte
   an einer Wand, Eingang und Lift-Ausstieg frei (`RoomZones`), jeder Sitz erreichbar. Begehbare/Wasser-Felder kommen aus
   `RoomLayout.BlockedTiles/WaterTiles` (Server, Client, Editor gleich). `PUT /rooms/{id}/layout`: Besitzer oder Admin,
   400 mit Fehler pro `items[i]`, danach `RoomLayoutChanged` an alle im Raum. Im Client: „Bauen“ → `BuildPanel` +
   `BuildEditor` (reines C#) + `BuildPreview` (Raster, Geist grün/rot). `RoomLayoutFixer` setzt alte Layouts aufs Raster.
   `RoomLayoutFixer` schiebt Stühle/Hocker an den Tisch vor ihnen (an kleinen Tischen mittig).
+  **Freies Drehen:** Möbel drehen in ganzen Grad (`RoomLayout.TurnsFreely`; Wandbilder, Pools, Lifte nur 90°). Im Baumodus
+  „Drehen“ antippen, dann ziehen: das Möbel schaut zum Finger (`BuildEditor.AimSelectionAt`), rastet auf 90° und auf den
+  Winkel schräger Fassaden ein (±4°, `WallAngles`), Deko auf dem Tisch dreht mit. Gedrehte Möbel stehen mit der Mitte im
+  12,5-cm-Raster, belegen genau die Zellen unter ihrer gedrehten Grundfläche (`RoomLayout.Cells`/`Shape`, `OrientedArea`)
+  und dürfen bündig an schräge Glaswände (Form gegen Umriss statt Zellen). Tischplatten/Deko: `SurfaceShape`/`DecorShape`,
+  Blickrichtung: `FrontVector`/`RotationFacing`.
   Geseedete Räume stehen als `Cell(item, x, z, rotation)` (Zellen, linke untere Ecke der Grundfläche) bzw. Deko als
   `At(item, x, z, rotation)` (Mitte in Metern) im Code; neu aufs Raster: `Dump_seed_rooms` + `RECONNECT_EXPORT_FROM`;
   `SeedRoomLayoutTests` prüft jeden Raum; `SeedRoomExport` (mit `RECONNECT_EXPORT_ROOMS=<Ordner>`) gibt Karten aus.

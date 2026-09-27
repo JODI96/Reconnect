@@ -89,6 +89,63 @@ namespace Reconnect.Client.Tests
         }
 
         [Test]
+        public void Dragging_in_turn_mode_makes_the_item_face_the_finger_in_whole_degrees()
+        {
+            var editor = Empty();
+            editor.Pick("loungeSofa", 5f, 4f);
+            var centre = RoomLayout.Shape(editor.Selection, editor.SelectionDefinition);
+            // Finger 2 m away at 37° from +X.
+            var angle = 37f * UnityEngine.Mathf.Deg2Rad;
+            editor.AimSelectionAt(centre.CentreX + 2f * UnityEngine.Mathf.Cos(angle), centre.CentreZ + 2f * UnityEngine.Mathf.Sin(angle));
+
+            Assert.IsTrue(RoomLayout.IsWholeDegree(editor.Selection.Rotation));
+            Assert.IsFalse(RoomLayout.IsQuarterTurn(editor.Selection.Rotation));
+            var (fx, fz) = RoomLayout.FrontVector(editor.Selection.ItemId, editor.Selection.Rotation);
+            Assert.Greater(fx * UnityEngine.Mathf.Cos(angle) + fz * UnityEngine.Mathf.Sin(angle), 0.999f, "faces the finger");
+            Assert.IsTrue(editor.SelectionIsValid, string.Join(", ", editor.SelectionProblems));
+            Assert.IsTrue(editor.Place());
+        }
+
+        [Test]
+        public void Turning_snaps_parallel_to_a_slanted_wall()
+        {
+            // A floor whose top edge rises at 20° (like the tower's slanted facades).
+            var outline = new[] { new RoomPointDto(0f, 0f), new RoomPointDto(12f, 0f), new RoomPointDto(12f, 8f + 12f * 0.364f), new RoomPointDto(0f, 8f) };
+            var editor = new BuildEditor("office", 12, 13, new RoomItemDto[0], outline);
+            var wall = RoomLayout.Normalize(-20f);
+            Assert.Contains(wall, editor.WallAngles().ToList());
+
+            editor.Pick("loungeSofa", 6f, 6f);
+            var centre = RoomLayout.Shape(editor.Selection, editor.SelectionDefinition);
+            // Aim 3° off the wall's own angle: it snaps onto the wall.
+            var wanted = RoomLayout.Normalize(wall + 3f);
+            var (fx, fz) = RoomLayout.FrontVector("loungeSofa", wanted);
+            editor.AimSelectionAt(centre.CentreX + fx * 2f, centre.CentreZ + fz * 2f);
+
+            Assert.AreEqual(wall, editor.Selection.Rotation, 0.01f);
+        }
+
+        [Test]
+        public void A_turned_table_turns_what_stands_on_it()
+        {
+            var editor = Empty();
+            editor.Pick("table", 5f, 4f);
+            editor.Place();
+            var table = editor.Items[0];
+            editor.Pick("laptop", table.Position.X, table.Position.Z);
+            editor.Place();
+
+            Assert.IsTrue(editor.SelectAt(table.Position.X + 0.6f, table.Position.Z));
+            editor.TurnSelectionTo(30f);
+
+            Assert.AreEqual(30f, editor.Selection.Rotation, 0.01f);
+            Assert.AreEqual(1, editor.Carried.Count);
+            Assert.AreEqual(30f, editor.Carried[0].Rotation % 180f, 0.01f);
+            Assert.IsTrue(editor.SelectionIsValid, string.Join(", ", editor.SelectionProblems));
+            Assert.IsTrue(editor.Place());
+        }
+
+        [Test]
         public void Tapping_a_laptop_picks_up_the_laptop()
         {
             var editor = Empty();

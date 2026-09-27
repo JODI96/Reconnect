@@ -56,7 +56,7 @@ namespace Reconnect.Client.Rooms
         private readonly HashSet<Vector2Int> _water = new();
         private readonly Dictionary<SeatDto, Guid> _occupied = new();
         private readonly HashSet<Vector2Int> _blocked = new();
-        private readonly List<(Area Top, float Height)> _tops = new();   // table tops small things stand on
+        private readonly List<(OrientedArea Top, float Height)> _tops = new();   // table tops small things stand on (turned with them)
         private readonly List<Bounds> _obstacles = new();   // everything that blocks tiles (counters for stools)
         private readonly List<string> _missingItems = new();
         private Transform _content;
@@ -486,10 +486,8 @@ namespace Reconnect.Client.Rooms
                 {
                     continue;
                 }
-                var cells = RoomLayout.Footprint(_layout[index], definition);
                 const float margin = 0.15f;
-                if (localPoint.x >= cells.X * BuildGrid.CellSize - margin && localPoint.x <= cells.XMax * BuildGrid.CellSize + margin
-                    && localPoint.z >= cells.Z * BuildGrid.CellSize - margin && localPoint.z <= cells.ZMax * BuildGrid.CellSize + margin)
+                if (RoomLayout.Shape(_layout[index], definition).Contains(localPoint.x, localPoint.z, margin))
                 {
                     return (seat, seat.NearestPlace(localPoint));
                 }
@@ -1186,7 +1184,7 @@ namespace Reconnect.Client.Rooms
             var context = BuildContext(layout);
             foreach (var (item, _, definition) in items.Where(i => i.Definition is { Kind: ItemKind.Floor, HasSurface: true }))
             {
-                _tops.Add((RoomLayout.SurfaceArea(item, definition), definition.SurfaceHeight));
+                _tops.Add((RoomLayout.SurfaceShape(item, definition), definition.SurfaceHeight));
             }
             foreach (var (item, index, definition) in items)
             {
@@ -1261,7 +1259,9 @@ namespace Reconnect.Client.Rooms
             }
             else if (definition != null)
             {
-                var (x, z) = RoomLayout.Centre(RoomLayout.Footprint(item, definition));
+                // Centre of the footprint (quarter turns) or the item's own centre (turned furniture).
+                var shape = RoomLayout.Shape(item, definition);
+                var (x, z) = (shape.CentreX, shape.CentreZ);
                 position = new Vector3(x, definition.Kind switch
                 {
                     ItemKind.Wall or ItemKind.Ceiling => definition.MountHeight,
@@ -1326,7 +1326,7 @@ namespace Reconnect.Client.Rooms
         /// <summary>The way an item faces in world space (catalog convention: Kenney -Z, Poly Haven +Z at rotation 0).</summary>
         private Vector3 FrontOf(RoomItemDto item)
         {
-            var (x, z) = RoomLayout.Front(item.ItemId, item.Rotation);
+            var (x, z) = RoomLayout.FrontVector(item.ItemId, item.Rotation);
             return transform.TransformDirection(new Vector3(x, 0f, z));
         }
 

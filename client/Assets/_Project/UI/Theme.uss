@@ -63,6 +63,7 @@
 .button--small { min-height: 44px; min-width: 44px; font-size: 15px; padding: 0 12px; margin: 0 0 0 6px; flex-shrink: 0; }
 .button:disabled { opacity: 0.5; }
 .button--off { opacity: 0.6; }
+.button--active { background-color: var(--color-primary); color: rgb(255, 255, 255); }
 
 .status { color: var(--color-text-muted); font-size: 15px; white-space: normal; margin: 8px 0; -unity-text-align: middle-center; }
 .status--error { color: var(--color-error); }

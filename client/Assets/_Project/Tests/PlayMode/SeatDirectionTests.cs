@@ -32,20 +32,29 @@ namespace Reconnect.Client.PlayModeTests
             var seatIds = ItemDefinitions.All.Where(d => d.Seats > 0 && d.Kind == ItemKind.Floor).Select(d => d.Id).OrderBy(id => id).ToList();
             Assert.IsNotEmpty(seatIds);
 
-            // A big empty room with every seat in a grid, each turned by 0/90/180/270 in turn.
+            // A big empty room with every seat in a grid, each turned by 0/90/180/270 and a crooked 37° in turn.
+            var angles = new[] { 0f, 90f, 180f, 270f, 37f };
             const int spacing = 4;
-            var perRow = 8;
+            var perRow = 10;
             var width = perRow * spacing + 2;
-            var depth = ((seatIds.Count * 4 + perRow - 1) / perRow) * spacing + 2;
+            var depth = ((seatIds.Count * angles.Length + perRow - 1) / perRow) * spacing + 2;
             var layout = new List<RoomItemDto>();
-            for (var i = 0; i < seatIds.Count * 4; i++)
+            for (var i = 0; i < seatIds.Count * angles.Length; i++)
             {
-                var id = seatIds[i / 4];
-                var quarter = i % 4;
+                var id = seatIds[i / angles.Length];
+                var rotation = angles[i % angles.Length];
                 var definition = ItemDefinitions.Find(id);
+                var tileX = (i % perRow) * spacing + 2;
+                var tileZ = (i / perRow) * spacing + 2;
+                if (!RoomLayout.IsQuarterTurn(rotation))
+                {
+                    layout.Add(new RoomItemDto(id, new Vector3Dto(tileX, 0f, tileZ), rotation));   // turned: centre on the fine grid
+                    continue;
+                }
+                var quarter = RoomLayout.Quarter(rotation);
                 var (w, d) = RoomLayout.Size(definition, quarter);
-                var cellX = ((i % perRow) * spacing + 2) * BuildGrid.CellsPerTile - w / 2;
-                var cellZ = ((i / perRow) * spacing + 2) * BuildGrid.CellsPerTile - d / 2;
+                var cellX = tileX * BuildGrid.CellsPerTile - w / 2;
+                var cellZ = tileZ * BuildGrid.CellsPerTile - d / 2;
                 var (x, z) = RoomLayout.Centre(new CellRect(cellX, cellZ, w, d));
                 layout.Add(new RoomItemDto(id, new Vector3Dto(x, 0f, z), quarter * 90f));
             }
@@ -80,7 +89,7 @@ namespace Reconnect.Client.PlayModeTests
                 {
                     continue;   // stools turn to counters
                 }
-                var (fx, fz) = RoomLayout.Front(item.ItemId, item.Rotation);
+                var (fx, fz) = RoomLayout.FrontVector(item.ItemId, item.Rotation);
                 var expected = view.transform.TransformDirection(new Vector3(fx, 0f, fz));
                 var looking = avatar.transform.forward;
                 looking.y = 0f;

@@ -122,15 +122,94 @@ public sealed class RoomLayoutTests
     }
 
     [Fact]
-    public void Items_must_stand_on_the_grid_and_turn_in_quarter_steps()
+    public void Items_must_stand_on_the_grid_and_turn_in_whole_degrees()
     {
         var offGrid = new RoomItemDto("table", new Vector3Dto(3.13f, 0f, 3.37f), 0f);
-        var slanted = At("chair", 5, 5) with { Rotation = 45f };
+        var halfDegree = new RoomItemDto("chair", new Vector3Dto(5f, 0f, 5f), 45.5f);
+        var turnedOffGrid = new RoomItemDto("chair", new Vector3Dto(5.06f, 0f, 3f), 45f);
 
-        var problems = Check(offGrid, slanted);
+        var problems = Check(offGrid, halfDegree, turnedOffGrid);
 
-        Assert.Equal(2, problems.Count);
+        Assert.Equal(3, problems.Count);
         Assert.Empty(Check(RoomLayout.Snap(offGrid)));
+        Assert.Empty(Check(new RoomItemDto("chair", new Vector3Dto(5f, 0f, 5f), 45f)));
+        var snapped = RoomLayout.Snap(new RoomItemDto("chair", new Vector3Dto(5.06f, 0f, 3.01f), 33.4f));
+        Assert.Equal(33f, snapped.Rotation);
+        Assert.Equal((5f, 3f), (snapped.Position.X, snapped.Position.Z));
+    }
+
+    [Fact]
+    public void Paintings_pools_and_lifts_turn_in_quarter_steps_only()
+    {
+        var painting = ItemDefinitions.All.First(d => d.Kind == ItemKind.Wall);
+        Assert.False(RoomLayout.TurnsFreely(painting));
+        Assert.False(RoomLayout.TurnsFreely(ItemDefinitions.Find(RoomZones.ElevatorItem)!));
+        Assert.True(RoomLayout.TurnsFreely(ItemDefinitions.Find("loungeSofa")!));
+        Assert.Equal(90f, RoomLayout.SnapRotation(painting, 80f));
+    }
+
+    [Fact]
+    public void Turned_furniture_covers_only_the_cells_under_it()
+    {
+        // A sofa turned by 45°: its axis-aligned box has empty corners where a pot may stand.
+        var sofa = new RoomItemDto("loungeSofa", new Vector3Dto(5f, 0f, 4f), 45f);
+        var definition = ItemDefinitions.Find("loungeSofa")!;
+        var covered = RoomLayout.Cells(sofa, definition).ToHashSet();
+        var box = RoomLayout.Footprint(sofa, definition);
+        var corner = (box.X, box.Z);
+        Assert.DoesNotContain(corner, covered);
+        var pot = new RoomItemDto("ph-planter_pot_clay", new Vector3Dto((corner.X + 0.5f) * BuildGrid.CellSize, 0f, (corner.Z + 0.5f) * BuildGrid.CellSize), 0f);
+        var underSofa = pot with { Position = new Vector3Dto(5f + 0.125f, 0f, 4f + 0.125f) };
+
+        Assert.Empty(Check(sofa, pot));
+        Assert.Contains(Check(sofa, underSofa), p => p.Message.Contains("überlappt"));
+    }
+
+    [Fact]
+    public void A_turned_sofa_can_stand_flush_against_a_slanted_facade()
+    {
+        // Floor with a wall at 20°: the sofa turned by −20° (parallel to it) fits right up to the glass.
+        List<RoomPointDto> outline = [new(0f, 0f), new(12f, 0f), new(12f, 8f + 12f * 0.364f), new(0f, 8f)];
+        var room = RoomZones.ContextFor("office", 12, 13, [], outline);
+        var definition = ItemDefinitions.Find("loungeSofa")!;
+        // The top edge rises 0.364 m per metre (20°). The sofa (75 cm deep) 42 cm below it: a few cm from the glass.
+        var turned = RoomLayout.Snap(new RoomItemDto("loungeSofa", new Vector3Dto(6f, 0f, 8f + 6f * 0.364f - 0.42f), 360f - 20f));
+        var shape = RoomLayout.Shape(turned, definition);
+        var gap = shape.Corners().Min(c => RoomOutline.DistanceToEdge(outline, c.X, c.Z));
+        Assert.InRange(gap, 0f, 0.08f);
+        var straight = RoomLayout.Snap(turned with { Rotation = 0f });
+
+        Assert.Empty(RoomLayout.Validate(room, [turned]));
+        Assert.Contains(RoomLayout.Validate(room, [straight]), p => p.Message.Contains("ragt aus dem Raum"));
+        Assert.True(definition.Width > definition.Depth);
+    }
+
+    [Fact]
+    public void Small_things_stand_on_the_turned_top_of_a_turned_table()
+    {
+        var table = new RoomItemDto("table", new Vector3Dto(5f, 0f, 4f), 30f);
+        var onTop = new RoomItemDto("laptop", new Vector3Dto(5f, 0f, 4f), 30f);
+        // Inside the table's bounding box but beyond the turned top.
+        var offTop = new RoomItemDto("laptop", new Vector3Dto(5.75f, 0f, 4.5f), 30f);
+
+        Assert.Empty(Check(table, onTop));
+        Assert.Contains(Check(table, offTop), p => p.Message.Contains("Tisch"));
+    }
+
+    [Fact]
+    public void Seats_face_their_turned_front()
+    {
+        var (x, z) = RoomLayout.FrontVector("chair", 90f);
+        Assert.Equal(-1f, x, 3);
+        Assert.Equal(0f, z, 3);
+        var (px, pz) = RoomLayout.FrontVector("ph-sofa_02", 0f);
+        Assert.Equal(0f, px, 3);
+        Assert.Equal(1f, pz, 3);
+        foreach (var rotation in new[] { 0f, 17f, 135f, 290f })
+        {
+            var (fx, fz) = RoomLayout.FrontVector("chair", rotation);
+            Assert.Equal(rotation, RoomLayout.RotationFacing("chair", fx, fz), 2);
+        }
     }
 
     [Fact]

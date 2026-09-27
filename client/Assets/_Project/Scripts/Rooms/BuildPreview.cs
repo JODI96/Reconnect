@@ -139,20 +139,24 @@ namespace Reconnect.Client.Rooms
                 plate.name = "Footprint";
                 Object.Destroy(plate.GetComponent<Collider>());
                 plate.transform.SetParent(_ghost.transform, false);
-                if (definition.Kind == ItemKind.Decor)
+                // The footprint turned with the item: small things their real outline just above the table top.
+                var shape = definition.Kind == ItemKind.Decor ? RoomLayout.DecorShape(item, definition) : RoomLayout.Shape(item, definition);
+                var y = definition.Kind == ItemKind.Decor ? _room.transform.InverseTransformPoint(bounds.min).y + 0.01f : 0.02f;
+                plate.transform.localPosition = new Vector3(shape.CentreX, y, shape.CentreZ);
+                plate.transform.localRotation = Quaternion.Euler(0f, shape.Rotation, 0f);
+                plate.transform.localScale = new Vector3(Mathf.Max(0.02f, shape.HalfX * 2f - 0.02f), 0.02f, Mathf.Max(0.02f, shape.HalfZ * 2f - 0.02f));
+                if (item == editor.Selection && definition.Kind != ItemKind.Wall)
                 {
-                    // Small things: their real outline, just above the table top.
-                    var area = RoomLayout.DecorArea(item, definition);
-                    var y = _room.transform.InverseTransformPoint(bounds.min).y + 0.01f;
-                    plate.transform.localPosition = new Vector3(area.CentreX, y, area.CentreZ);
-                    plate.transform.localScale = new Vector3(area.MaxX - area.MinX, 0.01f, area.MaxZ - area.MinZ);
-                }
-                else
-                {
-                    var cells = RoomLayout.Footprint(item, definition);
-                    var (x, z) = RoomLayout.Centre(cells);
-                    plate.transform.localPosition = new Vector3(x, 0.02f, z);
-                    plate.transform.localScale = new Vector3(cells.Width * BuildGrid.CellSize - 0.02f, 0.02f, cells.Depth * BuildGrid.CellSize - 0.02f);
+                    // Arrow to the front (the side one sits looking at), so turning shows where it faces.
+                    var (fx, fz) = RoomLayout.FrontVector(item.ItemId, item.Rotation);
+                    var reach = Mathf.Max(shape.HalfX, shape.HalfZ) + 0.35f;
+                    var arrow = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    arrow.name = "Front";
+                    Object.Destroy(arrow.GetComponent<Collider>());
+                    arrow.transform.SetParent(_ghost.transform, false);
+                    arrow.transform.localPosition = new Vector3(shape.CentreX + fx * reach / 2f, y + 0.01f, shape.CentreZ + fz * reach / 2f);
+                    arrow.transform.localRotation = Quaternion.LookRotation(new Vector3(fx, 0f, fz));
+                    arrow.transform.localScale = new Vector3(0.06f, 0.02f, reach);
                 }
             }
             foreach (var renderer in _ghost.GetComponentsInChildren<Renderer>())
