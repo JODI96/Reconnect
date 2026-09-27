@@ -294,7 +294,7 @@ internal static class TowerFloorDesigns
              .Put("custom-chair-cantilever", cx - 0.5f, z0 + 2.3f, 180f, "cognac/chrome")
              .Put("custom-chair-cantilever", cx + 0.5f, z0 + 2.3f, 180f, "cognac/chrome")
              .Put("custom-sideboard-120", cx, z0 + 5.5f, 0f, "walnut/brass").DecorOnLast("custom-tablelamp-dome", 0f, "warm-white/brass")
-             .Decor("ph-classic_laptop", cx - 0.1f, z0 + 3.4f)
+             .Decor("ph-classic_laptop", cx - 0.1f, z0 + 3.4f, 180f)   // facing the chair behind the desk
              .Put("custom-plant-tall-tapered", door == "east" ? x0 + 0.7f : x0 + 5.3f, z0 + 0.8f, 0f, "black-marble")
              .Put("custom-floorlamp-tripod", door == "east" ? x0 + 0.7f : x0 + 5.3f, z0 + 5.2f);
         }

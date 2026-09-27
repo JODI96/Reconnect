@@ -414,8 +414,9 @@ internal sealed class StoreyDesigner
             d.Put("custom-desk-140", dx, -0.5f, 180f, deskColours);
             d.Put("custom-officechair", dx, 1.3f, 0f);
             d.Put("custom-officechair", dx, -1.3f, 180f);
-            d.Decor(i % 2 == 0 ? "laptop" : "ph-classic_laptop", dx - 0.15f, 0.5f, 0f);
-            d.Decor("computerScreen", dx - 0.2f, -0.6f, 180f);
+            // Screens face the person at the desk: north row sits north of its desk (looks −Z), south row the other way.
+            d.Decor(i % 2 == 0 ? "laptop" : "ph-classic_laptop", dx - 0.15f, 0.5f, 180f);
+            d.Decor("computerScreen", dx - 0.2f, -0.6f, 180f);   // the monitor model faces +Z at 0°, the laptops −Z
             if (i % 2 == 1)
             {
                 d.Decor("custom-tablelamp-mushroom", dx + 0.45f, 0.55f, 0f, "sage/black");
