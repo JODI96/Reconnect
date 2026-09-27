@@ -28,6 +28,9 @@ namespace Reconnect.Client.Core
         [Tooltip("URP renderers whose ambient occlusion follows the graphics setting.")]
         [SerializeField] private UnityEngine.Rendering.Universal.ScriptableRendererData[] renderers;
 
+        [Tooltip("\"Grafik: Hoch\" pipelines (full resolution, 4× MSAA), copies of Mobile/PC_RPAsset.")]
+        [SerializeField] private UnityEngine.Rendering.RenderPipelineAsset[] highPipelines;
+
         internal UiCatalog Ui => ui;
         internal CitySettings CitySettings => citySettings;
 
@@ -58,9 +61,14 @@ namespace Reconnect.Client.Core
             _realEstate = new RealEstateService(api);
             _roomSession = new SignalRRoomSession(apiSettings.BaseUrl, _auth);
             city.Initialize(citySettings);
-            _graphics = new GraphicsQuality(renderers);
+            _graphics = new GraphicsQuality(renderers, highPipelines);
             room.HighQuality = _graphics.High;
-            _graphics.Changed += () => room.HighQuality = _graphics.High;
+            city.SetDetail(_graphics.High);
+            _graphics.Changed += () =>
+            {
+                room.HighQuality = _graphics.High;
+                city.SetDetail(_graphics.High);
+            };
 
             // Runtime copy: the navigator scales the panel per device, the asset stays untouched.
             var document = GetComponent<UIDocument>();

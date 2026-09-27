@@ -151,8 +151,10 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   `CrowdPerformanceTests`: volle Lobby (150 Personen, ganz herausgezoomt über der Etagenmitte) auf „Normal“ ≤ 400 Draw
   Calls, ≤ 80 Set-Pass-Calls, ≤ 400k Dreiecke; „Hoch“ (SSAO zeichnet alles ein zweites Mal in einen Tiefen-Vorabdurchgang)
   das Doppelte bei Draw Calls/Dreiecken. Das Log listet die teuersten Items („Draws by item“).
-- **Grafik Hoch/Normal** (`GraphicsQuality`, pro Gerät gemerkt, Stadt-Menü): Hoch = SSAO (Tiefenquelle, halbe Auflösung),
-  Reflexionen, doppelt so viele Lampenlichter; Standard Hoch ausser auf Handys < 5,5 GB RAM.
+- **Grafik Hoch/Normal** (`GraphicsQuality`, pro Gerät gemerkt, Stadt-Menü): Hoch = volle Render-Auflösung + 4× MSAA
+  (schaltet auf `Mobile_High_RPAsset`/`PC_High_RPAsset`, Kopien die Setup Project anlegt – Pipeline-Assets werden zur
+  Laufzeit nie verändert), SSAO (Tiefenquelle, halbe Auflösung), Reflexionen, doppelt so viele Lampenlichter, schärfere
+  Stadt (`CityView.SetDetail`: Google-Detail 8 statt 12, swisstopo 6 statt 8); Standard Hoch ausser auf Handys < 5,5 GB RAM.
 - **Kamera im Raum:** drehbar (Knöpfe ‹ › in 90°-Schritten, zwei Finger drehen, Q/E am PC); Wände zwischen Kamera und
   Raum werden ausgeblendet (`RoomView.RotateView`, Habbo-Prinzip: man schaut immer in den Raum).
 - **Sitzen:** Kein Emote-Knopf – Stuhl/Sofa/Liege antippen (auch knapp daneben, `RoomView.SeatAt`), die Figur läuft hin und

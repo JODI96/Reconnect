@@ -57,6 +57,24 @@ namespace Reconnect.Client.City
         public string Provider { get; private set; } = MapProviders.Swisstopo;
         public bool IsGoogle => Provider == MapProviders.Google;
 
+        /// <summary>
+        /// "Grafik: Hoch": finer tiles (lower screen-space error) for Google and swisstopo – sharper houses from close up,
+        /// more downloads and memory. "Normal" keeps the lighter defaults for older phones.
+        /// </summary>
+        public void SetDetail(bool high)
+        {
+            if (_settings == null)
+            {
+                return;
+            }
+            terrain.maximumScreenSpaceError = high ? _settings.highScreenSpaceError : _settings.terrainScreenSpaceError;
+            buildings.maximumScreenSpaceError = high ? _settings.highScreenSpaceError : _settings.buildingsScreenSpaceError;
+            if (googleTiles != null)
+            {
+                googleTiles.maximumScreenSpaceError = high ? _settings.googleHighScreenSpaceError : _settings.googleScreenSpaceError;
+            }
+        }
+
         /// <summary>0–100: how much of what the camera needs is loaded (visible city + roof-height data).</summary>
         public float LoadProgress => IsGoogle
             ? Mathf.Min(googleTiles.ComputeLoadProgress(), buildings.ComputeLoadProgress())
@@ -68,13 +86,11 @@ namespace Reconnect.Client.City
         {
             _settings = settings;
             georeference.SetOriginLongitudeLatitudeHeight(settings.originLongitude, settings.originLatitude, settings.originHeight);
-            terrain.maximumScreenSpaceError = settings.terrainScreenSpaceError;
-            buildings.maximumScreenSpaceError = settings.buildingsScreenSpaceError;
+            SetDetail(high: false);
             aerialOverlay.maximumScreenSpaceError = settings.imageryScreenSpaceError;
             mapOverlay.maximumScreenSpaceError = settings.imageryScreenSpaceError;
             if (googleTiles != null)
             {
-                googleTiles.maximumScreenSpaceError = settings.googleScreenSpaceError;
                 // Google heights are ellipsoidal, swisstopo's above sea level: lower Google so roofs line up.
                 googleTiles.transform.localPosition = new Vector3(0f, settings.googleHeightOffset, 0f);
                 googleTiles.gameObject.SetActive(false);

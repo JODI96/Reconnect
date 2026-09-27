@@ -21,6 +21,8 @@ namespace Reconnect.Client.City
         [Header("3D detail (Cesium, lower screen-space error = sharper, more downloads)")]
         [Range(1, 64)] public float buildingsScreenSpaceError = 8f;
         [Range(1, 64)] public float terrainScreenSpaceError = 8f;
+        [Tooltip("swisstopo buildings and terrain with \"Grafik: Hoch\".")]
+        [Range(1, 64)] public float highScreenSpaceError = 6f;
         [Tooltip("Imagery texture detail on the terrain.")]
         [Range(1, 16)] public float imageryScreenSpaceError = 1f;
         public MapLayer defaultLayer = MapLayer.Aerial;
@@ -29,6 +31,8 @@ namespace Reconnect.Client.City
         [Tooltip("Google uses heights above the WGS84 ellipsoid, swisstopo heights above sea level. Google tiles are lowered by the geoid height (Zurich: 47.75 m, EGM2008) so both line up.")]
         public float googleHeightOffset = -47.75f;
         [Range(1, 64)] public float googleScreenSpaceError = 12f;
+        [Tooltip("Google tiles with \"Grafik: Hoch\" (sharper houses, more downloads).")]
+        [Range(1, 64)] public float googleHighScreenSpaceError = 8f;
         [Tooltip("Google's model has roof superstructures (ventilation, lift machinery) that swisstopo lacks. Rooms on roofs are lifted by this much; their 4 m base closes the gap.")]
         [Range(0, 4)] public float googleRoofClearance = 4f;
 

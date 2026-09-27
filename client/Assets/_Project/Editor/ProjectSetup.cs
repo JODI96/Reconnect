@@ -99,6 +99,7 @@ namespace Reconnect.Client.Editor
             CreateAvatarCatalog();
             CreateMusicCatalog();
             CreatePostProcessing();
+            CreateHighPipelines();   // before the scene: the app references them
             AssetDatabase.SaveAssets();
 
             // 2) Build the scene. It re-loads every asset by path: references held from step 1 can
@@ -561,6 +562,13 @@ namespace Reconnect.Client.Editor
                 rendererList.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(rendererPaths[i]);
             }
             rendererList.serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            var highList = new SerializedObject(bootstrap).FindProperty("highPipelines");
+            highList.arraySize = HighPipelines.Length;
+            for (var i = 0; i < HighPipelines.Length; i++)
+            {
+                highList.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(HighPipelines[i].High);
+            }
+            highList.serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -617,7 +625,9 @@ namespace Reconnect.Client.Editor
         private static void ConfigureRendering()
         {
             AddMobileAmbientOcclusion();
-            foreach (var path in new[] { "Assets/Settings/Mobile_RPAsset.asset", "Assets/Settings/PC_RPAsset.asset" })
+            CreateHighPipelines();
+            foreach (var path in new[] { "Assets/Settings/Mobile_RPAsset.asset", "Assets/Settings/PC_RPAsset.asset" }
+                         .Concat(HighPipelines.Select(p => p.High)))
             {
                 var asset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(path);
                 if (asset == null)
@@ -632,6 +642,48 @@ namespace Reconnect.Client.Editor
             var graphics = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/GraphicsSettings.asset")[0]);
             graphics.FindProperty("m_BrgStripping").intValue = 2;   // keep all
             graphics.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>The quality levels' pipelines and their "Grafik: Hoch" copies.</summary>
+        private static readonly (string Normal, string High)[] HighPipelines =
+        {
+            ("Assets/Settings/Mobile_RPAsset.asset", "Assets/Settings/Mobile_High_RPAsset.asset"),
+            ("Assets/Settings/PC_RPAsset.asset", "Assets/Settings/PC_High_RPAsset.asset"),
+        };
+
+        /// <summary>
+        /// "Grafik: Hoch" pipelines: copies of Mobile/PC_RPAsset (same renderer, SSAO …) at full render resolution with
+        /// 4× MSAA. GraphicsQuality switches to them at runtime instead of editing the assets. Re-copied on every setup,
+        /// so changes to the normal pipeline carry over.
+        /// </summary>
+        private static void CreateHighPipelines()
+        {
+            foreach (var (normal, high) in HighPipelines)
+            {
+                var source = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(normal);
+                if (source == null)
+                {
+                    continue;
+                }
+                var target = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(high);
+                if (target == null)
+                {
+                    AssetDatabase.CopyAsset(normal, high);
+                    target = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(high);
+                }
+                else
+                {
+                    EditorUtility.CopySerialized(source, target);   // keeps the copy's GUID
+                    target.name = Path.GetFileNameWithoutExtension(high);
+                }
+                var settings = new SerializedObject(target);
+                settings.FindProperty("m_RenderScale").floatValue = 1f;
+                settings.FindProperty("m_MSAA").intValue = 4;
+                settings.FindProperty("m_UpscalingFilter").intValue = 0;
+                settings.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(target);
+            }
+            AssetDatabase.SaveAssets();
         }
 
         private static void ConfigurePlayer()
