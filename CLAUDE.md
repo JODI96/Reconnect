@@ -262,8 +262,9 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Boden-/Dachhöhe aus swisstopo. `TowerCutaway` schneidet den echten Turm aus Google-Tiles und Gelände (Cesium-Polygon-Clipping,
   `materialKey = "Clipping"` setzen!) und baut unser Turmmodell bis zum Stockwerk; der Raum steht an der Fassade
   (`RoomAnchor`, innerhalb des Grundrisses). swisstopo-Gebäude lassen sich nicht clippen (eigenes Material) und werden im
-  swisstopo-Modus während der Schnittansicht ausgeblendet. Etage = 3,5 m. Ein gepflasterter Platz (`Plaza`, Hülle +
-  Clip-Rand + 4 m, bis −25 m tief) füllt das ausgeschnittene Loch um den Turm (sonst sah man ins Leere). Während der
+  swisstopo-Modus während der Schnittansicht ausgeblendet. Etage = 3,5 m. In den unteren Etagen (< `RoomView.CityHiddenBelowStorey` = 6)
+  wird die Stadt ausgeblendet, der Raum steht im Schwarzen (die gleich hohen Nachbarbauten blockierten sonst die Sicht,
+  und das ausgeschnittene Loch um den Turm sah aus wie eine Wand); weiter oben bleibt der Stadtblick. Während der
   Schnittansicht werfen die Stadt-Kacheln keine Schatten (weggeschnittene Nachbarn würden sonst in den Raum schatten).
 - **Glaswände:** `custom-glasswall` hat das Glas an der Aussenkante seiner 25-cm-Zelle (lokal −Z), nicht in der Mitte;
   `StoreyDesigner.GlassRoom` stellt jede Wand eine halbe Zelle nach innen und dreht sie nach aussen, so liegen alle

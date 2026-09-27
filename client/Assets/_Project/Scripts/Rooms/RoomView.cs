@@ -32,6 +32,15 @@ namespace Reconnect.Client.Rooms
         private const float MinViewWidth = 3.5f;
         private const float StartViewWidth = 8f;     // metres of floor across the screen when entering: close to the people
         private const float MaxPlayViewWidth = 22f;
+
+        /// <summary>
+        /// Low tower storeys show no city: the neighbours stand at the same height, their cut-off ground floors blocked the
+        /// view. The room floats in black instead. Higher up the city lies below and stays.
+        /// </summary>
+        public const int CityHiddenBelowStorey = 6;
+
+        /// <summary>A tower storey low enough that the city around it is hidden (see <see cref="CityHiddenBelowStorey"/>).</summary>
+        public static bool HidesCity(int? storey) => storey is >= 0 and < CityHiddenBelowStorey;
         private const float TinyOnScreen = 0.012f;   // share of the screen height below which small items are not drawn  // furthest one can zoom out in big rooms: people stay recognisable
         private const int MaxLampLights = 10;
         private const float FacadeHeight = 3.4f;         // glass top floor: floor-to-ceiling glass
@@ -1596,7 +1605,12 @@ namespace Reconnect.Client.Rooms
             roomCamera.fieldOfView = CameraFieldOfView;
             roomCamera.nearClipPlane = 0.3f;
             roomCamera.farClipPlane = _theme.Outdoor ? 40000f : 400f;
-            if (_theme.Outdoor)
+            if (_outline != null && HidesCity(_storey))
+            {
+                roomCamera.clearFlags = CameraClearFlags.SolidColor;
+                roomCamera.backgroundColor = Color.black;
+            }
+            else if (_theme.Outdoor)
             {
                 roomCamera.clearFlags = CameraClearFlags.Skybox;
             }

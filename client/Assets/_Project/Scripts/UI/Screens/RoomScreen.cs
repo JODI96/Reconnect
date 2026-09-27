@@ -238,6 +238,10 @@ namespace Reconnect.Client.UI.Screens
                     anchor = centre;
                     yaw = turn;
                     _city.ShowTowerCutaway(tower, snapshot.Room.Floor.Value);
+                    if (RoomView.HidesCity(snapshot.Room.Floor))
+                    {
+                        _city.SetVisible(false);   // low storey: black all around (see RoomView.CityHiddenBelowStorey)
+                    }
                 }
                 else
                 {

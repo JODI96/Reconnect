@@ -462,12 +462,6 @@ namespace Reconnect.Client.City
             // Exactly the outline: the storey's own floor and glass stand on it, nothing sticks out.
             Prism(root.transform, "Floor Plate", slab, outline, height - 0.4f, height);
 
-            // The clipped-out ring around the tower would show the empty background (it looked like a grey wall beside
-            // the lobby): a paved plaza fills it, reaching well under the map's own ground and deep down.
-            var paving = new Material(_slabBase);
-            paving.SetColor("_BaseColor", new Color(0.46f, 0.46f, 0.45f));
-            paving.SetFloat("_Smoothness", 0.2f);
-            Prism(root.transform, "Plaza", paving, TowerInfo.Expand(tower.Hull, ClipMargin + 4f), -25f, -0.12f);
 
             return root;
         }

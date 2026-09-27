@@ -91,7 +91,12 @@ namespace Reconnect.Client.PlayModeTests
                 yield return Wait(detail, 15f);
                 var room = detail.Result.Value;
                 var me = Guid.NewGuid();
+                city.ShowAsBackdrop();
                 city.ShowTowerCutaway(tower, storey);
+                if (RoomView.HidesCity(storey))
+                {
+                    city.SetVisible(false);   // as the room screen does: low storeys float in black
+                }
                 var (centre, yaw) = city.StoreyPlacement(tower, room, room.Width, room.Depth);
                 view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, new[]
                 {
@@ -111,7 +116,7 @@ namespace Reconnect.Client.PlayModeTests
                 Debug.Log($"[Reconnect] Storey {storey}: room outline is at most {worst:0.00} m off the tower's outline");
                 Assert.Less(worst, 0.25f, "room outline on the tower's facade");
                 view.FrameWholeRoom();
-                yield return WaitForCity(city);
+                yield return WaitForCity(city, storey);
                 Save(view.Camera, $"tower-city-{storey:00}.png");
                 // What a player sees: close to the people, turned all four ways.
                 view.LookAt(new Vector2(room.Width / 2f, room.Depth / 2f), 22f);
@@ -121,17 +126,8 @@ namespace Reconnect.Client.PlayModeTests
                     {
                         yield return null;   // the view turns smoothly
                     }
-                    yield return WaitForCity(city);
+                    yield return WaitForCity(city, storey);
                     Save(view.Camera, $"tower-city-{storey:00}-view{turn}.png");
-                    if (storey == 0 && turn == 0)
-                    {
-                        // The same view without the city: what is ours and what comes from the map tiles.
-                        city.SetVisible(false);
-                        yield return null;
-                        Save(view.Camera, "tower-city-00-view0-nocity.png");
-                        city.ShowAsBackdrop();
-                        yield return WaitForCity(city);
-                    }
                     view.RotateView(1);
                 }
                 view.Hide();
@@ -155,10 +151,14 @@ namespace Reconnect.Client.PlayModeTests
             return best;
         }
 
-        private static IEnumerator WaitForCity(CityView city)
+        private static IEnumerator WaitForCity(CityView city, int storey = -1)
         {
             yield return null;
             yield return null;
+            if (RoomView.HidesCity(storey))
+            {
+                yield break;   // no city to stream
+            }
             var end = Time.realtimeSinceStartup + 180f;
             while (city.LoadProgress < 99.9f && Time.realtimeSinceStartup < end)
             {
