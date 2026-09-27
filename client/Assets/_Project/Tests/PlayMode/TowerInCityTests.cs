@@ -123,6 +123,15 @@ namespace Reconnect.Client.PlayModeTests
                     }
                     yield return WaitForCity(city);
                     Save(view.Camera, $"tower-city-{storey:00}-view{turn}.png");
+                    if (storey == 0 && turn == 0)
+                    {
+                        // The same view without the city: what is ours and what comes from the map tiles.
+                        city.SetVisible(false);
+                        yield return null;
+                        Save(view.Camera, "tower-city-00-view0-nocity.png");
+                        city.ShowAsBackdrop();
+                        yield return WaitForCity(city);
+                    }
                     view.RotateView(1);
                 }
                 view.Hide();

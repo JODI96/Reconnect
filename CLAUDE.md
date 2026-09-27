@@ -162,7 +162,9 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Der Server merkt sich den Platz pro Person (`Sit(item, place)` → false wenn besetzt, `StandUp`, `MoveTo` steht auf;
   `PlayerSeated`, Snapshot enthält `Seat`), adressiert über den Index im Layout. Der Client misst die Sitzhöhe am Modell
   (`Seat`, Strahl von oben); die Blickrichtung ist die Vorderseite des Möbels laut Katalog (Kenney −Z, Poly Haven +Z bei
-  Rotation 0). Hocker ohne Lehne drehen sich immer zur Theke/zum Tisch daneben. `SeatDirectionTests` prüft jedes
+  Rotation 0), gemessen im eigenen Koordinatensystem des Möbels (auch frei gedreht korrekt). Eigene Sofas/Sitzbänke setzen
+  pro Platz ein leeres Kind `SeatPoint` (Position + Blickrichtung), das hat Vorrang (Ecksofa: Chaiselongue-Platz).
+  Hocker ohne Lehne drehen sich immer zur Theke/zum Tisch daneben. `SeatDirectionTests` prüft jedes
   Sitzmöbel in alle vier Richtungen und den Barfall. `AvatarView.SitOn` schiebt die Figur nach der Animation so, dass die Hüfte
   auf der Sitzfläche liegt. Antippen eines Stuhls/Sofas oder „Sitzen“ (nächster freier Platz). `SeatingTests` prüft alle Sitztypen.
 - **Schwimmen:** Pools (`custom-pool` 6×3 m oder `custom-pool-<B>x<T>`) sind in den Boden versenkt (Boden und Sockel
@@ -260,7 +262,12 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Boden-/Dachhöhe aus swisstopo. `TowerCutaway` schneidet den echten Turm aus Google-Tiles und Gelände (Cesium-Polygon-Clipping,
   `materialKey = "Clipping"` setzen!) und baut unser Turmmodell bis zum Stockwerk; der Raum steht an der Fassade
   (`RoomAnchor`, innerhalb des Grundrisses). swisstopo-Gebäude lassen sich nicht clippen (eigenes Material) und werden im
-  swisstopo-Modus während der Schnittansicht ausgeblendet. Etage = 3,5 m.
+  swisstopo-Modus während der Schnittansicht ausgeblendet. Etage = 3,5 m. Ein gepflasterter Platz (`Plaza`, Hülle +
+  Clip-Rand + 4 m, bis −25 m tief) füllt das ausgeschnittene Loch um den Turm (sonst sah man ins Leere). Während der
+  Schnittansicht werfen die Stadt-Kacheln keine Schatten (weggeschnittene Nachbarn würden sonst in den Raum schatten).
+- **Glaswände:** `custom-glasswall` hat das Glas an der Aussenkante seiner 25-cm-Zelle (lokal −Z), nicht in der Mitte;
+  `StoreyDesigner.GlassRoom` stellt jede Wand eine halbe Zelle nach innen und dreht sie nach aussen, so liegen alle
+  Glaslinien auf den Raumkanten. Rechtwinklig treffende Glaswände dürfen sich die Eckzelle teilen (`RoomLayout.IsCornerJoint`).
 - **Echte Gebäude & Namen (rechtlich):** Gebäude dürfen als Ort genannt und von aussen dargestellt werden, aber
   keine Marken/Namen von Betrieben (z. B. das Restaurant im Prime Tower heisst im Spiel „Sky Lounge“), keine Logos,
   Schriftzüge oder Kunstwerke nachbauen, und überall wo ein echtes Gebäude bespielt wird der Hinweis „Unabhängiges Spiel –
