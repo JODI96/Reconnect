@@ -9,4 +9,7 @@ public interface IRoomProvisioning
 
     /// <summary>Removes the room and its layout (e.g. the office was sold).</summary>
     Task DeleteRoomAsync(Guid roomId, CancellationToken ct);
+
+    /// <summary>Whether the room still exists.</summary>
+    Task<bool> RoomExistsAsync(Guid roomId, CancellationToken ct);
 }

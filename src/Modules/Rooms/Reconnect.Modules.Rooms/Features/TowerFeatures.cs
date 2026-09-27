@@ -68,4 +68,6 @@ internal sealed class RoomProvisioning(RoomsDbContext db, ICityDirectory city) :
 
     public Task DeleteRoomAsync(Guid roomId, CancellationToken ct) =>
         db.Rooms.Where(r => r.Id == roomId).ExecuteDeleteAsync(ct);
+
+    public Task<bool> RoomExistsAsync(Guid roomId, CancellationToken ct) => db.Rooms.AnyAsync(r => r.Id == roomId, ct);
 }

@@ -112,9 +112,9 @@ internal static class RoomEndpoints
 
         var items = request.Items ?? [];
         var problems = RoomLayout.Validate(room.BuildContext(items), items).ToList();
-        // The core of a tower floor belongs to the building: it stays exactly where it is.
+        // The core of a tower floor belongs to the building: it stays exactly where it is (its colour may change).
         var fixedBefore = room.Layout.Select(RoomMappings.ToDto).Where(i => RoomZones.IsFixed(i.ItemId)).ToList();
-        foreach (var part in fixedBefore.Where(part => !items.Contains(part)))
+        foreach (var part in fixedBefore.Where(part => !items.Any(i => i.ItemId == part.ItemId && i.Position == part.Position && i.Rotation == part.Rotation)))
         {
             problems.Add(new LayoutProblem(-1, $"„{ItemDefinitions.Find(part.ItemId)?.Name ?? part.ItemId}“ gehört zum Gebäude und bleibt, wo es ist."));
         }

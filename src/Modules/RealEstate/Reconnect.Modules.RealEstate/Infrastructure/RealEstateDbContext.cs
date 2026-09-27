@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Reconnect.Modules.City.Public;
 using Reconnect.Modules.RealEstate.Domain;
+using Reconnect.Modules.RealEstate.Features;
+using Reconnect.Modules.Rooms.Public;
 using Reconnect.SharedKernel.Persistence;
 
 namespace Reconnect.Modules.RealEstate.Infrastructure;
@@ -57,5 +59,17 @@ internal static class OfficeSeeder
             }
         }
         await db.SaveChangesAsync(ct);
+
+        // A bought office always has its room: one that went missing (e.g. removed by an older seeding) is created again.
+        var rooms = services.GetRequiredService<IRoomProvisioning>();
+        foreach (var unit in await db.Offices.AsNoTracking().Where(o => o.OwnerId != null).ToListAsync(ct))
+        {
+            if (unit.RoomId is { } roomId && await rooms.RoomExistsAsync(roomId, ct))
+            {
+                continue;
+            }
+            var created = await rooms.CreateOfficeAsync(unit.OwnerId!.Value, unit.BuildingId, unit.Floor, unit.Name, OfficeEndpoints.OfficeCapacity, ct);
+            await db.Offices.Where(o => o.Id == unit.Id).ExecuteUpdateAsync(o => o.SetProperty(x => x.RoomId, created), ct);
+        }
     }
 }

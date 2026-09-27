@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using Reconnect.Api.Tests.Infrastructure;
 using Reconnect.Contracts;
 using Reconnect.Contracts.RealEstate;
@@ -52,6 +53,24 @@ public sealed class OfficeTests(ReconnectApiFactory factory)
         Assert.DoesNotContain(await ListAsync(other), u => u.Id == office.Id);
         Assert.Equal(HttpStatusCode.Conflict, (await other.Client.PostAsync(ApiRoutes.RealEstate.Buy(office.Id), null)).StatusCode);
         Assert.DoesNotContain((await GetTowerAsync(other)).Floors, f => f.RoomId == myFloor.RoomId);
+    }
+
+    [Fact]
+    public async Task The_core_of_your_floor_can_be_dressed_up_but_not_moved()
+    {
+        var user = await factory.RegisterAsync();
+        var office = (await ListAsync(user)).First(u => u.IsAvailable && u.Price <= StartingCapital);
+        var bought = await (await user.Client.PostAsync(ApiRoutes.RealEstate.Buy(office.Id), null)).ReadAsync<OfficeTransactionDto>();
+        var room = await (await user.Client.GetAsync(ApiRoutes.Rooms.ById(bought.Unit.RoomId!.Value))).ReadAsync<RoomDto>();
+        var core = Assert.Single(room.Layout, i => i.ItemId == RoomZones.CoreItem);
+
+        var dressed = await user.Client.PutAsJsonAsync(ApiRoutes.Rooms.Layout(room.Id),
+            new UpdateRoomLayoutRequest([core with { Colours = "walnut" }]), TestUsers.Json);
+        var moved = await user.Client.PutAsJsonAsync(ApiRoutes.Rooms.Layout(room.Id),
+            new UpdateRoomLayoutRequest([core with { Colours = "walnut", Position = core.Position with { X = core.Position.X + 1f } }]), TestUsers.Json);
+
+        Assert.Equal(HttpStatusCode.OK, dressed.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, moved.StatusCode);
     }
 
     [Fact]

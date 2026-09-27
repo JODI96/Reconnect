@@ -39,10 +39,11 @@ internal static partial class ShowcaseRooms
         var definitions = Definitions().ToList();
 
         // Showcase buildings that should only contain their showcase room (Prime Tower = the sky lounge):
-        // remove other rooms of the dev admin there, e.g. renamed or test rooms from earlier versions.
+        // remove other rooms of the dev admin there, e.g. renamed or test rooms from earlier versions – but never a storey
+        // of a tower (an office the admin bought there is a real purchase).
         var names = definitions.Select(d => d.Name).ToList();
         await db.Rooms
-            .Where(r => r.OwnerId == ownerId && ExclusiveBuildings.Contains(r.BuildingId) && !names.Contains(r.Name))
+            .Where(r => r.OwnerId == ownerId && ExclusiveBuildings.Contains(r.BuildingId) && !names.Contains(r.Name) && r.Floor == null)
             .ExecuteDeleteAsync(ct);
 
         foreach (var definition in definitions)
