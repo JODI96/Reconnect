@@ -402,6 +402,7 @@ namespace Reconnect.Client.Rooms
             {
                 var x = -count * cushion / 2f + (i + 0.5f) * cushion;
                 Soft(pivot, fabric, new Vector3(x, baseTop + 0.07f, -0.06f), new Vector3(cushion - 0.01f, 0.15f, depth - 0.3f), radius * 0.9f);
+                SeatPoint(pivot, new Vector3(x, seat, -0.07f));
             }
             // Back.
             var backDepth = style == "slim" ? 0.1f : 0.16f;
@@ -445,7 +446,18 @@ namespace Reconnect.Client.Rooms
                 {
                     Turned(pivot, legs, new Vector3(x - arm / 2f, 0f, -depth / 2f - reach + 0.08f), SoftShapes.RoundedCylinder(0.018f, legHeight, 0.006f, 10));
                 }
+                // The fourth place: on the chaise, leaning against its arm, looking along the sofa.
+                SeatPoint(pivot, new Vector3(-width / 2f + arm + 0.22f, seat, -depth / 2f - reach / 2f), 90f);
             }
+        }
+
+        /// <summary>Marks a place to sit (see <see cref="Seat"/>): at seat height, looking the item's way (−Z) unless turned.</summary>
+        private static void SeatPoint(Transform parent, Vector3 position, float yaw = 180f)
+        {
+            var point = new GameObject(Seat.SeatPointName).transform;
+            point.SetParent(parent, false);
+            point.localPosition = position;
+            point.localRotation = Quaternion.Euler(0f, yaw, 0f);
         }
 
         private void Ottoman(Transform pivot, string style)
@@ -496,7 +508,7 @@ namespace Reconnect.Client.Rooms
         /// <summary>Restaurant banquette (length in metres, −1 = corner): plinth, deep seat, channel-tufted back on a wood panel.</summary>
         private void Banquette(Transform pivot, float length)
         {
-            void Run(Vector3 centre, float runLength, float turn)
+            void Run(Vector3 centre, float runLength, float turn, params float[] places)
             {
                 var run = new GameObject("Run").transform;
                 run.SetParent(pivot, false);
@@ -512,14 +524,27 @@ namespace Reconnect.Client.Rooms
                     var x = -runLength / 2f + (i + 0.5f) * runLength / channels;
                     Soft(run, Z(0), new Vector3(x, 0.76f, depth / 2f - 0.13f), new Vector3(runLength / channels - 0.01f, 0.56f, 0.15f), 0.07f, 6f);
                 }
+                foreach (var place in places)
+                {
+                    SeatPoint(run, new Vector3(place, 0.45f, -0.06f));
+                }
             }
             if (length < 0f)
             {
-                Run(new Vector3(0.32f, 0f, 0f), 1.76f, 0f);
-                Run(new Vector3(-0.88f + 0.32f, 0f, -0.56f), 1.12f, -90f);
+                // Two places on the long run and one on the short run (each clear of the corner), one in the corner
+                // looking out diagonally, so nobody's legs end up in the other run.
+                Run(new Vector3(0.32f, 0f, 0f), 1.76f, 0f, -0.2f, 0.52f);
+                Run(new Vector3(-0.88f + 0.32f, 0f, -0.56f), 1.12f, -90f, -0.16f);
+                SeatPoint(pivot, new Vector3(-0.46f, 0.45f, -0.22f), 135f);
                 return;
             }
-            Run(Vector3.zero, length, 0f);
+            var count = Mathf.Max(1, Mathf.FloorToInt(length / 0.8f + 0.01f));   // one place per 80 cm, as in the catalog
+            var spots = new float[count];
+            for (var i = 0; i < count; i++)
+            {
+                spots[i] = -length / 2f + (i + 0.5f) * length / count;
+            }
+            Run(Vector3.zero, length, 0f, spots);
         }
 
         // ---------- Chairs & stools ----------

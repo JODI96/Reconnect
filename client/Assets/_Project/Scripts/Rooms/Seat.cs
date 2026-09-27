@@ -60,32 +60,58 @@ namespace Reconnect.Client.Rooms
             var seat = pivot.gameObject.AddComponent<Seat>();
             seat.Item = item;
 
-            var alongX = bounds.size.x >= bounds.size.z;
+            // Places the model marks itself (our sofas: one per cushion, the chaise of a corner sofa): taken as they are.
+            var marked = new List<Transform>();
+            foreach (var child in pivot.GetComponentsInChildren<Transform>())
+            {
+                if (child.name == SeatPointName)
+                {
+                    marked.Add(child);
+                }
+            }
+            if (marked.Count == places)
+            {
+                foreach (var mark in marked)
+                {
+                    var facing = mark.forward;
+                    facing.y = 0f;
+                    facing.Normalize();
+                    seat.Add(room, mark.position, facing, mark.position + facing * 0.9f);
+                }
+                return seat;
+            }
+
+            // Measured in the item's own frame, so furniture turned by any angle sits right too (world bounds of a turned
+            // sofa are bigger and not along its back).
+            var local = LocalBounds(pivot);
+            var alongX = local.size.x >= local.size.z;
             var along = alongX ? Vector3.right : Vector3.forward;
             var across = alongX ? Vector3.forward : Vector3.right;
-            var length = alongX ? bounds.size.x : bounds.size.z;
-            var depth = alongX ? bounds.size.z : bounds.size.x;
+            var length = alongX ? local.size.x : local.size.z;
             for (var place = 0; place < places; place++)
             {
-                var centre = bounds.center + along * ((place + 0.5f) / places - 0.5f) * length;
-                centre.y = bounds.max.y;
+                var localCentre = local.center + along * ((place + 0.5f) / places - 0.5f) * length;
+                localCentre.y = local.max.y;
+                var centre = pivot.TransformPoint(localCentre);
 
                 // Backrest = highest side. Sofas: only front/back; single seats: all four sides.
                 var sides = places > 1 ? new[] { across, -across } : new[] { across, -across, along, -along };
-                var back = sides[0];
+                var back = pivot.TransformDirection(sides[0]);
                 var highest = float.MinValue;
                 var lowest = float.MaxValue;
                 foreach (var side in sides)
                 {
-                    var extent = Mathf.Abs(Vector3.Dot(bounds.extents, side));
-                    var height = HeightAt(colliders, centre + side * extent * 0.7f, bounds);
+                    var extent = Mathf.Abs(Vector3.Dot(local.extents, side));
+                    var height = HeightAt(colliders, pivot.TransformPoint(localCentre + side * extent * 0.7f), bounds);
                     if (height > highest)
                     {
                         highest = height;
-                        back = side;
+                        back = pivot.TransformDirection(side);
                     }
                     lowest = Mathf.Min(lowest, height);
                 }
+                back.y = 0f;
+                back.Normalize();
                 if (highest - lowest < 0.12f)
                 {
                     seat.HasBackrest = false;
@@ -102,14 +128,51 @@ namespace Reconnect.Client.Rooms
                 }
 
                 var facing = -back;
-                var reach = Mathf.Abs(Vector3.Dot(bounds.extents, facing));
+                var localFacing = pivot.InverseTransformDirection(facing);
+                var reach = Mathf.Abs(local.extents.x * localFacing.x) + Mathf.Abs(local.extents.z * localFacing.z);
                 var point = centre + facing * reach * 0.15f;
                 point.y = HeightAt(colliders, point, bounds);
-                seat._points.Add(room.InverseTransformPoint(point));
-                seat._facings.Add(Quaternion.LookRotation(room.InverseTransformDirection(facing)).eulerAngles.y);
-                seat._standing.Add(room.InverseTransformPoint(centre + facing * (reach + 0.55f)));
+                seat.Add(room, point, facing, centre + facing * (reach + 0.55f));
             }
             return seat;
+        }
+
+        /// <summary>Name of an empty child a model can put on each of its places (forward = the way one sits looking).</summary>
+        public const string SeatPointName = "SeatPoint";
+
+        private void Add(Transform room, Vector3 point, Vector3 facing, Vector3 standing)
+        {
+            _points.Add(room.InverseTransformPoint(point));
+            _facings.Add(Quaternion.LookRotation(room.InverseTransformDirection(facing)).eulerAngles.y);
+            _standing.Add(room.InverseTransformPoint(standing));
+        }
+
+        /// <summary>Bounds of the meshes under the pivot, in the pivot's own space.</summary>
+        private static Bounds LocalBounds(Transform pivot)
+        {
+            var result = new Bounds();
+            var any = false;
+            foreach (var filter in pivot.GetComponentsInChildren<MeshFilter>())
+            {
+                if (filter.sharedMesh == null)
+                {
+                    continue;
+                }
+                var toPivot = pivot.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+                var b = filter.sharedMesh.bounds;
+                for (var i = 0; i < 8; i++)
+                {
+                    var corner = toPivot.MultiplyPoint3x4(b.center + Vector3.Scale(b.extents,
+                        new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1)));
+                    if (!any)
+                    {
+                        result = new Bounds(corner, Vector3.zero);
+                        any = true;
+                    }
+                    result.Encapsulate(corner);
+                }
+            }
+            return result;
         }
 
         /// <summary>Turns every place (and where one stands before sitting) towards a room point, e.g. the bar.</summary>

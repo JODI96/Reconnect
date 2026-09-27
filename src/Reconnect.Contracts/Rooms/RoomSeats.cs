@@ -14,7 +14,7 @@ namespace Reconnect.Contracts.Rooms
             // Kenney furniture kit
             ["chair"] = 1, ["chairCushion"] = 1, ["chairDesk"] = 1, ["chairRounded"] = 1, ["chairModernCushion"] = 1,
             ["chairModernFrameCushion"] = 1, ["stoolBar"] = 1, ["loungeChair"] = 1, ["loungeDesignChair"] = 1,
-            ["benchCushion"] = 2, ["loungeSofa"] = 2, ["loungeDesignSofa"] = 2,
+            ["benchCushion"] = 1, ["loungeSofa"] = 2, ["loungeDesignSofa"] = 2,
             // Poly Haven (ph-...)
             ["ph-dining_chair_02"] = 1, ["ph-bar_chair_round_01"] = 1, ["ph-GreenChair_01"] = 1, ["ph-ArmChair_01"] = 1,
             ["ph-modern_arm_chair_01"] = 1, ["ph-mid_century_lounge_chair"] = 1, ["ph-Ottoman_01"] = 1,
