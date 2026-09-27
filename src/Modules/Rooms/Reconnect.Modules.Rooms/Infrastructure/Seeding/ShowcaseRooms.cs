@@ -135,7 +135,7 @@ internal static partial class ShowcaseRooms
         Cell("custom-rug", 40, 48, 90),   // Teppich
         Cell("custom-rug", 40, 34, 90),   // Teppich
         Cell("ph-metal_office_desk", 40, 22, 180),   // Bürotisch
-        At("computerScreen", 10.5f, 5.75f, 0),   // Bildschirm
+        At("computerScreen", 10.5f, 5.75f, 180),   // Bildschirm
         At("computerKeyboard", 10.75f, 6.25f, 0),   // Tastatur
         Cell("ph-GreenChair_01", 44, 26, 180),   // Samtstuhl
         At("ph-desk_lamp_arm_01", 11.75f, 5.875f, 180),   // Schreibtischlampe
@@ -405,7 +405,7 @@ internal static partial class ShowcaseRooms
         Cell("ph-modern_coffee_table_01", 44, 36, 270),   // Moderner Couchtisch
         At("ph-standing_picture_frame_01", 11.75f, 9.25f, 180),   // Bilderrahmen
         Cell("ph-metal_office_desk", 50, 8, 270),   // Bürotisch
-        At("computerScreen", 13f, 3.25f, 270),   // Bildschirm
+        At("computerScreen", 13f, 3.25f, 90),   // Bildschirm
         Cell("ph-GreenChair_01", 47, 12, 90),   // Samtstuhl
         Cell("game-tictactoe", 36, 16, 0),   // Tic-Tac-Toe-Tisch
         Cell("ph-dining_chair_02", 34, 18, 90),   // Esszimmerstuhl
