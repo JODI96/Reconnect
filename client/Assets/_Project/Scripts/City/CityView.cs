@@ -120,6 +120,12 @@ namespace Reconnect.Client.City
             SetVisible(false);
         }
 
+        /// <summary>
+        /// Cesium finishes height samples inside a tileset's Update; whoever awaits them would go on right there. Hiding or
+        /// clipping tilesets from inside that call crashes natively (entering the lobby did), so continue next frame.
+        /// </summary>
+        private static async System.Threading.Tasks.Task OutOfTilesetUpdate() => await System.Threading.Tasks.Task.Yield();
+
         /// <summary>Footprint and height of a tower building with a marker (measured once from swisstopo, then cached).</summary>
         public async System.Threading.Tasks.Task<TowerInfo> GetTowerAsync(Guid buildingId)
         {
@@ -148,6 +154,7 @@ namespace Reconnect.Client.City
                 _towers[buildingId] = tower;
                 Debug.Log($"[Reconnect] Tower measured: {tower.SizeX:0.0} × {tower.SizeZ:0.0} m, yaw {tower.Yaw:0}°, " +
                           $"ground {tower.GroundY:0.0}, roof {tower.RoofY:0.0} ({tower.RoofY - tower.GroundY:0} m high)");
+                await OutOfTilesetUpdate();
             }
             return tower;
         }
@@ -333,6 +340,7 @@ namespace Reconnect.Client.City
             }
 
             var result = await buildings.SampleHeightMostDetailed(points.ToArray());
+            await OutOfTilesetUpdate();
             var highest = center.y;
             for (var i = 0; i < points.Count; i++)
             {

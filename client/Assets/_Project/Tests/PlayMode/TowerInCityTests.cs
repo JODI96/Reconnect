@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Reconnect.Client.City;
@@ -76,10 +77,26 @@ namespace Reconnect.Client.PlayModeTests
             }
             city.ShowAsBackdrop();
 
-            var measure = city.GetTowerAsync(PrimeTowerId);
+            // Like the room screen entering the lobby: right after measuring, cut the tower out and hide the city – in
+            // the same continuation (this crashed natively when it ran inside the tileset's Update).
+            var measure = city.GetTowerAsync(PrimeTowerId).ContinueWith(t =>
+            {
+                if (t.Result != null)
+                {
+                    city.ShowTowerCutaway(t.Result, 0);
+                    city.SetVisible(false);
+                }
+                return t.Result;
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.FromCurrentSynchronizationContext());
             yield return Wait(measure, 60f);
             var tower = measure.Result;
             Assert.IsNotNull(tower, "tower measured");
+            for (var frame = 0; frame < 10; frame++)
+            {
+                yield return null;
+            }
+            city.HideTowerCutaway();
+            city.ShowAsBackdrop();
             Assert.That(tower.RoofY - tower.GroundY, Is.InRange(100f, 140f), "Prime Tower is 126 m high");
             Assert.That(tower.SizeX, Is.InRange(15f, 75f));
             Assert.That(tower.SizeZ, Is.InRange(15f, 75f));
