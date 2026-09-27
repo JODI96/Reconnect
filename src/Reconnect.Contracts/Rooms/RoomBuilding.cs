@@ -179,9 +179,19 @@ namespace Reconnect.Contracts.Rooms
             {
                 return definition;
             }
-            return TryPoolSize(itemId, out var width, out var depth)
-                ? new ItemDefinition(itemId, $"Pool {width}×{depth} m", "Spezial", ItemKind.Floor, width * BuildGrid.CellsPerTile, depth * BuildGrid.CellsPerTile, 0.05f)
-                : null;
+            if (TryPoolSize(itemId, out var width, out var depth))
+            {
+                return new ItemDefinition(itemId, $"Pool {width}×{depth} m", "Spezial", ItemKind.Floor, width * BuildGrid.CellsPerTile, depth * BuildGrid.CellsPerTile, 0.05f);
+            }
+            // Floor zones come in any size (custom-zone-wood-15x16): a thin inlay covering exactly that area.
+            if (FurnitureFamilies.TryZone(itemId, out _, out var zoneWidth, out var zoneDepth))
+            {
+                var cellsX = (int)Math.Round(zoneWidth / BuildGrid.CellSize);
+                var cellsZ = (int)Math.Round(zoneDepth / BuildGrid.CellSize);
+                return new ItemDefinition(itemId, FurnitureFamilies.Find(itemId).Name, FurnitureFamilies.Floors, ItemKind.Rug, cellsX, cellsZ, 0.012f,
+                    sizeX: zoneWidth, sizeZ: zoneDepth);
+            }
+            return null;
         }
 
         /// <summary>"custom-pool" = 6 × 3 m, "custom-pool-12x6" = 12 × 6 m (whole metres, water surface).</summary>

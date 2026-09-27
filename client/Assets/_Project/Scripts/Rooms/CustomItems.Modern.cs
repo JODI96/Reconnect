@@ -136,50 +136,102 @@ namespace Reconnect.Client.Rooms
             var parts = itemId.Substring(Prefix.Length).Split('-');
             string Part(int i) => i < parts.Length ? parts[i] : "";
             int Number(int i) => int.TryParse(Part(i), out var n) ? n : 0;
+            // Built in a child that is then centred on the pivot: the footprint (centred on the pivot) and the piece line up
+            // even for asymmetric ones (corner sofa, corner banquette, arc lamp).
+            var model = new GameObject("Model").transform;
+            model.SetParent(pivot, false);
+            bool built;
             switch (parts[0])
             {
-                case "sofa": Sofa(pivot, Part(1), Part(2) == "corner" ? -1 : Number(2)); return true;
-                case "armchair": Sofa(pivot, Part(1), 1); return true;
-                case "ottoman": Ottoman(pivot, Part(1)); return true;
-                case "lounge": LoungeChair(pivot, Part(1)); return true;
-                case "banquette": Banquette(pivot, Part(1) == "corner" ? -1 : Number(1) / 100f); return true;
-                case "chair": Chair(pivot, Part(1)); return true;
-                case "barstool": BarStool(pivot, Part(1)); return true;
-                case "pouf": Pouf(pivot, Part(1)); return true;
-                case "bench": Bench(pivot, Part(1), Number(2) / 100f); return true;
-                case "table": Table(pivot, Part(1), Number(2) / 100f); return true;
-                case "roundtable": RoundTable(pivot, Number(2) / 200f); return true;
-                case "bistro": Bistro(pivot, Part(1) == "square"); return true;
-                case "hightable": HighTable(pivot, Part(1) == "long"); return true;
-                case "dinner": Dinner(pivot, Part(1), Number(2)); return true;
-                case "coffeetable": CoffeeTable(pivot, Part(1)); return true;
-                case "sidetable": SideTable(pivot, Part(1)); return true;
-                case "console": ConsoleTable(pivot); return true;
-                case "desk": Desk(pivot, Number(1) / 100f); return true;
-                case "sideboard": Sideboard(pivot, Number(1) / 100f); return true;
-                case "shelf": Shelf(pivot, Part(1)); return true;
-                case "cabinet": TallCabinet(pivot); return true;
-                case "vitrine": Vitrine(pivot); return true;
-                case "barcabinet": BarCabinet(pivot); return true;
-                case "floorlamp": FloorLamp(pivot, Part(1)); return true;
-                case "tablelamp": TableLamp(pivot, Part(1)); return true;
-                case "pendantlamp": PendantLamp(pivot, Part(1)); return true;
-                case "plant": Plant(pivot, Part(1), Part(2)); return true;
-                case "planterbench": PlanterBench(pivot); return true;
-                case "acoustic": Acoustic(pivot, Part(1) == "curved"); return true;
-                case "whiteboard": Whiteboard(pivot); return true;
-                case "screen": Screen(pivot); return true;
-                case "vase": Vase(pivot, Part(1)); return true;
-                case "candles": Candles(pivot); return true;
-                case "books": Books(pivot); return true;
-                case "tray": Tray(pivot); return true;
+                case "sofa": Sofa(model, Part(1), Part(2) == "corner" ? -1 : Number(2)); built = true; break;
+                case "armchair": Sofa(model, Part(1), 1); built = true; break;
+                case "ottoman": Ottoman(model, Part(1)); built = true; break;
+                case "lounge": LoungeChair(model, Part(1)); built = true; break;
+                case "banquette": Banquette(model, Part(1) == "corner" ? -1 : Number(1) / 100f); built = true; break;
+                case "chair": Chair(model, Part(1)); built = true; break;
+                case "barstool": BarStool(model, Part(1)); built = true; break;
+                case "pouf": Pouf(model, Part(1)); built = true; break;
+                case "bench": Bench(model, Part(1), Number(2) / 100f); built = true; break;
+                case "table": Table(model, Part(1), Number(2) / 100f); built = true; break;
+                case "roundtable": RoundTable(model, Number(2) / 200f); built = true; break;
+                case "bistro": Bistro(model, Part(1) == "square"); built = true; break;
+                case "hightable": HighTable(model, Part(1) == "long"); built = true; break;
+                case "dinner": Dinner(model, Part(1), Number(2)); built = true; break;
+                case "coffeetable": CoffeeTable(model, Part(1)); built = true; break;
+                case "sidetable": SideTable(model, Part(1)); built = true; break;
+                case "console": ConsoleTable(model); built = true; break;
+                case "desk": Desk(model, Number(1) / 100f); built = true; break;
+                case "sideboard": Sideboard(model, Number(1) / 100f); built = true; break;
+                case "shelf": Shelf(model, Part(1)); built = true; break;
+                case "cabinet": TallCabinet(model); built = true; break;
+                case "vitrine": Vitrine(model); built = true; break;
+                case "barcabinet": BarCabinet(model); built = true; break;
+                case "floorlamp": FloorLamp(model, Part(1)); built = true; break;
+                case "tablelamp": TableLamp(model, Part(1)); built = true; break;
+                case "pendantlamp": PendantLamp(model, Part(1)); built = true; break;
+                case "plant": Plant(model, Part(1), Part(2)); built = true; break;
+                case "planterbench": PlanterBench(model); built = true; break;
+                case "acoustic": Acoustic(model, Part(1) == "curved"); built = true; break;
+                case "whiteboard": Whiteboard(model); built = true; break;
+                case "screen": Screen(model); built = true; break;
+                case "vase": Vase(model, Part(1)); built = true; break;
+                case "candles": Candles(model); built = true; break;
+                case "books": Books(model); built = true; break;
+                case "tray": Tray(model); built = true; break;
                 case "zone":
                     FurnitureFamilies.TryZone(itemId, out _, out var w, out var d);
-                    Soft(pivot, Z(0), new Vector3(0f, 0.006f, 0f), new Vector3(w, 0.012f, d), 0.005f);
-                    return true;
-                case "rugmodern": ModernRug(pivot, itemId); return true;
-                default: return false;
+                    Soft(model, Z(0), new Vector3(0f, 0.006f, 0f), new Vector3(w, 0.012f, d), 0.005f);
+                    built = true; break;
+                case "rugmodern": ModernRug(model, itemId); built = true; break;
+                default: built = false; break;
             }
+            if (!built)
+            {
+                DestroyNow(model.gameObject);
+                return false;
+            }
+            CentreOnPivot(pivot, model);
+            return true;
+        }
+
+        /// <summary>Moves <paramref name="model"/> so the middle of everything it shows lies on the pivot (x/z, in pivot space).</summary>
+        private static void CentreOnPivot(Transform pivot, Transform model)
+        {
+            var min = new Vector3(float.MaxValue, 0f, float.MaxValue);
+            var max = new Vector3(float.MinValue, 0f, float.MinValue);
+            foreach (var filter in model.GetComponentsInChildren<MeshFilter>())
+            {
+                if (filter.sharedMesh == null || IsSpawnedModel(filter.transform, model))
+                {
+                    continue;   // plants and books placed into it don't count (their leaves are lopsided)
+                }
+                var toPivot = pivot.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+                var b = filter.sharedMesh.bounds;
+                for (var i = 0; i < 8; i++)
+                {
+                    var corner = b.center + Vector3.Scale(b.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                    var p = toPivot.MultiplyPoint3x4(corner);
+                    min = Vector3.Min(min, p);
+                    max = Vector3.Max(max, p);
+                }
+            }
+            if (min.x > max.x)
+            {
+                return;
+            }
+            model.localPosition -= new Vector3((min.x + max.x) / 2f, 0f, (min.z + max.z) / 2f);
+        }
+
+        private static bool IsSpawnedModel(Transform part, Transform model)
+        {
+            for (var t = part; t != null && t != model; t = t.parent)
+            {
+                if (t.name.StartsWith("ph-") || t.name.StartsWith("books"))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>Material of colour zone <paramref name="i"/> of the item being built.</summary>
@@ -847,19 +899,47 @@ namespace Reconnect.Client.Rooms
             {
                 var y = 0.05f + r * (height - 0.08f) / rows;
                 Soft(pivot, wood, new Vector3(0f, y, 0f), new Vector3(width, 0.03f, depth), 0.006f);
-                if (r == rows || _spawnModel == null)
+                if (r == rows)
                 {
                     continue;
                 }
                 for (var c = 0; c < columns; c++)
                 {
                     var x = -width / 2f + (c + 0.5f) * width / columns;
-                    var id = (r + c) % 3 == 0 ? "ph-ceramic_vase_02" : "books";
-                    var thing = _spawnModel(id, pivot);
-                    if (thing != null)
-                    {
-                        thing.transform.localPosition = new Vector3(x + ((r + c) % 2 == 0 ? -0.1f : 0.1f), y + 0.015f, 0f);
-                    }
+                    ShelfFill(pivot, x, y + 0.015f, width / columns - 0.05f, (r * 7 + c * 3) % 5);
+                }
+            }
+        }
+
+        /// <summary>
+        /// What stands in a shelf compartment, built here in a few shared colours (so a whole shelf wall costs a handful of
+        /// draw calls): rows of book spines, sometimes a lying stack or a vase.
+        /// </summary>
+        private void ShelfFill(Transform pivot, float x, float y, float room, int pattern)
+        {
+            var spines = new[] { Lit(new Color(0.55f, 0.62f, 0.52f), 0.3f), Lit(new Color(0.78f, 0.45f, 0.32f), 0.3f), Lit(new Color(0.92f, 0.89f, 0.82f), 0.3f), Lit(new Color(0.2f, 0.22f, 0.26f), 0.3f) };
+            if (pattern == 0)
+            {
+                Turned(pivot, Lit(new Color(0.93f, 0.91f, 0.86f), 0.5f), new Vector3(x, y, 0f), SoftShapes.Lathe(new[]
+                {
+                    new Vector2(0f, 0f), new Vector2(0.05f, 0f), new Vector2(0.08f, 0.1f), new Vector2(0.05f, 0.2f), new Vector2(0.035f, 0.21f), new Vector2(0f, 0.2f),
+                }, 16));
+                return;
+            }
+            var left = x - room / 2f + 0.03f;
+            var count = pattern == 3 ? 5 : 9;
+            for (var i = 0; i < count; i++)
+            {
+                var height = 0.2f + ((i * 37 + pattern * 11) % 7) * 0.012f;
+                var thickness = 0.03f + ((i * 13 + pattern) % 3) * 0.008f;
+                Box(pivot, spines[(i + pattern) % spines.Length], new Vector3(left + thickness / 2f, y + height / 2f, 0f), new Vector3(thickness, height, 0.22f));
+                left += thickness + 0.004f;
+            }
+            if (pattern == 3)
+            {
+                for (var i = 0; i < 3; i++)
+                {
+                    Box(pivot, spines[i], new Vector3(x + room / 4f, y + 0.02f + i * 0.035f, 0f), new Vector3(0.24f - i * 0.02f, 0.03f, 0.18f));
                 }
             }
         }

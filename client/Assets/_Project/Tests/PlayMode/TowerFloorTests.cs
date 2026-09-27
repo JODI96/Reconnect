@@ -72,6 +72,16 @@ namespace Reconnect.Client.PlayModeTests
                 CollectionAssert.IsEmpty(view.MissingItems, room.Name + ": every item id has a model");
                 Assert.IsTrue(view.Stations.Any(s => s.GameId == RoomView.ElevatorStation), room.Name + " has a lift");
                 Save(view.Camera, $"tower-{floor.Floor:00}-avatar.png");
+                // Zones from the player's camera (about 14 m across): west wing, middle, east wing.
+                foreach (var (zone, x, z) in new[] { ("west", 11f, 18f), ("middle", 30f, 25f), ("east", 47f, 17f) })
+                {
+                    view.LookAt(new Vector2(x, z), 14f);
+                    for (var frame = 0; frame < 3; frame++)
+                    {
+                        yield return null;
+                    }
+                    Save(view.Camera, $"tower-{floor.Floor:00}-{zone}.png");
+                }
                 view.FrameWholeRoom();
                 yield return null;
                 Save(view.Camera, $"tower-{floor.Floor:00}.png");

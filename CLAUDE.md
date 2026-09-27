@@ -147,7 +147,7 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Material (`ItemMeshMerger` → `_Project/Build/Merged/*.mesh|.prefab`, LFS); aus Primitiven gebaute Items (Bar, Kern,
   Fassade, Spielstationen) fasst `MeshBaker.MergeStill` zur Laufzeit pro Material zusammen (bewegte Teile mit Skript
   bleiben einzeln), `CustomItems` teilt Materialien gleicher Farbe; kleine Dinge werden ab 1,2 % Bildhöhe nicht gezeichnet
-  (`CullWhenTiny`). Auf grossen Etagen lässt sich nur bis ~24 m Bildbreite herauszoomen (`MaxPlayViewWidth`).
+  (`CullWhenTiny`). Auf grossen Etagen lässt sich nur bis ~22 m Bildbreite herauszoomen (`MaxPlayViewWidth`).
   `CrowdPerformanceTests`: volle Lobby (150 Personen, ganz herausgezoomt über der Etagenmitte) auf „Normal“ ≤ 400 Draw
   Calls, ≤ 80 Set-Pass-Calls, ≤ 400k Dreiecke; „Hoch“ (SSAO zeichnet alles ein zweites Mal in einen Tiefen-Vorabdurchgang)
   das Doppelte bei Draw Calls/Dreiecken. Das Log listet die teuersten Items („Draws by item“).
@@ -172,6 +172,17 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Tile-Prüfung) – jeder Client leitet es gleich aus dem Layout ab. Raum: „Seebad Utoquai“ (Theme `pool`), `PoolTests`.
 - **Musik:** ein CC0-Titel pro Raum-Theme (OpenGameArt, `tools/fetch_music.py` prüft die Lizenz, `Music/CREDITS.md`),
   `RoomMusic` blendet ein/aus, „Ton“/„Stumm“ im Raum wird gemerkt; Import: Streaming + Vorbis.
+- **Eigenes Möbel-Sortiment „Reconnect Modern“** (das Rückgrat der Einrichtung): `FurnitureFamilies` (Contracts) listet
+  ~150 Möbel in Familien (Sofa-Stile × Grössen, Stühle, Tische in vielen Längen, Leuchten, Pflanzen in Töpfen, Regale,
+  Bodenzonen …) mit Namen, Kategorie, Art, Sitzplätzen und Tischplatte; `CustomItems.Modern.cs` baut sie aus `SoftShapes`
+  (abgerundete Quader, Drehkörper; Meshes pro Grösse geteilt) mit echten Materialien (`SurfaceMaterials`: Poly Haven +
+  ambientCG, CC0: Nussbaum, Eiche, Leder, Samt, Bouclé, Leinen, Carrara, schwarzer Marmor, Travertin; Stoffe grau und
+  eingefärbt). Jedes Stück wird auf seine Mitte zentriert (Grundfläche = Möbel). **Farbwahl wie in Sims:** `ItemColours`
+  – bis 3 Zonen pro Möbel (Stoff/Holz/Metall/Stein/Lack, 49 Farbfelder), gespeichert als `RoomItemDto.Colours`
+  („sage/walnut“), Server prüft sie; im Baumodus Zonen-Tabs + Farbfelder (`SwatchLook`). Familien-Möbel werden nicht
+  zusammengebacken (gleiche Teile teilen Mesh + Material → GPU-Instancing). Neue Stücke: Familie in `FurnitureFamilies`
+  (+ Farbzonen), Bau in `CustomItems.Modern.cs`, Setup Project (Katalog + Bild), `ItemColoursTests` prüft Vollständigkeit.
+  Antike Poly-Haven-Stücke stehen im Katalog unter „Klassisch“, das Kenney-Kit unter „Retro“.
 - **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney` (Low-Poly, Figuren nicht mehr genutzt), dazu
   realistische **Poly-Haven-Modelle** (CC0, kommerziell frei, keine Namensnennung nötig) in `Assets/ThirdParty/PolyHaven`
   als glTF (Import über `com.unity.cloud.gltfast`, 1k-Texturen für Mobile). Neue Poly-Haven-Modelle: Namen in
@@ -230,9 +241,14 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   `RoomDto.Outline` (Polygon in Raum-Metern) + `Anchor` (Geo-Position/Drehung); Bauregeln und Laufkacheln folgen dem
   Polygon (`RoomLayoutContext.IsInside/TileWalkable`, 0,3 m Abstand zur Fassade), keine Wände/Tür. In der Mitte der fixe
   Gebäudekern `custom-core` mit Lifttüren auf beiden Längsseiten (nicht verschieb-/löschbar, Ausstieg bleibt frei, Spawn
-  vor dem Lift). Eingerichtet werden die Etagen in `TowerFloorDesigns` mit `FloorDesigner` (Gruppen in Metern: Lounge,
-  Pultinsel, Glasraum, Tafel, Bistro, Stehtisch; `FacadeGreenery` stellt Pflanzen der Fassade entlang, `TryAt` nur wo
-  keine Regel bricht). Laufkarten prüfen: `Dump_tile_maps` mit `RECONNECT_TILEMAP=<Ordner>`. Spiele pro Etage: Vier gewinnt,
+  vor dem Lift). Eingerichtet werden die Etagen in `TowerFloorDesigns` mit `StoreyDesigner`: Gruppen (Lounge-Insel,
+  Tafel, Rundtisch, Bistro, Stehtisch, Bankettreihe, Leseecke, Arbeitsinsel, Glasraum) in eigenen Rahmen, beliebig gedreht –
+  `AlongFacade(edge, t, inset)` stellt eine Gruppe parallel zu einer schrägen Glasfront (lokal −Z = hinaus); gedrehte Gruppen
+  lassen automatisch etwas mehr Luft (`Slack`); `DecorOnLast` stellt Deko auf die echte Mitte des letzten Tischs; `TryPut`
+  (Fassadenbegrünung) setzt nur, wenn kein neues Problem entsteht. Jede Etage hat Charakter und Palette (Lobby Sand/Cognac/
+  Travertin, Coworking Eiche/Filzfarben, Sky Office Nussbaum/Leder, Konferenz Petrol/Navy, Sky Lounge Smaragd-Samt/schwarzer
+  Marmor) und Bodenzonen (`custom-zone-<carpet|wood|stone>-<B>x<T>`, jede Grösse). Sitzmöbel an Süd-/Südwestfassaden schauen
+  zum Glas (die Kamera kommt von Südwesten). Laufkarten und Item-Listen: `Dump_tile_maps` mit `RECONNECT_TILEMAP=<Ordner>`. Spiele pro Etage: Vier gewinnt,
   Memory, Schach (`BoardGameJoin/Move/Reset`, `TwoPlayerGame`), Quiz-Show, Tic-Tac-Toe, Zürich-Quiz.
   Kapazität wird atomar in Redis geprüft (Lua), der Lift (`RideElevator`) fährt sofort oder stellt in eine FIFO-Warteschlange;
   wird ein Platz frei, fährt der Nächste automatisch (`ElevatorArrived`). Wer mit dem Lift kommt, steht vor der Liftbank

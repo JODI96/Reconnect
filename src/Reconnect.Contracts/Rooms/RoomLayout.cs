@@ -445,9 +445,11 @@ namespace Reconnect.Contracts.Rooms
                 placed.Add((i, definition, cells, covered));
             }
 
-            // Overlaps per layer: who covers which cell (reported once, at the later item).
-            var owners = new Dictionary<(ItemKind Layer, int X, int Z), int>();
+            // Overlaps per layer (reported once, at the later item). Shared cells find the candidates; two items at quarter
+            // turns overlap when they share a cell, a turned one only if the real turned rectangles overlap.
+            var owners = new Dictionary<(ItemKind Layer, int X, int Z), List<int>>();
             var reported = new HashSet<int>();
+            var checkedPairs = new HashSet<(int, int)>();
             foreach (var (index, definition, _, covered) in placed)
             {
                 if (definition.Kind == ItemKind.Decor)
@@ -456,17 +458,26 @@ namespace Reconnect.Contracts.Rooms
                 }
                 foreach (var (x, z) in covered)
                 {
-                    if (owners.TryGetValue((definition.Kind, x, z), out var first))
+                    if (!owners.TryGetValue((definition.Kind, x, z), out var others))
                     {
-                        if (reported.Add(index))
+                        owners[(definition.Kind, x, z)] = others = new List<int>();
+                    }
+                    foreach (var other in others)
+                    {
+                        if (reported.Contains(index) || !checkedPairs.Add((other, index)))
                         {
-                            problems.Add(new LayoutProblem(index, $"„{definition.Name}“ überlappt mit „{ItemDefinitions.Find(items[first].ItemId).Name}“."));
+                            continue;
+                        }
+                        var otherDefinition = ItemDefinitions.Find(items[other].ItemId);
+                        var overlaps = IsQuarterTurn(items[index].Rotation) && IsQuarterTurn(items[other].Rotation)
+                            || Shape(items[index], definition).Grown(-Tolerance).Overlaps(Shape(items[other], otherDefinition).Grown(-Tolerance));
+                        if (overlaps)
+                        {
+                            reported.Add(index);
+                            problems.Add(new LayoutProblem(index, $"„{definition.Name}“ überlappt mit „{otherDefinition.Name}“."));
                         }
                     }
-                    else
-                    {
-                        owners[(definition.Kind, x, z)] = index;
-                    }
+                    others.Add(index);
                 }
             }
 

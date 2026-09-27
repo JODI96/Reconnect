@@ -21,7 +21,7 @@ namespace Reconnect.Contracts.Rooms
             new ItemDefinition("custom-shelf-wide", "Bücherregal breit", "Aufbewahrung", ItemKind.Floor, 7, 2, 1.2f, 0f, 0f, 1.83f, 0.38f, 0f, 0f),
             new ItemDefinition("custom-shelf-tall", "Bücherregal hoch", "Aufbewahrung", ItemKind.Floor, 4, 2, 2f, 0f, 0f, 1.03f, 0.38f, 0f, 0f),
             new ItemDefinition("custom-cabinet-tall", "Hochschrank", "Aufbewahrung", ItemKind.Floor, 4, 2, 2.1f, 0f, 0f, 1f, 0.52f, 0f, 0f),
-            new ItemDefinition("custom-shelf-grid", "Regalwand", "Aufbewahrung", ItemKind.Floor, 10, 2, 2.2f, 0f, 0f, 2.52f, 0.38f, 0f, 0f),
+            new ItemDefinition("custom-shelf-grid", "Regalwand", "Aufbewahrung", ItemKind.Floor, 10, 2, 2.2f, 0f, 0f, 2.43f, 0.38f, 0f, 0f),
             new ItemDefinition("ph-modern_wooden_cabinet", "Sideboard", "Aufbewahrung", ItemKind.Floor, 10, 2, 0.68f, 0.68f, 0f, 2.44f, 0.52f, 2.44f, 0.52f),
             new ItemDefinition("custom-sideboard-120", "Sideboard 120 cm", "Aufbewahrung", ItemKind.Floor, 5, 2, 0.74f, 0.74f, 0f, 1.2f, 0.46f, 1.2f, 0.46f),
             new ItemDefinition("custom-sideboard-180", "Sideboard 180 cm", "Aufbewahrung", ItemKind.Floor, 7, 2, 0.74f, 0.74f, 0f, 1.8f, 0.46f, 1.8f, 0.46f),

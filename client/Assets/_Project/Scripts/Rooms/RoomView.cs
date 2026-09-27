@@ -31,7 +31,7 @@ namespace Reconnect.Client.Rooms
         private const float CameraFieldOfView = 24f;
         private const float MinViewWidth = 3.5f;
         private const float StartViewWidth = 8f;     // metres of floor across the screen when entering: close to the people
-        private const float MaxPlayViewWidth = 24f;
+        private const float MaxPlayViewWidth = 22f;
         private const float TinyOnScreen = 0.012f;   // share of the screen height below which small items are not drawn  // furthest one can zoom out in big rooms: people stay recognisable
         private const int MaxLampLights = 10;
         private const float FacadeHeight = 3.4f;         // glass top floor: floor-to-ceiling glass
@@ -584,7 +584,7 @@ namespace Reconnect.Client.Rooms
         private float MaxViewWidth => (_width + _depth) * 0.7071f * 1.05f;
 
         /// <summary>
-        /// How far players can zoom out: the whole room, but in big rooms (tower storeys) only ~24 m – further out people are
+        /// How far players can zoom out: the whole room, but in big rooms (tower storeys) only ~22 m – further out people are
         /// a few pixels tall and a phone would draw the whole floor with everyone on it. The camera follows oneself there.
         /// </summary>
         private float MaxZoomOut => Mathf.Min(MaxViewWidth, MaxPlayViewWidth);
@@ -1224,7 +1224,16 @@ namespace Reconnect.Client.Rooms
                 }
                 if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks, item.Colours))
                 {
-                    MeshBaker.MergeStill(pivot);
+                    // Our furniture families share their meshes and materials between copies, so the GPU draws equal pieces
+                    // together (instancing); merging would make every copy unique. One-off builds (bar, stage …) are merged.
+                    if (FurnitureFamilies.Find(item.ItemId) == null)
+                    {
+                        MeshBaker.MergeStill(pivot);
+                    }
+                    else if (pivot.childCount > 0)
+                    {
+                        CullWhenTiny(pivot.GetChild(0).gameObject, Bounds(pivot));   // vases, candles, table lamps …
+                    }
                     if (blocks)
                     {
                         _obstacles.Add(Bounds(pivot));

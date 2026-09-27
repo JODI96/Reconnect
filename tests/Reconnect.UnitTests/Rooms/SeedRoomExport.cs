@@ -78,6 +78,13 @@ public sealed class SeedRoomExport
             }
             map.AppendLine("    " + string.Concat(Enumerable.Range(0, width).Select(x => (char)('0' + x % 10))));
             File.WriteAllText(Path.Combine(folder, string.Concat(name.Where(char.IsLetterOrDigit)) + ".tiles.txt"), map.ToString());
+            // Every item with index, position and rotation (to find what a build-rule message points at).
+            var list = new StringBuilder();
+            for (var i = 0; i < items.Count; i++)
+            {
+                list.AppendLine($"#{i} {items[i].ItemId} ({items[i].Position.X}, {items[i].Position.Z}) r{items[i].Rotation} {items[i].Colours}");
+            }
+            File.WriteAllText(Path.Combine(folder, string.Concat(name.Where(char.IsLetterOrDigit)) + ".items.txt"), list.ToString());
         }
     }
 

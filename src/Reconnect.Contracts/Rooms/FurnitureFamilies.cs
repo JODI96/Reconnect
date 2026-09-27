@@ -321,6 +321,7 @@ namespace Reconnect.Contracts.Rooms
             ItemColours.Register("custom-roundtable-stone-", Z("Platte", Stone, "white-marble"), Z("Fuss", Metal, "black"));
             ItemColours.Register("custom-bistro", Z("Platte", Stone, "white-marble"), Z("Fuss", Metal, "black"));
             ItemColours.Register("custom-hightable", Z("Platte", Stone, "white-marble"), Z("Fuss", Metal, "black"));
+            ItemColours.Register("custom-hightable-long", Z("Platte", Wood, "oak"), Z("Gestell", Metal, "black"));
             ItemColours.Register("custom-dinner-", Z("Tischtuch", Fabric, "cream"));
             ItemColours.Register("custom-coffeetable-", Z("Platte", Wood, "walnut"), Z("Gestell", Metal, "black"));
             ItemColours.Register("custom-coffeetable-round", Z("Platte", Stone, "white-marble"), Z("Gestell", Metal, "black"));
