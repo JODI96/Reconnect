@@ -31,6 +31,8 @@ namespace Reconnect.Client.Rooms
         private const float CameraFieldOfView = 24f;
         private const float MinViewWidth = 3.5f;
         private const float StartViewWidth = 8f;     // metres of floor across the screen when entering: close to the people
+        private const float MaxPlayViewWidth = 24f;
+        private const float TinyOnScreen = 0.012f;   // share of the screen height below which small items are not drawn  // furthest one can zoom out in big rooms: people stay recognisable
         private const int MaxLampLights = 10;
         private const float FacadeHeight = 3.4f;         // glass top floor: floor-to-ceiling glass
         private const float HallHeight = 10f;            // tower lobby (Prime Tower: 10 m serpentine walls)
@@ -582,6 +584,21 @@ namespace Reconnect.Client.Rooms
 
         private float MaxViewWidth => (_width + _depth) * 0.7071f * 1.05f;
 
+        /// <summary>
+        /// How far players can zoom out: the whole room, but in big rooms (tower storeys) only ~24 m – further out people are
+        /// a few pixels tall and a phone would draw the whole floor with everyone on it. The camera follows oneself there.
+        /// </summary>
+        private float MaxZoomOut => Mathf.Min(MaxViewWidth, MaxPlayViewWidth);
+
+        /// <summary>Zooms out as far as players can, centred on <paramref name="focus"/> (room metres; tests, previews).</summary>
+        public void ZoomOutFully(Vector2 focus)
+        {
+            _follow = false;
+            _focus = new Vector3(focus.x, 0f, focus.y);
+            _viewWidth = MaxZoomOut;
+            ApplyCamera();
+        }
+
         /// <summary>Background music of the room (theme track, mute switch).</summary>
         public RoomMusic Music { get; private set; }
 
@@ -756,7 +773,7 @@ namespace Reconnect.Client.Rooms
 
         private void Zoom(float factor)
         {
-            _viewWidth = Mathf.Clamp(_viewWidth * factor, MinViewWidth, MaxViewWidth);
+            _viewWidth = Mathf.Clamp(_viewWidth * factor, MinViewWidth, MaxZoomOut);
         }
 
         private bool TryTileAt(Vector2 screenPosition, out Vector2Int tile)
@@ -922,6 +939,7 @@ namespace Reconnect.Client.Rooms
                     foot.transform.localPosition = at + Vector3.up * 0.06f;
                     foot.transform.localScale = new Vector3(0.36f, 0.06f, 0.36f);
                 }
+                MeshBaker.MergeStill(edge);
                 _wallParts.Add((edge.gameObject, outward));
             }
         }
@@ -1185,17 +1203,20 @@ namespace Reconnect.Client.Rooms
                 }
                 if (RoomZones.IsLift(item.ItemId) && _custom.TryBuild(item.ItemId, pivot, out _))
                 {
+                    MeshBaker.MergeStill(pivot);
                     BuildElevatorStation(pivot, item);
                     continue;
                 }
                 if (CustomItems.GameStations.TryGetValue(item.ItemId, out var gameId) && _custom.TryBuild(item.ItemId, pivot, out _))
                 {
+                    MeshBaker.MergeStill(pivot);
                     _obstacles.Add(Bounds(pivot));
                     RegisterStation(pivot, gameId);
                     continue;
                 }
                 if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks))
                 {
+                    MeshBaker.MergeStill(pivot);
                     if (blocks)
                     {
                         _obstacles.Add(Bounds(pivot));
@@ -1344,7 +1365,26 @@ namespace Reconnect.Client.Rooms
                 instance.GetComponent<Renderer>().sharedMaterial = itemMaterial;
                 Destroy(instance.GetComponent<Collider>());
             }
-            return PlaceCentered(instance);
+            var bounds = PlaceCentered(instance);
+            CullWhenTiny(instance, bounds);
+            return bounds;
+        }
+
+        /// <summary>
+        /// Small things (vases, laptops, candles …) are skipped once they are only a few pixels tall on screen: zoomed out
+        /// over a full tower storey that saves hundreds of draw calls, close up nothing changes.
+        /// </summary>
+        private static void CullWhenTiny(GameObject instance, Bounds bounds)
+        {
+            var size = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
+            if (size > 1.2f)
+            {
+                return;
+            }
+            var group = instance.AddComponent<LODGroup>();
+            group.localReferencePoint = instance.transform.InverseTransformPoint(bounds.center);
+            group.size = size / Mathf.Max(0.0001f, instance.transform.lossyScale.x);
+            group.SetLODs(new[] { new LOD(TinyOnScreen, instance.GetComponentsInChildren<Renderer>()) });
         }
 
         /// <summary>Kenney models have their origin at a corner: centre them on the pivot, standing on it.</summary>
@@ -1547,7 +1587,7 @@ namespace Reconnect.Client.Rooms
             }
 
             // Start close, centred on me; pinch out to see the whole room.
-            _viewWidth = Mathf.Min(MaxViewWidth, StartViewWidth);
+            _viewWidth = Mathf.Min(MaxZoomOut, StartViewWidth);
             _follow = _viewWidth < MaxViewWidth;
             var me = Avatar(_localUserId);
             _focus = _follow && me != null

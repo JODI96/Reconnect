@@ -142,9 +142,17 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Die Szene braucht genau einen `AudioListener` (an der Hauptkamera), sonst ist nichts zu hören.
   **Handy-Budget:** jede Figur = ein Skinned Mesh mit 2 Materialien (Atlas `opaque` 1024 / `cutout` 512, ASTC) in
   3 LODs (~8k / 3k / 1k Dreiecke, LODGroup), 2-Knochen-Skinning. Poly-Haven-Möbel werden nach dem Download mit
-  `tools/polyhaven_mobile.py` (Blender) auf ≤ 3k Dreiecke pro Teil reduziert; der GPU Resident Drawer (Forward+) bündelt
-  die Möbel. `CrowdPerformanceTests`: volle Lobby (80 Personen, ganzer Raum) ≤ 400 Draw Calls, ≤ 80 Set-Pass-Calls,
-  ≤ 400k Dreiecke (SRP Batcher: Set-Pass-Wechsel sind der teure Teil).
+  `tools/polyhaven_mobile.py` (Blender) auf ≤ 3k Dreiecke pro Teil reduziert (oft platzierte Modelle wie Topfpflanzen:
+  `MODEL_BUDGET`). **Draw Calls:** Setup Project backt jedes mehrteilige Katalogmodell zu einem Mesh mit einem Sub-Mesh pro
+  Material (`ItemMeshMerger` → `_Project/Build/Merged/*.mesh|.prefab`, LFS); aus Primitiven gebaute Items (Bar, Kern,
+  Fassade, Spielstationen) fasst `MeshBaker.MergeStill` zur Laufzeit pro Material zusammen (bewegte Teile mit Skript
+  bleiben einzeln), `CustomItems` teilt Materialien gleicher Farbe; kleine Dinge werden ab 1,2 % Bildhöhe nicht gezeichnet
+  (`CullWhenTiny`). Auf grossen Etagen lässt sich nur bis ~24 m Bildbreite herauszoomen (`MaxPlayViewWidth`).
+  `CrowdPerformanceTests`: volle Lobby (150 Personen, ganz herausgezoomt über der Etagenmitte) auf „Normal“ ≤ 400 Draw
+  Calls, ≤ 80 Set-Pass-Calls, ≤ 400k Dreiecke; „Hoch“ (SSAO zeichnet alles ein zweites Mal in einen Tiefen-Vorabdurchgang)
+  das Doppelte bei Draw Calls/Dreiecken. Das Log listet die teuersten Items („Draws by item“).
+- **Grafik Hoch/Normal** (`GraphicsQuality`, pro Gerät gemerkt, Stadt-Menü): Hoch = SSAO (Tiefenquelle, halbe Auflösung),
+  Reflexionen, doppelt so viele Lampenlichter; Standard Hoch ausser auf Handys < 5,5 GB RAM.
 - **Kamera im Raum:** drehbar (Knöpfe ‹ › in 90°-Schritten, zwei Finger drehen, Q/E am PC); Wände zwischen Kamera und
   Raum werden ausgeblendet (`RoomView.RotateView`, Habbo-Prinzip: man schaut immer in den Raum).
 - **Sitzen:** Kein Emote-Knopf – Stuhl/Sofa/Liege antippen (auch knapp daneben, `RoomView.SeatAt`), die Figur läuft hin und
@@ -207,10 +215,19 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   (nie in Code/Repo). Im Google-Cloud-Konto Key auf Map Tiles API + App-IDs beschränken und Tageslimit setzen.
   Automatische Tests starten nie eine Google-Sitzung.
 - **Prime Tower (Stockwerke):** öffentliche Stockwerke gehören dem Turm (`TowerOwners`, alle Umgebungen, `PrimeTowerFloors`):
-  Lobby EG (80 Personen, Warteschlangen-Ort), Coworking 12. OG, Sky Office 24. OG, Konferenzzentrum 34. OG, Sky Lounge 35. OG.
+  Lobby EG (150 Personen, Warteschlangen-Ort, muss die grösste Kapazität haben), Coworking 12. OG (100), Sky Office 24. OG
+  (80, Theme `office`), Konferenzzentrum 34. OG (140), Sky Lounge 35. OG (120). Jede Etage ist der **echte Grundriss**
+  (~63 × 36 m, 1580 m², schräge Fassaden): `TowerFloorPlan.FromFootprint` legt das kleinste Rechteck um den OSM-Grundriss,
+  `RoomDto.Outline` (Polygon in Raum-Metern) + `Anchor` (Geo-Position/Drehung); Bauregeln und Laufkacheln folgen dem
+  Polygon (`RoomLayoutContext.IsInside/TileWalkable`, 0,3 m Abstand zur Fassade), keine Wände/Tür. In der Mitte der fixe
+  Gebäudekern `custom-core` mit Lifttüren auf beiden Längsseiten (nicht verschieb-/löschbar, Ausstieg bleibt frei, Spawn
+  vor dem Lift). Eingerichtet werden die Etagen in `TowerFloorDesigns` mit `FloorDesigner` (Gruppen in Metern: Lounge,
+  Pultinsel, Glasraum, Tafel, Bistro, Stehtisch; `FacadeGreenery` stellt Pflanzen der Fassade entlang, `TryAt` nur wo
+  keine Regel bricht). Laufkarten prüfen: `Dump_tile_maps` mit `RECONNECT_TILEMAP=<Ordner>`. Spiele pro Etage: Vier gewinnt,
+  Memory, Schach (`BoardGameJoin/Move/Reset`, `TwoPlayerGame`), Quiz-Show, Tic-Tac-Toe, Zürich-Quiz.
   Kapazität wird atomar in Redis geprüft (Lua), der Lift (`RideElevator`) fährt sofort oder stellt in eine FIFO-Warteschlange;
   wird ein Platz frei, fährt der Nächste automatisch (`ElevatorArrived`). Wer mit dem Lift kommt, steht vor der Liftbank
-  (`custom-elevator`). Büros (RealEstate, 2.–33. OG) kosten CHF, Verkauf zurück an den Turm zum Kaufpreis; in Towers kann man
+  (`custom-elevator`). Büros (RealEstate, 2.–33. OG) sind ganze Etagen (60 Personen, 5000 + Etage × 500 CHF, `StarterOffice`-Einrichtung) und kosten CHF, Verkauf zurück an den Turm zum Kaufpreis; in Towers kann man
   keine freien Räume anlegen. Geld: Wallet (Rappen als Ganzzahl, jede Buchung im Kontobuch; Transaktionen in der
   Execution Strategy, weil Aspire Retries aktiviert).
 - **Stockwerke in echter Höhe (Schnittansicht):** `TowerInfo` = Grundriss aus `BuildingDto.Footprint` (OpenStreetMap,
@@ -317,7 +334,7 @@ $unity = "C:\Program Files\Unity\Hub\Editor\6000.3.25f1\Editor\Unity.exe"
 2. **Unity-Client mit Login und Raumliste** – Upgrade auf Unity 6 LTS, Contracts-DLL einbinden
 3. **Multiplayer-Raum** – erledigt lokal über SignalR: Avatare, Laufen (Wegfindung), Sprechblasen, Emotes,
    Minigames (Tic-Tac-Toe, Zürich-Quiz), 5 Showcase-Räume. Offen: Photon/Custom Auth bei Bedarf
-4. **Raum-Editor** – erledigt: Baueditor mit 50-cm-Raster, Bauregeln auf Server und Client (offen: Item-Icons im Katalog)
+4. **Raum-Editor** – erledigt: Baueditor mit 25-cm-Raster, Deko-Feinraster, Bildkatalog, Bauregeln auf Server und Client
 5. **Likes/Matches/Chat im Client** (SignalR)
 6. **Stadtquartier aus swisstopo-Daten** – Grundlage steht (Cesium + swissBUILDINGS3D); offen: Gebäude-Eingänge, Self-Hosting, Performance auf Geräten
 7. **Face-Tracking**

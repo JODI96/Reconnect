@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Reconnect.Client.Core;
 using Reconnect.Client.Networking;
 using Reconnect.Client.Rooms;
 using Reconnect.Contracts;
@@ -17,8 +18,9 @@ using UnityEngine.TestTools;
 namespace Reconnect.Client.PlayModeTests
 {
     /// <summary>
-    /// Phone budget for the worst case: the Prime Tower lobby (largest floor) full with 80 avatars, whole room in view,
-    /// portrait at phone resolution. With URP's SRP Batcher draw calls are cheap and set-pass calls (shader/material
+    /// Phone budget for the worst case: the Prime Tower lobby (whole storey, ~1580 m²) full with 150 avatars, zoomed out as
+    /// far as players can over the middle of the floor (the tilted camera then sees nearly the whole storey), portrait at
+    /// phone resolution, for both graphics settings. With URP's SRP Batcher draw calls are cheap and set-pass calls (shader/material
     /// switches) are what costs; the limits keep mid-range phones at 30+ fps.
     /// Renders client/Logs/crowd-lobby.png. Needs the local backend.
     /// </summary>
@@ -26,7 +28,7 @@ namespace Reconnect.Client.PlayModeTests
     public sealed class CrowdPerformanceTests
     {
         private const string BaseUrl = "http://localhost:5191";
-        private const int People = 80;
+        private const int People = 150;
         private const int MaxBatches = 400;
         private const int MaxSetPassCalls = 80;
         private const int MaxTriangles = 400_000;
@@ -39,7 +41,7 @@ namespace Reconnect.Client.PlayModeTests
         }
 
         [UnityTest]
-        public IEnumerator Lobby_with_80_people_stays_within_the_phone_budget()
+        public IEnumerator Lobby_with_150_people_stays_within_the_phone_budget()
         {
             var api = new ApiClient(new UnityWebRequestTransport(10), BaseUrl);
             var login = api.PostAsync<AuthResponse>(ApiRoutes.Auth.Login, new LoginRequest("Admin", "Admin"));
@@ -55,65 +57,105 @@ namespace Reconnect.Client.PlayModeTests
             yield return Wait(detail);
             var room = detail.Result.Value;
 
-            // 80 people spread over the hall.
+            // People spread over the free floor (inside the outline, not in furniture).
+            var blocked = RoomLayout.BlockedTiles(room.Layout);
+            blocked.UnionWith(RoomLayout.OutsideTiles(RoomZones.ContextFor(room.Theme, room.Width, room.Depth, room.Layout, room.Outline)));
             var random = new System.Random(7);
-            var players = Enumerable.Range(0, People)
-                .Select(i => new RoomPlayerDto(Guid.NewGuid(), "Gast " + i, new TilePosition(random.Next(1, room.Width - 1), random.Next(1, room.Depth - 1))))
+            var free = Enumerable.Range(0, room.Width * room.Depth)
+                .Select(i => (X: i % room.Width, Z: i / room.Width))
+                .Where(t => !blocked.Contains(t))
+                .OrderBy(_ => random.Next())
+                .Take(People)
+                .ToArray();
+            Assert.AreEqual(People, free.Length, "free tiles");
+            var players = free
+                .Select((t, i) => new RoomPlayerDto(Guid.NewGuid(), "Gast " + i, new TilePosition(t.X, t.Z)))
                 .ToArray();
             var view = UnityEngine.Object.FindFirstObjectByType<RoomView>();
+            var graphics = UnityEngine.Object.FindFirstObjectByType<AppBootstrap>().Graphics;
+            var wasHigh = graphics.High;
             var target = new RenderTexture(1080, 1920, 24);
             view.Camera.targetTexture = target;
-#if UNITY_EDITOR
-            // The empty room first: the avatars' share is the difference.
-            view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, players.Take(1).ToArray()), players[0].UserId);
-            view.FrameWholeRoom();
-            for (var frame = 0; frame < 5; frame++)
-            {
-                yield return null;
-            }
-            view.Camera.Render();
-            Debug.Log($"[Reconnect] Lobby empty: {UnityEditor.UnityStats.batches} batches, {UnityEditor.UnityStats.triangles} triangles, shadow casters {UnityEditor.UnityStats.shadowCasters}");
-            var heavy = view.GetComponentsInChildren<MeshFilter>()
-                .Where(f => f.sharedMesh != null)
-                .GroupBy(f => f.sharedMesh.name)
-                .Select(g => (Name: g.Key, Count: g.Count(), Triangles: g.Sum(f => f.sharedMesh.triangles.Length / 3)))
-                .OrderByDescending(x => x.Triangles)
-                .Take(15);
-            Debug.Log("[Reconnect] Heaviest meshes: " + string.Join(" | ", heavy.Select(h => $"{h.Name} x{h.Count} = {h.Triangles}")));
-            Debug.Log($"[Reconnect] Room renderers: {view.GetComponentsInChildren<Renderer>().Length}, materials: {view.GetComponentsInChildren<Renderer>().SelectMany(r => r.sharedMaterials).Distinct().Count()}");
-            view.Hide();
-#endif
             view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, players), players[0].UserId);
-            view.FrameWholeRoom();
-            for (var frame = 0; frame < 30; frame++)
-            {
-                yield return null;
-            }
+            // Furthest a player can zoom out, over the middle of the storey (most people and furniture in view).
+            view.ZoomOutFully(new Vector2(room.Width / 2f, room.Depth / 2f));
 
-            view.Camera.Render();
+            var results = new System.Collections.Generic.List<(bool High, int Batches, int SetPasses, int Triangles)>();
+            foreach (var high in new[] { false, true })
+            {
+                graphics.Set(high);
+                for (var frame = 0; frame < 30; frame++)
+                {
+                    yield return null;
+                }
+                view.Camera.Render();
 #if UNITY_EDITOR
-            var batches = UnityEditor.UnityStats.batches;
-            var triangles = UnityEditor.UnityStats.triangles;
-            var setPasses = UnityEditor.UnityStats.setPassCalls;
-            Debug.Log($"[Reconnect] Lobby with {People} people: {batches} batches, {setPasses} set-pass calls, {triangles} triangles, shadow casters {UnityEditor.UnityStats.shadowCasters}");
-            var lodCounts = UnityEngine.Object.FindObjectsByType<LODGroup>(FindObjectsSortMode.None)
-                .Select(g => g.GetLODs().Select((lod, i) => (lod, i)).FirstOrDefault(x => x.lod.renderers.Any(r => r != null && r.isVisible)).i);
-            Debug.Log("[Reconnect] Avatar LODs visible: " + string.Join(",", lodCounts.GroupBy(i => i).OrderBy(g => g.Key).Select(g => $"LOD{g.Key}={g.Count()}")));
+                results.Add((high, UnityEditor.UnityStats.batches, UnityEditor.UnityStats.setPassCalls, UnityEditor.UnityStats.triangles));
+                Debug.Log($"[Reconnect] Lobby with {People} people, graphics {(high ? "high" : "normal")}: {UnityEditor.UnityStats.batches} batches, " +
+                          $"{UnityEditor.UnityStats.setPassCalls} set-pass calls, {UnityEditor.UnityStats.triangles} triangles");
+#endif
+            }
+#if UNITY_EDITOR
+            // What costs the most, for when the budget breaks: draw calls and triangles per kind of item.
+            var drawn = view.GetComponentsInChildren<Renderer>()
+                .Where(r => r.isVisible && r.enabled)
+                .GroupBy(r => TopItem(view.transform, r.transform))
+                .Select(g => (Name: g.Key.name, Draws: g.Sum(r => r.sharedMaterials.Length), Triangles: g.Sum(r => r is MeshRenderer ? Triangles(r.GetComponent<MeshFilter>().sharedMesh) : 0)))
+                .GroupBy(x => x.Name.StartsWith("Avatar") ? "Avatars" : x.Name)
+                .Select(g => (Name: $"{g.Key} x{g.Count()}", Draws: g.Sum(x => x.Draws), Triangles: g.Sum(x => x.Triangles)))
+                .OrderByDescending(x => x.Draws)
+                .Take(25);
+            Debug.Log("[Reconnect] Draws by item: " + string.Join(" | ", drawn.Select(d => $"{d.Name} {d.Draws}/{d.Triangles}")));
 #endif
             Save(view.Camera, "crowd-lobby.png");
+            graphics.Set(wasHigh);
             view.Hide();
             view.Camera.targetTexture = null;
             target.Release();
 
 #if UNITY_EDITOR
-            if (batches == 0)
+            if (results.Any(r => r.Batches == 0))
             {
                 Assert.Inconclusive("Render statistics not available in this run.");
             }
-            Assert.LessOrEqual(batches, MaxBatches, "draw calls");
-            Assert.LessOrEqual(setPasses, MaxSetPassCalls, "set-pass calls");
-            Assert.LessOrEqual(triangles, MaxTriangles, "triangles");
+            foreach (var (high, batches, setPasses, triangles) in results)
+            {
+                // "Hoch" (phones with 5.5 GB+) adds ambient occlusion, which draws everything once more into a depth pre-pass:
+                // cheap on the GPU (depth only, same shader state), so it gets twice the draw-call and triangle budget.
+                var factor = high ? 2 : 1;
+                var label = high ? "graphics high" : "graphics normal";
+                Assert.LessOrEqual(batches, MaxBatches * factor, "draw calls, " + label);
+                Assert.LessOrEqual(setPasses, MaxSetPassCalls, "set-pass calls, " + label);
+                Assert.LessOrEqual(triangles, MaxTriangles * factor, "triangles, " + label);
+            }
 #endif
+        }
+
+        private static Transform TopItem(Transform root, Transform t)
+        {
+            for (var x = t; x != null && x != root; x = x.parent)
+            {
+                if (x.parent != null && x.parent.name == "Furniture")
+                {
+                    return x;
+                }
+            }
+            while (t.parent != null && t.parent != root && t.parent.parent != root)
+            {
+                t = t.parent;
+            }
+            return t;
+        }
+
+        /// <summary>Triangle count without reading the mesh (works for meshes without Read/Write).</summary>
+        private static int Triangles(Mesh mesh)
+        {
+            long indices = 0;
+            for (var i = 0; i < mesh.subMeshCount; i++)
+            {
+                indices += mesh.GetIndexCount(i);
+            }
+            return (int)(indices / 3);
         }
 
         private static IEnumerator Wait(Task task)

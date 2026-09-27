@@ -109,11 +109,11 @@ internal sealed class FloorDesigner
 
     /// <summary>
     /// Plants along the glass all round the storey (every <paramref name="spacing"/> metres, a little inside the facade),
-    /// only where there is room: big pachiras, potted plants and planter boxes in turn.
+    /// only where there is room: big pachiras and planter boxes in turn.
     /// </summary>
     public FloorDesigner FacadeGreenery(float spacing = 5f, float inset = 0.9f)
     {
-        var plants = new[] { "ph-pachira_aquatica_01", "ph-potted_plant_01", "ph-planter_box_02", "ph-potted_plant_02" };
+        var plants = new[] { "ph-pachira_aquatica_01", "ph-planter_box_02" };   // light models (~3k triangles)
         var outline = _plan.Outline;
         var area = 0f;
         for (int i = 0, j = outline.Count - 1; i < outline.Count; j = i++)

@@ -42,6 +42,9 @@ namespace Reconnect.Client.Core
         private IRoomSession _roomSession;
         private GraphicsQuality _graphics;
 
+        /// <summary>The "Grafik: Hoch/Normal" setting (tests switch it to measure both).</summary>
+        public GraphicsQuality Graphics => _graphics;
+
         private async void Start()
         {
             var api = new ApiClient(new UnityWebRequestTransport(apiSettings.RequestTimeoutSeconds), apiSettings.BaseUrl);

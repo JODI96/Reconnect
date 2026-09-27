@@ -18,6 +18,8 @@ from fetch_polyhaven import VARIANTS  # noqa: E402 – files with several varian
 
 MAX_TRIANGLES = 3000         # per mesh
 MAX_MODEL_TRIANGLES = 12000  # per model (chess sets and book rows are many small meshes)
+# Items placed many times on a storey (the tower floors line the glass with plants) get a smaller budget.
+MODEL_BUDGET = {"potted_plant_01": 4000, "potted_plant_02": 4000}
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "client", "Assets", "ThirdParty", "PolyHaven"))
 
 
@@ -63,9 +65,10 @@ for path in sorted(glob.glob(os.path.join(ROOT, "*", "*.gltf"))):
         if triangles(obj) > MAX_TRIANGLES:
             decimate(obj, MAX_TRIANGLES / triangles(obj))
     total = sum(triangles(o) for o in meshes)
-    if total > MAX_MODEL_TRIANGLES:
+    budget = MODEL_BUDGET.get(model, MAX_MODEL_TRIANGLES)
+    if total > budget:
         for obj in meshes:
-            decimate(obj, MAX_MODEL_TRIANGLES / total)
+            decimate(obj, budget / total)
     after = sum(triangles(o) for o in meshes)
     if after < before or scaled or removed:
         bpy.ops.export_scene.gltf(filepath=path, export_format="GLTF_SEPARATE", export_keep_originals=True,

@@ -931,19 +931,35 @@ namespace Reconnect.Client.Rooms
             return material;
         }
 
+        /// <summary>
+        /// Materials by colour: every item of a room built with the same colour shares one material, so their parts can
+        /// be merged and drawn together (<see cref="MeshBaker"/>). Nothing changes these materials after creation.
+        /// </summary>
+        private readonly Dictionary<(bool Glow, Color Color, float Value), Material> _materials = new();
+
         private Material Lit(Color color, float smoothness = 0.35f)
         {
-            var material = new Material(_litBase);
-            material.SetColor("_BaseColor", color);
-            material.SetFloat("_Smoothness", smoothness);
+            if (!_materials.TryGetValue((false, color, smoothness), out var material))
+            {
+                material = new Material(_litBase);
+                material.SetColor("_BaseColor", color);
+                material.SetFloat("_Smoothness", smoothness);
+                _materials[(false, color, smoothness)] = material;
+            }
             return material;
         }
 
         private Material Glow(Color color, float intensity)
         {
-            var material = Lit(color);
-            material.EnableKeyword("_EMISSION");
-            material.SetColor("_EmissionColor", color * intensity);
+            if (!_materials.TryGetValue((true, color, intensity), out var material))
+            {
+                material = new Material(_litBase);
+                material.SetColor("_BaseColor", color);
+                material.SetFloat("_Smoothness", 0.35f);
+                material.EnableKeyword("_EMISSION");
+                material.SetColor("_EmissionColor", color * intensity);
+                _materials[(true, color, intensity)] = material;
+            }
             return material;
         }
 

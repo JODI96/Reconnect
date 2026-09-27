@@ -234,6 +234,12 @@ namespace Reconnect.Client.Editor
                 entry.scale = RealSizeScale(entry.model, catalog.modelScale, KenneyRealHeights[entry.itemId]);
             }
 
+            // One mesh per item (sub-mesh per material) instead of many parts: far fewer draw calls on full storeys.
+            foreach (var entry in catalog.items)
+            {
+                entry.model = ItemMeshMerger.Merge(entry.itemId, entry.model);
+            }
+
             var missing = catalog.items.Where(e => e.model == null).Select(e => e.itemId).ToList();
             if (missing.Count > 0)
             {
@@ -322,14 +328,27 @@ namespace Reconnect.Client.Editor
 
         /// <summary>
         /// Ambient occlusion also on phones (switchable, "Grafik: Hoch"): a copy of the PC renderer's SSAO feature on the
-        /// mobile renderer.
+        /// mobile renderer. It works from the depth buffer alone (normals reconstructed) at half resolution: with normals
+        /// URP draws every object a second time for them, which doubled the draw calls on a full tower storey.
         /// </summary>
         private static void AddMobileAmbientOcclusion()
         {
             var pc = AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/Settings/PC_Renderer.asset");
             var mobile = AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/Settings/Mobile_Renderer.asset");
-            if (pc == null || mobile == null || mobile.rendererFeatures.Exists(f => f != null && f.GetType().Name.Contains("AmbientOcclusion")))
+            if (pc == null || mobile == null)
             {
+                return;
+            }
+            if (mobile.rendererFeatures.Find(f => f != null && f.GetType().Name.Contains("AmbientOcclusion")) is { } existing)
+            {
+                var settings = new SerializedObject(existing);
+                settings.FindProperty("m_Settings.Source").intValue = 0;       // depth only
+                settings.FindProperty("m_Settings.Downsample").boolValue = true;
+                if (settings.ApplyModifiedPropertiesWithoutUndo())
+                {
+                    EditorUtility.SetDirty(mobile);
+                    AssetDatabase.SaveAssets();
+                }
                 return;
             }
             var source = pc.rendererFeatures.Find(f => f != null && f.GetType().Name.Contains("AmbientOcclusion"));
@@ -351,6 +370,7 @@ namespace Reconnect.Client.Editor
             data.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(mobile);
             AssetDatabase.SaveAssets();
+            AddMobileAmbientOcclusion();   // now configure the copy
         }
 
         /// <summary>One CC0 track per room theme: file name = theme id (tools/fetch_music.py), "default" for the rest.</summary>
