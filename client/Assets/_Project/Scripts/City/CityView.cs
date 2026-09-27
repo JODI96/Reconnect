@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CesiumForUnity;
 using Reconnect.Contracts.Buildings;
+using Reconnect.Contracts.Rooms;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -150,6 +151,23 @@ namespace Reconnect.Client.City
         /// real tower clipped out; swisstopo's buildings can't be clipped (own material), so in the swisstopo look they
         /// are hidden meanwhile (terrain and aerial image stay, heights keep coming from the hidden data).
         /// </summary>
+        /// <summary>
+        /// Where a tower storey stands: rooms with the real outline have their corner (0, 0) on the globe (the backend's
+        /// geo anchor), so their glass lies exactly on the tower's facade; older rectangular rooms stand in the tower's
+        /// enclosing rectangle. Returns the world point for the room's centre and its yaw.
+        /// </summary>
+        public (Vector3 Centre, float Yaw) StoreyPlacement(TowerInfo tower, RoomDto room, int width, int depth)
+        {
+            var floor = room.Floor ?? 0;
+            if (room.Anchor is { } geo)
+            {
+                var corner = ToUnityAtOrigin(geo.Latitude, geo.Longitude);
+                corner.y = tower.FloorAnchor(floor).y;
+                return (corner + Quaternion.Euler(0f, geo.Yaw, 0f) * new Vector3(width / 2f, 0f, depth / 2f), geo.Yaw);
+            }
+            return (tower.RoomAnchor(floor, width, depth), tower.Yaw);
+        }
+
         public void ShowTowerCutaway(TowerInfo tower, int floor)
         {
             _cutaway.Show(tower, floor);

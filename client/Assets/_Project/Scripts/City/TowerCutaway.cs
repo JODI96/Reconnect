@@ -17,9 +17,13 @@ namespace Reconnect.Client.City
     {
         public const float FloorHeight = 3.5f;
 
-        public TowerInfo(Vector3 center, float yaw, float sizeX, float sizeZ, float groundY, float roofY, IReadOnlyList<Vector2> outline)
+        /// <param name="outline">The real ground plan (may be concave, e.g. the Prime Tower's folded facades).</param>
+        /// <param name="hull">Its convex hull (room placement in the enclosing rectangle); null = the outline is convex.</param>
+        public TowerInfo(Vector3 center, float yaw, float sizeX, float sizeZ, float groundY, float roofY, IReadOnlyList<Vector2> outline,
+            IReadOnlyList<Vector2> hull = null)
         {
             Outline = outline;
+            Hull = hull ?? outline;
             Center = center;
             Yaw = yaw;
             SizeX = sizeX;
@@ -39,8 +43,11 @@ namespace Reconnect.Client.City
         public float RoofY { get; }
         public Quaternion Rotation => Quaternion.Euler(0f, Yaw, 0f);
 
-        /// <summary>Real footprint outline (convex, counter-clockwise), world X/Z.</summary>
+        /// <summary>Real footprint outline (counter-clockwise, may be concave), world X/Z: model, clipping, floor plate.</summary>
         public IReadOnlyList<Vector2> Outline { get; }
+
+        /// <summary>Convex hull of the outline (counter-clockwise), world X/Z.</summary>
+        public IReadOnlyList<Vector2> Hull { get; }
 
         /// <summary>Distance of a room's back walls from the facade.</summary>
         private const float FacadeInset = 0.4f;
@@ -82,13 +89,13 @@ namespace Reconnect.Client.City
             return true;
         }
 
-        /// <summary>Point in the convex, counter-clockwise outline.</summary>
+        /// <summary>Point in the convex hull (counter-clockwise).</summary>
         public bool Contains(Vector2 point)
         {
-            for (var i = 0; i < Outline.Count; i++)
+            for (var i = 0; i < Hull.Count; i++)
             {
-                var a = Outline[i];
-                var b = Outline[(i + 1) % Outline.Count];
+                var a = Hull[i];
+                var b = Hull[(i + 1) % Hull.Count];
                 if ((b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x) < 0f)
                 {
                     return false;
@@ -269,7 +276,10 @@ namespace Reconnect.Client.City
                 bestAngle += Mathf.PI / 2f;
             }
             var yaw = -bestAngle * Mathf.Rad2Deg;
-            return new TowerInfo(new Vector3(bestCentre.x, groundY, bestCentre.y), yaw, bestX, bestZ, groundY, roofY, hull);
+            // Model, clipping and floor plate follow the real outline – its hull would bridge folded facades and leave
+            // floor plate showing next to the storey.
+            return new TowerInfo(new Vector3(bestCentre.x, groundY, bestCentre.y), yaw, bestX, bestZ, groundY, roofY,
+                Reconnect.Client.Rooms.PolygonMesh.CounterClockwise(outline), hull);
         }
 
         /// <summary>Andrew's monotone chain; counter-clockwise, without the repeated first point.</summary>
@@ -299,10 +309,29 @@ namespace Reconnect.Client.City
         }
 
         /// <summary>Pushes every corner of a convex outline outwards by <paramref name="distance"/>.</summary>
+        /// <summary>
+        /// The counter-clockwise outline moved outwards by <paramref name="distance"/> (negative: inwards), every edge
+        /// parallel to the original (mitred corners, capped at sharp ones).
+        /// </summary>
         public static List<Vector2> Expand(IReadOnlyList<Vector2> outline, float distance)
         {
-            var centre = new Vector2(outline.Average(p => p.x), outline.Average(p => p.y));
-            return outline.Select(p => p + (p - centre).normalized * distance).ToList();
+            var n = outline.Count;
+            var result = new List<Vector2>(n);
+            for (var i = 0; i < n; i++)
+            {
+                var previous = outline[(i + n - 1) % n];
+                var point = outline[i];
+                var next = outline[(i + 1) % n];
+                // Outward normals of the two edges at this corner (right of the direction for a counter-clockwise outline).
+                var e1 = (point - previous).normalized;
+                var e2 = (next - point).normalized;
+                var n1 = new Vector2(e1.y, -e1.x);
+                var n2 = new Vector2(e2.y, -e2.x);
+                var bisector = (n1 + n2).normalized;
+                var cos = Mathf.Max(0.35f, Vector2.Dot(bisector, n1));
+                result.Add(point + bisector * (distance / cos));
+            }
+            return result;
         }
     }
 
@@ -430,7 +459,8 @@ namespace Reconnect.Client.City
             var slab = new Material(_slabBase);
             slab.SetColor("_BaseColor", new Color(0.62f, 0.63f, 0.63f));
             slab.SetFloat("_Smoothness", 0.45f);
-            Prism(root.transform, "Floor Plate", slab, TowerInfo.Expand(outline, 0.15f), height - 0.4f, height);
+            // Exactly the outline: the storey's own floor and glass stand on it, nothing sticks out.
+            Prism(root.transform, "Floor Plate", slab, outline, height - 0.4f, height);
 
             return root;
         }
@@ -456,21 +486,16 @@ namespace Reconnect.Client.City
             var n = outline.Count;
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
-            // Top and bottom caps (triangle fans – the outline is convex).
+            // Top and bottom caps (ear clipping – real outlines can be concave).
+            var caps = Reconnect.Client.Rooms.PolygonMesh.Triangulate(outline);
             foreach (var (y, up) in new[] { (top, true), (bottom, false) })
             {
                 var start = vertices.Count;
                 vertices.AddRange(outline.Select(p => new Vector3(p.x, y, p.y)));
-                for (var i = 1; i < n - 1; i++)
+                foreach (var (a, b, c) in caps)
                 {
-                    if (up)
-                    {
-                        triangles.AddRange(new[] { start, start + i + 1, start + i });
-                    }
-                    else
-                    {
-                        triangles.AddRange(new[] { start, start + i, start + i + 1 });
-                    }
+                    // Counter-clockwise in X/Z is clockwise seen from above in Unity: that faces up.
+                    triangles.AddRange(up ? new[] { start + a, start + c, start + b } : new[] { start + a, start + b, start + c });
                 }
             }
             // Sides.

@@ -84,13 +84,24 @@ namespace Reconnect.Client.PlayModeTests
                 var room = detail.Result.Value;
                 var me = Guid.NewGuid();
                 city.ShowTowerCutaway(tower, storey);
+                var (centre, yaw) = city.StoreyPlacement(tower, room, room.Width, room.Depth);
                 view.Show(new RoomSnapshotDto(room, room.Width, room.Depth, new[]
                 {
                     new RoomPlayerDto(me, "Anna", new TilePosition(room.Width / 2, 3)),
                     new RoomPlayerDto(Guid.NewGuid(), "Ben", new TilePosition(room.Width / 2 + 1, 4)),
-                }), me, tower.RoomAnchor(storey, room.Width, room.Depth), tower.Yaw);
+                }), me, centre, yaw);
 
                 Assert.AreEqual(tower.FloorAnchor(storey).y, view.transform.position.y, 0.01f, "floor at its real height");
+                // The storey's glass stands on the tower's facade: every outline corner of the room lies on the tower's
+                // outline (a few cm of rounding allowed), so no floor plate shows outside and nothing overhangs.
+                Assert.IsNotNull(room.Outline, "tower storeys have the real outline");
+                var worst = room.Outline.Max(p =>
+                {
+                    var world = view.transform.TransformPoint(new Vector3(p.X, 0f, p.Z));
+                    return DistanceToOutline(tower.Outline, new Vector2(world.x, world.z));
+                });
+                Debug.Log($"[Reconnect] Storey {storey}: room outline is at most {worst:0.00} m off the tower's outline");
+                Assert.Less(worst, 0.25f, "room outline on the tower's facade");
                 view.FrameWholeRoom();
                 yield return WaitForCity(city);
                 Save(view.Camera, $"tower-city-{storey:00}.png");
@@ -100,6 +111,19 @@ namespace Reconnect.Client.PlayModeTests
             city.HideTowerCutaway();
             view.Camera.targetTexture = null;
             target.Release();
+        }
+
+        private static float DistanceToOutline(System.Collections.Generic.IReadOnlyList<Vector2> outline, Vector2 point)
+        {
+            var best = float.MaxValue;
+            for (var i = 0; i < outline.Count; i++)
+            {
+                var a = outline[i];
+                var b = outline[(i + 1) % outline.Count];
+                var t = Mathf.Clamp01(Vector2.Dot(point - a, b - a) / Mathf.Max(1e-6f, (b - a).sqrMagnitude));
+                best = Mathf.Min(best, Vector2.Distance(point, a + (b - a) * t));
+            }
+            return best;
         }
 
         private static IEnumerator WaitForCity(CityView city)
