@@ -48,6 +48,12 @@ AMBIENTCG = {
     "Marble012": "carrara",
     "Marble016": "black marble",
     "Travertine009": "travertine",
+    "Tiles078": "large cream marble tiles (residence living/kitchen floor)",
+    "Tiles075": "large dark green-black marble tiles (bath/spa floor)",
+    "WoodFloor015": "light herringbone parquet",
+    "WoodFloor014": "dark herringbone parquet",
+    "WoodFloor064": "teak-like planks (pool deck)",
+    "Rubber001": "gym rubber floor",
 }
 
 

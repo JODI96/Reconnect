@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Reconnect.Client.Rooms
@@ -10,6 +11,80 @@ namespace Reconnect.Client.Rooms
         /// A slab from <paramref name="top"/> down by <paramref name="thickness"/>; UVs are metres / <paramref name="metresPerUv"/>
         /// so a tiled floor texture keeps its scale.
         /// </summary>
+        /// <summary>
+        /// The outline cut into pieces that leave the rectangular <paramref name="holes"/> open (pools): per hole the rest
+        /// is split into the part below, above, left and right of it (clipped against half-planes).
+        /// </summary>
+        public static List<List<Vector2>> AroundHoles(IReadOnlyList<Vector2> outline, IReadOnlyList<Rect> holes)
+        {
+            var pieces = new List<List<Vector2>> { new List<Vector2>(outline) };
+            foreach (var hole in holes)
+            {
+                var next = new List<List<Vector2>>();
+                foreach (var piece in pieces)
+                {
+                    var bounds = BoundsOf(piece);
+                    if (!bounds.Overlaps(hole))
+                    {
+                        next.Add(piece);
+                        continue;
+                    }
+                    // Below, above, left and right of the hole.
+                    next.Add(Clip(piece, (0f, -1f, -hole.yMin)));
+                    next.Add(Clip(piece, (0f, 1f, hole.yMax)));
+                    next.Add(Clip(Clip(Clip(piece, (0f, 1f, hole.yMin)), (0f, -1f, -hole.yMax)), (-1f, 0f, -hole.xMin)));
+                    next.Add(Clip(Clip(Clip(piece, (0f, 1f, hole.yMin)), (0f, -1f, -hole.yMax)), (1f, 0f, hole.xMax)));
+                }
+                pieces = next.Where(p => p.Count >= 3 && Mathf.Abs(SignedArea(p)) > 0.01f).ToList();
+            }
+            return pieces;
+        }
+
+        /// <summary>Sutherland–Hodgman: keeps the part of the polygon where a·x + b·z ≥ c (plane = (a, b, c)).</summary>
+        private static List<Vector2> Clip(List<Vector2> polygon, (float A, float B, float C) plane)
+        {
+            float Side(Vector2 p) => plane.A * p.x + plane.B * p.y - plane.C;
+            var result = new List<Vector2>();
+            for (var i = 0; i < polygon.Count; i++)
+            {
+                var p = polygon[i];
+                var q = polygon[(i + 1) % polygon.Count];
+                var sp = Side(p);
+                var sq = Side(q);
+                if (sp >= 0f)
+                {
+                    result.Add(p);
+                }
+                if ((sp >= 0f) != (sq >= 0f))
+                {
+                    result.Add(Vector2.Lerp(p, q, sp / (sp - sq)));
+                }
+            }
+            return result;
+        }
+
+        private static Rect BoundsOf(List<Vector2> points)
+        {
+            var min = points[0];
+            var max = points[0];
+            foreach (var p in points)
+            {
+                min = Vector2.Min(min, p);
+                max = Vector2.Max(max, p);
+            }
+            return Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+        }
+
+        private static float SignedArea(List<Vector2> points)
+        {
+            var sum = 0f;
+            for (int i = 0, j = points.Count - 1; i < points.Count; j = i++)
+            {
+                sum += points[j].x * points[i].y - points[i].x * points[j].y;
+            }
+            return sum / 2f;
+        }
+
         public static Mesh Slab(IReadOnlyList<Vector2> outline, float top, float thickness, float metresPerUv)
         {
             var points = CounterClockwise(outline);

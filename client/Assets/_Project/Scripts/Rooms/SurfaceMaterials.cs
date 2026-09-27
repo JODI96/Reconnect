@@ -24,6 +24,12 @@ namespace Reconnect.Client.Rooms
         public const string Marble = "marble";
         public const string BlackMarble = "blackmarble";
         public const string Travertine = "travertine";
+        public const string MarbleTiles = "marbletiles";
+        public const string DarkMarbleTiles = "darkmarbletiles";
+        public const string Herringbone = "herringbone";
+        public const string DarkHerringbone = "darkherringbone";
+        public const string Deck = "deck";
+        public const string Rubber = "rubber";
 
         [Serializable]
         public sealed class Entry

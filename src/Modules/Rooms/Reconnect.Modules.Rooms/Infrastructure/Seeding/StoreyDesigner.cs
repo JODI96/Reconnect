@@ -398,6 +398,60 @@ internal sealed class StoreyDesigner
         return this;
     }
 
+    /// <summary>
+    /// A solid interior wall along a grid line from (x0, z0) to (x1, z1) (whole metres, horizontal or vertical): the wall fills
+    /// the 25 cm cell row just after the line (+Z / +X side), in pieces of 3, 2 and 1 m, leaving the <paramref name="gaps"/>
+    /// (start, end in metres along the line) open as doorways. Art pieces (<c>custom-wall-art-N</c>) can replace 2 m pieces
+    /// facing −Z/−X via <paramref name="art"/> (position along the line → artwork number).
+    /// </summary>
+    public StoreyDesigner WallLine(float x0, float z0, float x1, float z1, string style, string? colours,
+        (float From, float To)[]? gaps = null, Dictionary<float, int>? art = null, bool artFacesPlus = false)
+    {
+        const float half = BuildGrid.CellSize / 2f;
+        var horizontal = Math.Abs(z1 - z0) < 0.01f;
+        var start = horizontal ? Math.Min(x0, x1) : Math.Min(z0, z1);
+        var end = horizontal ? Math.Max(x0, x1) : Math.Max(z0, z1);
+        var open = gaps ?? [];
+        var at = start;
+        while (at < end - 0.01f)
+        {
+            var gap = open.FirstOrDefault(g => at >= g.From - 0.01f && at < g.To - 0.01f);
+            if (gap != default)
+            {
+                at = gap.To;
+                continue;
+            }
+            var nextGap = open.Where(g => g.From > at + 0.01f).Select(g => g.From).DefaultIfEmpty(end).Min();
+            var room = Math.Min(end, nextGap) - at;
+            var wantsArt = art != null && art.ContainsKey(at) && room >= 2f;
+            var length = wantsArt ? 2 : room >= 3f ? 3 : room >= 2f ? 2 : 1;
+            string item;
+            string? itemColours = colours;
+            if (length == 2 && art != null && art.TryGetValue(at, out var artwork))
+            {
+                item = $"custom-wall-art-{artwork}";
+                itemColours = null;
+            }
+            else
+            {
+                item = $"custom-wall-{style}-{length}";
+            }
+            var centre = at + length / 2f;
+            // Art faces −Z at rotation 0 (horizontal) and −X at 90 (vertical); turned round to face the other side.
+            var rotation = horizontal ? (artFacesPlus ? 180f : 0f) : (artFacesPlus ? 270f : 90f);
+            if (horizontal)
+            {
+                Put(item, centre, z0 + half, rotation, itemColours);
+            }
+            else
+            {
+                Put(item, x0 + half, centre, rotation, itemColours);
+            }
+            at += length;
+        }
+        return this;
+    }
+
     /// <summary>Desk island: desks in two rows facing each other, office chairs, screens and plants.</summary>
     public StoreyDesigner WorkIsland(float x, float z, int desks, string? deskColours = null) => Group(x, z, 0f, d =>
     {

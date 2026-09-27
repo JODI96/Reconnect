@@ -749,24 +749,64 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: 9d032890e90544f42bb345b64853c302, type: 3}
   - itemId: custom-zone-stone-3x2
     icon: {fileID: 2800000, guid: b2f62c47f8f30ab40b7bd37ca6fd63ed, type: 3}
+  - itemId: custom-zone-marble-3x2
+    icon: {fileID: 2800000, guid: 761f7446dd400c5408288f84f8e9f929, type: 3}
+  - itemId: custom-zone-darkmarble-3x2
+    icon: {fileID: 2800000, guid: 9fb526cb7f9e3fc4d8ae56653fa9a2f0, type: 3}
+  - itemId: custom-zone-herringbone-3x2
+    icon: {fileID: 2800000, guid: bdad0217da025c34bb31cdd8a7605dd1, type: 3}
+  - itemId: custom-zone-deck-3x2
+    icon: {fileID: 2800000, guid: 384bf0c6c9bf31b41b9a0558f0adcd7e, type: 3}
+  - itemId: custom-zone-rubber-3x2
+    icon: {fileID: 2800000, guid: 8a70be53a33c8ba4982b930ce6f76cd8, type: 3}
   - itemId: custom-zone-carpet-4x3
     icon: {fileID: 2800000, guid: 0cf9690eeb461ea4b958b47a39dfdda4, type: 3}
   - itemId: custom-zone-wood-4x3
     icon: {fileID: 2800000, guid: 797d3c6eaaaded744ba2ad0784c311e5, type: 3}
   - itemId: custom-zone-stone-4x3
     icon: {fileID: 2800000, guid: 1448ae2ca228a204aba5d584e1c89bae, type: 3}
+  - itemId: custom-zone-marble-4x3
+    icon: {fileID: 2800000, guid: 3c410cc0a3d24654d8d87225090039b6, type: 3}
+  - itemId: custom-zone-darkmarble-4x3
+    icon: {fileID: 2800000, guid: e60cb737b14bb7b4f81ba854dee4c47a, type: 3}
+  - itemId: custom-zone-herringbone-4x3
+    icon: {fileID: 2800000, guid: 1d759d0ec843e604a83653169719284d, type: 3}
+  - itemId: custom-zone-deck-4x3
+    icon: {fileID: 2800000, guid: 79a7c9349817a664d9c16cc1dfcfa3b1, type: 3}
+  - itemId: custom-zone-rubber-4x3
+    icon: {fileID: 2800000, guid: ddff839ec77e61c4c8a15ea9ff1e7694, type: 3}
   - itemId: custom-zone-carpet-6x4
     icon: {fileID: 2800000, guid: 7ca9681716b62e143acd80d9f4f6c839, type: 3}
   - itemId: custom-zone-wood-6x4
     icon: {fileID: 2800000, guid: 25e7cebc248c00943afaab25b3180385, type: 3}
   - itemId: custom-zone-stone-6x4
     icon: {fileID: 2800000, guid: 1c3341b6757dc374190144d0372c32b1, type: 3}
+  - itemId: custom-zone-marble-6x4
+    icon: {fileID: 2800000, guid: fb36e3b11cc726a40b17095f51824ba0, type: 3}
+  - itemId: custom-zone-darkmarble-6x4
+    icon: {fileID: 2800000, guid: 2ab028a232f19b7419edd5cce94b1964, type: 3}
+  - itemId: custom-zone-herringbone-6x4
+    icon: {fileID: 2800000, guid: 5686b713284b7db438195765c19c9bd4, type: 3}
+  - itemId: custom-zone-deck-6x4
+    icon: {fileID: 2800000, guid: 2f750d2b0a242e6488a74106953cfdbb, type: 3}
+  - itemId: custom-zone-rubber-6x4
+    icon: {fileID: 2800000, guid: 4dbc6d46b2447b64b934981a042f48c3, type: 3}
   - itemId: custom-zone-carpet-8x6
     icon: {fileID: 2800000, guid: 171cac8a2e64feb4395c78af06e3bf4b, type: 3}
   - itemId: custom-zone-wood-8x6
     icon: {fileID: 2800000, guid: 00826315ecedefa40967892ab9706297, type: 3}
   - itemId: custom-zone-stone-8x6
     icon: {fileID: 2800000, guid: 6df5ba7cd8c2782409ed1ca667d6ae4f, type: 3}
+  - itemId: custom-zone-marble-8x6
+    icon: {fileID: 2800000, guid: 9275fc81edc3a0b48b85c185d24bd2f3, type: 3}
+  - itemId: custom-zone-darkmarble-8x6
+    icon: {fileID: 2800000, guid: 6c70a61bcad0f5d4993425dbc89ab2e3, type: 3}
+  - itemId: custom-zone-herringbone-8x6
+    icon: {fileID: 2800000, guid: cf043177758e58142b0ee33df6b1b371, type: 3}
+  - itemId: custom-zone-deck-8x6
+    icon: {fileID: 2800000, guid: 746173bd1360cbd4489f173143fb718a, type: 3}
+  - itemId: custom-zone-rubber-8x6
+    icon: {fileID: 2800000, guid: 603ca528cfbf7f74aa0d5c5ea5ecdba5, type: 3}
   - itemId: custom-rugmodern-round-200
     icon: {fileID: 2800000, guid: be074d93c6c4a3d47b383e8854b04a87, type: 3}
   - itemId: custom-rugmodern-round-300
@@ -775,6 +815,156 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: f2dabcb73c87b494fb3bb3803ed01818, type: 3}
   - itemId: custom-rugmodern-300x200
     icon: {fileID: 2800000, guid: 00cd36b5b570bd64688176e69244b2c9, type: 3}
+  - itemId: custom-floor-carpet
+    icon: {fileID: 2800000, guid: 418c3671d08ac96418db5605ab06a662, type: 3}
+  - itemId: custom-floor-wood
+    icon: {fileID: 2800000, guid: faac68cc03c4cde4aa6c1fd5472ac176, type: 3}
+  - itemId: custom-floor-stone
+    icon: {fileID: 2800000, guid: 87c8ff7c70c810d418292d7ef7d5e106, type: 3}
+  - itemId: custom-floor-marble
+    icon: {fileID: 2800000, guid: 844123adb38053247b72ea1e1fdd2ae6, type: 3}
+  - itemId: custom-floor-darkmarble
+    icon: {fileID: 2800000, guid: f888c85dd5211924581fcccc6bb44b19, type: 3}
+  - itemId: custom-floor-herringbone
+    icon: {fileID: 2800000, guid: 846b8f633c8f7e646b20d1acca74e637, type: 3}
+  - itemId: custom-floor-deck
+    icon: {fileID: 2800000, guid: 96062fef2a1037344878775cbf438bf7, type: 3}
+  - itemId: custom-floor-rubber
+    icon: {fileID: 2800000, guid: 2b76f6a80bc59ee458c43963bd03f291, type: 3}
+  - itemId: custom-wall-plaster-1
+    icon: {fileID: 2800000, guid: 65c4fc2c4e296c44e817eef9b9593cfb, type: 3}
+  - itemId: custom-wall-plaster-2
+    icon: {fileID: 2800000, guid: 9c8d03bf35740bf489ed512c7beaab11, type: 3}
+  - itemId: custom-wall-plaster-3
+    icon: {fileID: 2800000, guid: 636e22da5590cd442a6c5a86877f9ab7, type: 3}
+  - itemId: custom-wall-slats-1
+    icon: {fileID: 2800000, guid: bb5ac9dadcacea94e98ef6a76faa2d67, type: 3}
+  - itemId: custom-wall-slats-2
+    icon: {fileID: 2800000, guid: a38bf07666ddcd7498506d0124e8b119, type: 3}
+  - itemId: custom-wall-slats-3
+    icon: {fileID: 2800000, guid: 208fe1a623fe1bc49bf99039f1ee5ba9, type: 3}
+  - itemId: custom-wall-marble-1
+    icon: {fileID: 2800000, guid: 602875a927da78641832d86ff175f469, type: 3}
+  - itemId: custom-wall-marble-2
+    icon: {fileID: 2800000, guid: 1d04bf3ac3ce63645b1817c1b37a8044, type: 3}
+  - itemId: custom-wall-marble-3
+    icon: {fileID: 2800000, guid: 7e3de0ee912264848b73b19271d7e201, type: 3}
+  - itemId: custom-wall-art-1
+    icon: {fileID: 2800000, guid: 98c6611c348d1a2478407e2b3fa43a9e, type: 3}
+  - itemId: custom-wall-art-2
+    icon: {fileID: 2800000, guid: 2f5e626efccc9534e8c081bc2691a001, type: 3}
+  - itemId: custom-wall-art-3
+    icon: {fileID: 2800000, guid: 2741e4219473d9d4eb4357f27d1f7da0, type: 3}
+  - itemId: custom-wall-art-4
+    icon: {fileID: 2800000, guid: b402d1ad2c2ed5945920602595ff81b4, type: 3}
+  - itemId: custom-wall-art-5
+    icon: {fileID: 2800000, guid: 5d5c1abdc2167b144a24a5b3771eb6ba, type: 3}
+  - itemId: custom-wall-art-6
+    icon: {fileID: 2800000, guid: 882ec7386fb582144ae4547a0e4c69fa, type: 3}
+  - itemId: custom-wall-art-7
+    icon: {fileID: 2800000, guid: a3fb7d7732cdc914fba0c3ffdab59041, type: 3}
+  - itemId: custom-wall-art-8
+    icon: {fileID: 2800000, guid: b68f9a2a447ee0645bc1c0d761676187, type: 3}
+  - itemId: custom-kitchenisland-300
+    icon: {fileID: 2800000, guid: c596c168abe76a5468c207b5ac138796, type: 3}
+  - itemId: custom-kitchenwall-300
+    icon: {fileID: 2800000, guid: d9cbf67feb19178409281dce00679e39, type: 3}
+  - itemId: custom-kitchenisland-400
+    icon: {fileID: 2800000, guid: 82b90dbaf6034564faab74fbe58181b8, type: 3}
+  - itemId: custom-kitchenwall-400
+    icon: {fileID: 2800000, guid: 66159f4034978204d83d6a9cdb378820, type: 3}
+  - itemId: custom-kitchenhood
+    icon: {fileID: 2800000, guid: 167f03754eb280d46a659cf7de3137ed, type: 3}
+  - itemId: custom-winefridge
+    icon: {fileID: 2800000, guid: 14ef41a7e7f45c941af258870f0f29d3, type: 3}
+  - itemId: custom-espresso
+    icon: {fileID: 2800000, guid: c5db251a41860de4990510df33b9bfa3, type: 3}
+  - itemId: custom-fruitbowl
+    icon: {fileID: 2800000, guid: e59bbbd3543a56348888abc1d4251425, type: 3}
+  - itemId: custom-fireplace
+    icon: {fileID: 2800000, guid: 58252e39932030c46b21be46676974a6, type: 3}
+  - itemId: custom-tvwall
+    icon: {fileID: 2800000, guid: 0566df1dbef4bc84a93468245b346bfa, type: 3}
+  - itemId: custom-piano
+    icon: {fileID: 2800000, guid: 0e3231794f0787c4f9eb3c0d128dc59e, type: 3}
+  - itemId: custom-sculpture-1
+    icon: {fileID: 2800000, guid: 2898a5e3f38a5ca4ea754f8064003343, type: 3}
+  - itemId: custom-sculpture-2
+    icon: {fileID: 2800000, guid: fd266c43a59f3d84889a4f00ad4c5767, type: 3}
+  - itemId: custom-sculpture-3
+    icon: {fileID: 2800000, guid: e041eb9d19bb67c42b89924f3c931025, type: 3}
+  - itemId: custom-bed-panel
+    icon: {fileID: 2800000, guid: c9c8628a9ec15c847bd27545145d251b, type: 3}
+  - itemId: custom-bed-canopy
+    icon: {fileID: 2800000, guid: e3493807d012ca94fbdf1961da65ebe6, type: 3}
+  - itemId: custom-nightstand
+    icon: {fileID: 2800000, guid: c705e96e69b081c4caf27042550ff6b5, type: 3}
+  - itemId: custom-wardrobe-200
+    icon: {fileID: 2800000, guid: ed9d87622dfbcf94b870f9aeda472723, type: 3}
+  - itemId: custom-wardrobe-300
+    icon: {fileID: 2800000, guid: 5cc224393f39c914989c4b653d52d048, type: 3}
+  - itemId: custom-vanity
+    icon: {fileID: 2800000, guid: 260dfd043e4cca348b0b6dc5df43b1d9, type: 3}
+  - itemId: custom-chaise
+    icon: {fileID: 2800000, guid: 124bbb7d7bf4f33459b133287b75f6a5, type: 3}
+  - itemId: custom-mirror
+    icon: {fileID: 2800000, guid: 573bb37655ee9864d8e283689497a8bd, type: 3}
+  - itemId: custom-bathtub
+    icon: {fileID: 2800000, guid: 162832193858c124a83d466a937fec1f, type: 3}
+  - itemId: custom-shower
+    icon: {fileID: 2800000, guid: c2c9ffe68aaffc84cb54c6f4c46416aa, type: 3}
+  - itemId: custom-washstand
+    icon: {fileID: 2800000, guid: fe56b8878dc06204994a81d06a62153f, type: 3}
+  - itemId: custom-toilet
+    icon: {fileID: 2800000, guid: 17469ecb2c7c78f43b5ec05fef8f5d15, type: 3}
+  - itemId: custom-towelrack
+    icon: {fileID: 2800000, guid: dbd29cd15861c9f42820d6432e6fd429, type: 3}
+  - itemId: custom-sauna
+    icon: {fileID: 2800000, guid: 8b76bfea82179e148a07fc6541e94381, type: 3}
+  - itemId: custom-hottub
+    icon: {fileID: 2800000, guid: 4a78ebeb0cecd3a48960503dee9377f4, type: 3}
+  - itemId: custom-towels
+    icon: {fileID: 2800000, guid: 29a48a64d65150d459d6b937672c1bcd, type: 3}
+  - itemId: custom-treadmill
+    icon: {fileID: 2800000, guid: 86a8b22177e9af443836b5b2c138206e, type: 3}
+  - itemId: custom-spinbike
+    icon: {fileID: 2800000, guid: 8419ec27a8a44964f9d84e48fb07954c, type: 3}
+  - itemId: custom-powerrack
+    icon: {fileID: 2800000, guid: b19fe55fe8902724b97bf4034438c805, type: 3}
+  - itemId: custom-weightbench
+    icon: {fileID: 2800000, guid: e697470431e978149813b445dd5c2c76, type: 3}
+  - itemId: custom-dumbbells
+    icon: {fileID: 2800000, guid: cfb96fee3d913654a96c3b3f87a27aea, type: 3}
+  - itemId: custom-boxingbag
+    icon: {fileID: 2800000, guid: cb0db99c21ebb2045b99f019a1dc14a7, type: 3}
+  - itemId: custom-gymmirror
+    icon: {fileID: 2800000, guid: 70854f20564457b4dadffb61b434913b, type: 3}
+  - itemId: custom-yogamat
+    icon: {fileID: 2800000, guid: 8522186cca25c82458759914017399e2, type: 3}
+  - itemId: custom-executivedesk
+    icon: {fileID: 2800000, guid: d26af1fdcaa8a3d4194117ec60540e26, type: 3}
+  - itemId: custom-executivechair
+    icon: {fileID: 2800000, guid: 75c9622067198534db177b5a70a6da4a, type: 3}
+  - itemId: custom-gamingdesk
+    icon: {fileID: 2800000, guid: 65773eba442fda844abf383340594e2c, type: 3}
+  - itemId: custom-gamingchair
+    icon: {fileID: 2800000, guid: e40451e9b4870a342a09d9db8b6cf4f4, type: 3}
+  - itemId: custom-drinkfridge
+    icon: {fileID: 2800000, guid: c70132be3e984754d8672a8f324e35b4, type: 3}
+  - itemId: custom-ledlamp-rgb
+    icon: {fileID: 2800000, guid: 4e872cdbd0e77fa45b56adbde3034810, type: 3}
+  - itemId: custom-arcade
+    icon: {fileID: 2800000, guid: 03e6d3b73225c6544bab2a8458a54f18, type: 3}
+  - itemId: custom-bed-dungeon
+    icon: {fileID: 2800000, guid: a0f781bbb1c752e4aa29b088829c83df, type: 3}
+  - itemId: custom-adult-cross
+    icon: {fileID: 2800000, guid: af57e6ae0f50ff544ac15f545ccb5577, type: 3}
+  - itemId: custom-adult-bench
+    icon: {fileID: 2800000, guid: 42a3314aa0360cc4293d79c289f9f25b, type: 3}
+  - itemId: custom-adult-rack
+    icon: {fileID: 2800000, guid: 7e24741ce6aad91409affcf0e2230fa3, type: 3}
+  - itemId: custom-adult-cage
+    icon: {fileID: 2800000, guid: bc8cef20c98166b4b9ebf704e5991150, type: 3}
   - itemId: game-tictactoe
     icon: {fileID: 2800000, guid: 5efb0b99374abb44898b94051ffedca1, type: 3}
   - itemId: game-quiz

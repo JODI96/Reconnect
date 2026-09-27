@@ -47,11 +47,15 @@ namespace Reconnect.Contracts.Rooms
             {
                 "sand", "cream", "oat", "stone", "charcoal", "black", "sage", "olive", "emerald", "petrol", "navy", "sky",
                 "blush", "terracotta", "rust", "mustard", "plum", "burgundy", "cognac", "tan", "espresso", "white-leather",
+                "black-leather", "red-leather", "crimson",
             },
-            [SwatchKind.Wood] = new[] { "oak", "light-oak", "walnut", "smoked-oak", "ebony", "cherry" },
+            [SwatchKind.Wood] = new[] { "oak", "light-oak", "walnut", "smoked-oak", "ebony", "cherry", "herringbone", "dark-herringbone", "teak" },
             [SwatchKind.Metal] = new[] { "black", "brass", "chrome", "bronze", "white", "gunmetal" },
-            [SwatchKind.Stone] = new[] { "white-marble", "black-marble", "green-marble", "travertine", "terrazzo", "concrete" },
-            [SwatchKind.Paint] = new[] { "white", "warm-white", "greige", "sage", "navy", "black", "terracotta", "mustard", "blush" },
+            [SwatchKind.Stone] = new[]
+            {
+                "white-marble", "black-marble", "green-marble", "travertine", "terrazzo", "concrete", "marble-tiles", "dark-marble-tiles", "rubber",
+            },
+            [SwatchKind.Paint] = new[] { "white", "warm-white", "greige", "sage", "navy", "black", "terracotta", "mustard", "blush", "anthracite", "red", "cyan", "violet" },
         };
 
         private static readonly List<(string Prefix, ColourZone[] Zones)> Families = new List<(string, ColourZone[])>();

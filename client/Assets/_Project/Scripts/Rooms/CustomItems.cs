@@ -124,7 +124,16 @@ namespace Reconnect.Client.Rooms
                 case "custom-pendant": Pendant(pivot); blocksTiles = false; return true;
                 case "custom-ledstrip": LedStrip(pivot); blocksTiles = false; return true;
                 case ElevatorItem: Elevator(pivot); return true;
-                case CoreItem: Core(pivot); return true;
+                case CoreItem:
+                    if (string.IsNullOrEmpty(colours))
+                    {
+                        Core(pivot);
+                    }
+                    else
+                    {
+                        CoreResidence(pivot, SwatchMaterial(SwatchKind.Wood, ItemColours.Resolve(CoreItem, colours)[0]));
+                    }
+                    return true;
                 case "custom-glasswall": GlassWall(pivot); return true;
                 case "custom-phonebooth": PhoneBooth(pivot); return true;
                 case "custom-officechair": OfficeChair(pivot); return true;

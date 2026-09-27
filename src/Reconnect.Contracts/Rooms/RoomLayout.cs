@@ -286,9 +286,15 @@ namespace Reconnect.Contracts.Rooms
         /// <summary>Partition walls that may share the corner cells where they meet at a right angle (glass rooms).</summary>
         public static readonly IReadOnlyCollection<string> Partitions = new HashSet<string> { "custom-glasswall" };
 
+        /// <summary>A rug lying on a floor zone (a zone is a floor finish, rugs go on top of it; two zones don't stack).</summary>
+        public static bool IsRugOnZone(RoomItemDto a, RoomItemDto b) =>
+            FurnitureFamilies.TryZone(a.ItemId, out _, out _, out _) != FurnitureFamilies.TryZone(b.ItemId, out _, out _, out _);
+
+        private static bool IsPartition(string itemId) => Partitions.Contains(itemId) || FurnitureFamilies.IsWall(itemId);
+
         /// <summary>Two partition walls meeting at a right angle: they share their corner cells instead of overlapping.</summary>
         public static bool IsCornerJoint(RoomItemDto a, RoomItemDto b) =>
-            Partitions.Contains(a.ItemId) && Partitions.Contains(b.ItemId)
+            IsPartition(a.ItemId) && IsPartition(b.ItemId)
             && IsQuarterTurn(a.Rotation) && IsQuarterTurn(b.Rotation) && (Quarter(a.Rotation) + Quarter(b.Rotation)) % 2 == 1;
 
         public static OrientedArea Shape(RoomItemDto item, ItemDefinition definition)
@@ -477,7 +483,7 @@ namespace Reconnect.Contracts.Rooms
                             continue;
                         }
                         var otherDefinition = ItemDefinitions.Find(items[other].ItemId);
-                        if (IsCornerJoint(items[index], items[other]))
+                        if (IsCornerJoint(items[index], items[other]) || IsRugOnZone(items[index], items[other]))
                         {
                             continue;
                         }

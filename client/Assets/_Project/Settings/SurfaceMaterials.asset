@@ -46,3 +46,21 @@ MonoBehaviour:
   - name: travertine
     material: {fileID: 2100000, guid: 7c94f1bfa8667364187427f36a485906, type: 2}
     tintable: 0
+  - name: marbletiles
+    material: {fileID: 2100000, guid: f46cf8a84e9f9f44ea3a4eeee45de083, type: 2}
+    tintable: 0
+  - name: darkmarbletiles
+    material: {fileID: 2100000, guid: 5400878a10ea31b4d94d8356fb19c3aa, type: 2}
+    tintable: 0
+  - name: herringbone
+    material: {fileID: 2100000, guid: 88dd3be462b2ff74e8eb571ee278c69d, type: 2}
+    tintable: 0
+  - name: darkherringbone
+    material: {fileID: 2100000, guid: 0ef92224a89090141bb33a1168163f31, type: 2}
+    tintable: 0
+  - name: deck
+    material: {fileID: 2100000, guid: dec7dc958f6d7c64bb66a1c00484ed0d, type: 2}
+    tintable: 0
+  - name: rubber
+    material: {fileID: 2100000, guid: a8f0e08a4781602469a4c1dbf1d69037, type: 2}
+    tintable: 0

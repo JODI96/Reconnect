@@ -333,6 +333,12 @@ namespace Reconnect.Client.Editor
             (SurfaceMaterials.Marble, "Marble012", Color.white, 0.8f, 1.2f, false),
             (SurfaceMaterials.BlackMarble, "Marble016", Color.white, 0.82f, 1.2f, false),
             (SurfaceMaterials.Travertine, "Travertine009", Color.white, 0.4f, 1.2f, false),
+            (SurfaceMaterials.MarbleTiles, "Tiles078", Color.white, 0.78f, 2.4f, false),
+            (SurfaceMaterials.DarkMarbleTiles, "Tiles075", Color.white, 0.8f, 1.35f, false),
+            (SurfaceMaterials.Herringbone, "WoodFloor015", Color.white, 0.5f, 1.5f, false),
+            (SurfaceMaterials.DarkHerringbone, "WoodFloor014", Color.white, 0.55f, 1.5f, false),
+            (SurfaceMaterials.Deck, "WoodFloor064", new Color(0.85f, 0.8f, 0.75f), 0.35f, 1.6f, false),
+            (SurfaceMaterials.Rubber, "Rubber001", Color.white, 0.12f, 1f, false),
         };
 
         private static void CreateSurfaceMaterials()

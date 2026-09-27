@@ -453,14 +453,10 @@ namespace Reconnect.Client.City
                 }
                 var body = new Material(_slabBase);
                 body.SetColor("_BaseColor", new Color(0.12f, 0.14f, 0.15f));
-                Prism(root.transform, "Body", body, TowerInfo.Expand(outline, -0.3f), 0.05f, height - 0.1f);
+                // The body ends well below the storey: the room's own floor slab closes the top, with holes for pools
+                // (2 m deep basins) – a plate here would cover the water.
+                Prism(root.transform, "Body", body, TowerInfo.Expand(outline, -0.3f), 0.05f, Mathf.Max(0.1f, height - 2.4f));
             }
-
-            var slab = new Material(_slabBase);
-            slab.SetColor("_BaseColor", new Color(0.62f, 0.63f, 0.63f));
-            slab.SetFloat("_Smoothness", 0.45f);
-            // Exactly the outline: the storey's own floor and glass stand on it, nothing sticks out.
-            Prism(root.transform, "Floor Plate", slab, outline, height - 0.4f, height);
 
 
             return root;

@@ -89,6 +89,12 @@ namespace Reconnect.Client.Rooms
         private float _targetYaw;    // turns smoothly towards this
         private float _lastTwistAngle = float.NaN;
         private readonly List<(GameObject Part, Vector2 Normal)> _wallParts = new();   // walls/facade by outward direction
+
+        /// <summary>Interior walls built from the layout: full and cut-down version, centre in room metres.</summary>
+        private readonly List<(GameObject Full, GameObject Cut, Vector2 Centre)> _itemWalls = new();
+
+        /// <summary>Interior walls closer to the camera than this (metres beyond the focus) are cut down.</summary>
+        private const float WallCutawayReach = 0.8f;
         private IReadOnlyList<RoomPointDto> _outline;   // floor outline of tower storeys (null = rectangle)
         private float _viewWidth;
         private bool _follow = true;
@@ -337,6 +343,7 @@ namespace Reconnect.Client.Rooms
             _tops.Clear();
             _obstacles.Clear();
             _missingItems.Clear();
+            _itemWalls.Clear();
             _lampLights = 0;
         }
 
@@ -841,6 +848,13 @@ namespace Reconnect.Client.Rooms
                     _ => 0.3f,
                 });
             }
+            // A floor finish in the layout (custom-floor-…) replaces the theme's floor in the whole room.
+            if (_layout.FirstOrDefault(i => FurnitureFamilies.IsFloorFinish(i.ItemId)) is { } finish
+                && _custom.FloorFinish(finish.ItemId, finish.Colours, out var finishMaterial, out var finishMetres))
+            {
+                material = new Material(finishMaterial);
+                metresPerTile = finishMetres;
+            }
             material.mainTextureScale = new Vector2(_width / metresPerTile, _depth / metresPerTile);
 
             if (_outline != null)
@@ -892,15 +906,20 @@ namespace Reconnect.Client.Rooms
         {
             var points = _outline.Select(p => new Vector2(p.X, p.Z)).ToList();
             material.mainTextureScale = Vector2.one;   // the mesh carries UVs in texture repeats
-            var floor = new GameObject("Floor", typeof(MeshFilter), typeof(MeshRenderer));
-            floor.transform.SetParent(_floorRoot, false);
-            floor.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(points, 0f, 0.1f, metresPerTile);
-            floor.GetComponent<MeshRenderer>().sharedMaterial = material;
+            var baseMaterial = Tinted(wallMaterial, new Color(0.55f, 0.56f, 0.58f));
+            // Pools are sunk into the floor: the outline is cut into pieces around them (UVs in metres keep the pattern going).
+            foreach (var piece in PolygonMesh.AroundHoles(points, _pools))
+            {
+                var floor = new GameObject("Floor", typeof(MeshFilter), typeof(MeshRenderer));
+                floor.transform.SetParent(_floorRoot, false);
+                floor.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(piece, 0f, 0.1f, metresPerTile);
+                floor.GetComponent<MeshRenderer>().sharedMaterial = material;
 
-            var slab = new GameObject("Floor Base", typeof(MeshFilter), typeof(MeshRenderer));
-            slab.transform.SetParent(_floorRoot, false);
-            slab.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(points, -0.1f, 0.3f, 4f);
-            slab.GetComponent<MeshRenderer>().sharedMaterial = Tinted(wallMaterial, new Color(0.55f, 0.56f, 0.58f));
+                var slab = new GameObject("Floor Base", typeof(MeshFilter), typeof(MeshRenderer));
+                slab.transform.SetParent(_floorRoot, false);
+                slab.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(piece, -0.1f, 0.3f, 4f);
+                slab.GetComponent<MeshRenderer>().sharedMaterial = baseMaterial;
+            }
         }
 
         /// <summary>
@@ -1219,7 +1238,7 @@ namespace Reconnect.Client.Rooms
                     BuildStation(pivot, "quiz", "cabinetTelevision", top => Stack(top, "televisionModern"));
                     continue;
                 }
-                if (RoomZones.IsLift(item.ItemId) && _custom.TryBuild(item.ItemId, pivot, out _))
+                if (RoomZones.IsLift(item.ItemId) && _custom.TryBuild(item.ItemId, pivot, out _, item.Colours))
                 {
                     MeshBaker.MergeStill(pivot);
                     BuildElevatorStation(pivot, item);
@@ -1240,6 +1259,14 @@ namespace Reconnect.Client.Rooms
                     {
                         MeshBaker.MergeStill(pivot);
                     }
+                    else if (FurnitureFamilies.IsWall(item.ItemId))
+                    {
+                        MergeWall(pivot);   // full and cut-down version each on their own (the view switches them)
+                    }
+                    else if (pivot.GetComponentsInChildren<MeshRenderer>().Length > ManyParts)
+                    {
+                        MeshBaker.MergeStill(pivot);   // wardrobes, wine and drinks fridges, sauna …: a few draws instead of dozens
+                    }
                     else if (pivot.childCount > 0)
                     {
                         CullWhenTiny(pivot.GetChild(0).gameObject, Bounds(pivot));   // vases, candles, table lamps …
@@ -1251,6 +1278,10 @@ namespace Reconnect.Client.Rooms
                     if (RoomSeats.PlacesFor(item.ItemId) is var loungerPlaces and > 0)
                     {
                         _seats[index] = Seat.Build(pivot, _content, Bounds(pivot), index, loungerPlaces, FrontOf(item));
+                    }
+                    if (FurnitureFamilies.IsWall(item.ItemId))
+                    {
+                        RememberItemWall(pivot);
                     }
                     continue;
                 }
@@ -1659,6 +1690,66 @@ namespace Reconnect.Client.Rooms
                 }
             }
             ApplySectionCut();
+            ApplyWallCutaway(new Vector2(look.x, look.z).normalized);
+        }
+
+        /// <summary>
+        /// Furniture with more parts than this is merged into one mesh per material; smaller pieces stay as they are, so equal
+        /// copies (chairs, sofas) are drawn together by instancing.
+        /// </summary>
+        private const int ManyParts = 16;
+
+        private static void MergeWall(Transform pivot)
+        {
+            foreach (var part in pivot.GetComponentsInChildren<Transform>(true))
+            {
+                if (part.name is not (CustomItems.WallFullName or CustomItems.WallCutName))
+                {
+                    continue;
+                }
+                var active = part.gameObject.activeSelf;
+                part.gameObject.SetActive(true);
+                MeshBaker.MergeStill(part);
+                part.gameObject.SetActive(active);
+            }
+        }
+
+        private void RememberItemWall(Transform pivot)
+        {
+            GameObject full = null, cut = null;
+            foreach (var child in pivot.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == CustomItems.WallFullName)
+                {
+                    full = child.gameObject;
+                }
+                else if (child.name == CustomItems.WallCutName)
+                {
+                    cut = child.gameObject;
+                }
+            }
+            if (full != null && cut != null)
+            {
+                _itemWalls.Add((full, cut, new Vector2(pivot.localPosition.x, pivot.localPosition.z)));
+            }
+        }
+
+        /// <summary>
+        /// Cutaway walls (like The Sims): interior walls between the camera and what one looks at are cut down to a low
+        /// edge, walls behind it stay up – so one always sees into the rooms, from every side.
+        /// </summary>
+        private void ApplyWallCutaway(Vector2 lookFlat)
+        {
+            var focus = new Vector2(_focus.x, _focus.z);
+            foreach (var (full, cut, centre) in _itemWalls)
+            {
+                var inFront = Vector2.Dot(centre - focus, lookFlat) < WallCutawayReach;
+                if (full.activeSelf == inFront)
+                {
+                    full.SetActive(!inFront);
+                    cut.SetActive(inFront);
+                }
+            }
         }
 
         /// <summary>A tower storey is cut open just above its windows: nothing higher is drawn.</summary>

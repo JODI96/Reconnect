@@ -34,6 +34,9 @@ namespace Reconnect.Client.Rooms
             ["tan"] = (SurfaceMaterials.CreamLeather, new Color(0.82f, 0.62f, 0.42f)),
             ["espresso"] = (SurfaceMaterials.Cognac, new Color(0.45f, 0.36f, 0.32f)),
             ["white-leather"] = (SurfaceMaterials.CreamLeather, new Color(0.97f, 0.96f, 0.93f)),
+            ["black-leather"] = (SurfaceMaterials.CreamLeather, new Color(0.1f, 0.1f, 0.11f)),
+            ["red-leather"] = (SurfaceMaterials.CreamLeather, new Color(0.55f, 0.06f, 0.08f)),
+            ["crimson"] = (SurfaceMaterials.Velvet, new Color(0.62f, 0.05f, 0.1f)),
         };
 
         public static readonly IReadOnlyDictionary<string, (string Surface, Color Tint)> Woods = new Dictionary<string, (string, Color)>
@@ -44,6 +47,9 @@ namespace Reconnect.Client.Rooms
             ["smoked-oak"] = (SurfaceMaterials.Oak, new Color(0.55f, 0.47f, 0.4f)),
             ["ebony"] = (SurfaceMaterials.Walnut, new Color(0.3f, 0.27f, 0.25f)),
             ["cherry"] = (SurfaceMaterials.Oak, new Color(0.88f, 0.58f, 0.44f)),
+            ["herringbone"] = (SurfaceMaterials.Herringbone, Color.white),
+            ["dark-herringbone"] = (SurfaceMaterials.DarkHerringbone, Color.white),
+            ["teak"] = (SurfaceMaterials.Deck, Color.white),
         };
 
         public static readonly IReadOnlyDictionary<string, (Color Colour, float Smoothness, float Metallic)> Metals = new Dictionary<string, (Color, float, float)>
@@ -64,6 +70,9 @@ namespace Reconnect.Client.Rooms
             ["travertine"] = (SurfaceMaterials.Travertine, Color.white, -1f),
             ["terrazzo"] = (SurfaceMaterials.Boucle, new Color(0.9f, 0.88f, 0.84f), 0.4f),
             ["concrete"] = (null, new Color(0.64f, 0.63f, 0.6f), 0.15f),
+            ["marble-tiles"] = (SurfaceMaterials.MarbleTiles, Color.white, -1f),
+            ["dark-marble-tiles"] = (SurfaceMaterials.DarkMarbleTiles, Color.white, -1f),
+            ["rubber"] = (SurfaceMaterials.Rubber, Color.white, -1f),
         };
 
         public static readonly IReadOnlyDictionary<string, Color> Paints = new Dictionary<string, Color>
@@ -71,6 +80,8 @@ namespace Reconnect.Client.Rooms
             ["white"] = new Color(0.95f, 0.95f, 0.94f), ["warm-white"] = new Color(0.94f, 0.91f, 0.85f), ["greige"] = new Color(0.72f, 0.68f, 0.62f),
             ["sage"] = new Color(0.6f, 0.66f, 0.56f), ["navy"] = new Color(0.15f, 0.2f, 0.33f), ["black"] = new Color(0.09f, 0.09f, 0.1f),
             ["terracotta"] = new Color(0.75f, 0.43f, 0.31f), ["mustard"] = new Color(0.86f, 0.66f, 0.26f), ["blush"] = new Color(0.9f, 0.73f, 0.69f),
+            ["anthracite"] = new Color(0.2f, 0.21f, 0.22f), ["red"] = new Color(0.62f, 0.06f, 0.08f),
+            ["cyan"] = new Color(0.1f, 0.65f, 0.85f), ["violet"] = new Color(0.45f, 0.15f, 0.75f),
         };
 
         /// <summary>Colour of the chip in the build editor.</summary>
@@ -85,6 +96,9 @@ namespace Reconnect.Client.Rooms
                     {
                         SurfaceMaterials.Walnut => new Color(0.4f, 0.27f, 0.19f),
                         SurfaceMaterials.WhiteOak => new Color(0.78f, 0.68f, 0.55f),
+                        SurfaceMaterials.Herringbone => new Color(0.66f, 0.5f, 0.4f),
+                        SurfaceMaterials.DarkHerringbone => new Color(0.36f, 0.26f, 0.2f),
+                        SurfaceMaterials.Deck => new Color(0.5f, 0.3f, 0.14f),
                         _ => new Color(0.7f, 0.53f, 0.36f),
                     };
                     return baseWood * wood.Tint;
@@ -96,6 +110,9 @@ namespace Reconnect.Client.Rooms
                         null => stone.Tint,
                         SurfaceMaterials.BlackMarble => new Color(0.12f, 0.12f, 0.13f),
                         SurfaceMaterials.Travertine => new Color(0.86f, 0.79f, 0.66f),
+                        SurfaceMaterials.MarbleTiles => new Color(0.84f, 0.8f, 0.74f),
+                        SurfaceMaterials.DarkMarbleTiles => new Color(0.1f, 0.12f, 0.11f),
+                        SurfaceMaterials.Rubber => new Color(0.12f, 0.12f, 0.13f),
                         _ => new Color(0.92f, 0.91f, 0.89f) * stone.Tint,
                     };
                 case SwatchKind.Paint when Paints.TryGetValue(swatch, out var paint):
@@ -178,12 +195,16 @@ namespace Reconnect.Client.Rooms
                 case "candles": Candles(model); built = true; break;
                 case "books": Books(model); built = true; break;
                 case "tray": Tray(model); built = true; break;
+                case "floor":   // floor finish: a 1 m sample where it stands, the room takes the material for its whole floor
+                    Soft(model, Z(0), new Vector3(0f, 0.002f, 0f), new Vector3(1f, 0.004f, 1f), 0.0015f);
+                    built = true; break;
                 case "zone":
                     FurnitureFamilies.TryZone(itemId, out _, out var w, out var d);
-                    Soft(model, Z(0), new Vector3(0f, 0.006f, 0f), new Vector3(w, 0.012f, d), 0.005f);
+                    // Only 4 mm: a rug may lie on the zone and stays above it.
+                    Soft(model, Z(0), new Vector3(0f, 0.002f, 0f), new Vector3(w, 0.004f, d), 0.0015f);
                     built = true; break;
                 case "rugmodern": ModernRug(model, itemId); built = true; break;
-                default: built = false; break;
+                default: built = TryBuildResidence(model, itemId, parts); break;
             }
             if (!built)
             {
@@ -232,6 +253,25 @@ namespace Reconnect.Client.Rooms
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// Material of a floor finish (custom-floor-…) in its colour, for the whole floor of a room, and the metres one texture
+        /// repeat covers.
+        /// </summary>
+        public bool FloorFinish(string itemId, string colours, out Material material, out float metresPerTile)
+        {
+            material = null;
+            metresPerTile = 1f;
+            var zones = ItemColours.ZonesFor(itemId);
+            if (!FurnitureFamilies.IsFloorFinish(itemId) || zones.Count == 0)
+            {
+                return false;
+            }
+            material = SwatchMaterial(zones[0].Kind, ItemColours.Resolve(itemId, colours)[0]);
+            var scale = material.mainTexture != null ? material.mainTextureScale.x : 0f;
+            metresPerTile = scale > 0.0001f ? 1f / scale : 1f;
+            return true;
         }
 
         /// <summary>Material of colour zone <paramref name="i"/> of the item being built.</summary>

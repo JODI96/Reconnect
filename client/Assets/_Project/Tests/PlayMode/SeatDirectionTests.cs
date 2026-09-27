@@ -26,6 +26,9 @@ namespace Reconnect.Client.PlayModeTests
             yield return null;
         }
 
+        /// <summary>Seats whose places don't look the item's way: in the hot tub everyone faces the middle, on the bench sideways.</summary>
+        private static readonly HashSet<string> FacesItsOwnWay = new() { "custom-hottub", "custom-weightbench" };
+
         [UnityTest]
         public IEnumerator People_sit_facing_the_way_every_seat_faces()
         {
@@ -85,9 +88,9 @@ namespace Reconnect.Client.PlayModeTests
                 {
                     suspicious.Add(item.ItemId);
                 }
-                if (!seat.HasBackrest)
+                if (!seat.HasBackrest || FacesItsOwnWay.Contains(item.ItemId))
                 {
-                    continue;   // stools turn to counters
+                    continue;   // stools turn to counters; hot tub and weight bench have their own directions
                 }
                 var (fx, fz) = RoomLayout.FrontVector(item.ItemId, item.Rotation);
                 var expected = view.transform.TransformDirection(new Vector3(fx, 0f, fz));

@@ -19,7 +19,8 @@ namespace Reconnect.Client.UI.Screens
         private static readonly string[] Categories =
         {
             "Sofas & Sessel", "Stühle & Hocker", "Tische", "Aufbewahrung", "Licht", "Pflanzen", "Teppiche & Böden", "Deko", "Arbeiten",
-            "Küche & Bar", "Wand", "Spiele", "Spezial", "Klassisch", "Retro",
+            "Küche & Bar", "Wohnen", "Schlafen", "Bad & Spa", "Fitness", "Gaming", "Wände", "Kunst", "Ab 18",
+            "Wand", "Spiele", "Spezial", "Klassisch", "Retro",
         };
 
         private readonly VisualElement _panel;

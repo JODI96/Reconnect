@@ -185,6 +185,23 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   zusammengebacken (gleiche Teile teilen Mesh + Material → GPU-Instancing). Neue Stücke: Familie in `FurnitureFamilies`
   (+ Farbzonen), Bau in `CustomItems.Modern.cs`, Setup Project (Katalog + Bild), `ItemColoursTests` prüft Vollständigkeit.
   Antike Poly-Haven-Stücke stehen im Katalog unter „Klassisch“, das Kenney-Kit unter „Retro“.
+- **„Reconnect Residence“ (Wohnungen, `CustomItems.Residence.cs`):** Innenwände (`custom-wall-<plaster|slats|marble>-<1|2|3>`,
+  Bild-Wände `custom-wall-art-N` mit prozeduralen Gemälden aus `ArtCanvas`) füllen ihre 25-cm-Zelle, rechtwinklige Wände teilen
+  die Eckzelle; jede Wand gibt es voll und gekürzt – `RoomView.ApplyWallCutaway` kürzt Wände zwischen Kamera und Blickpunkt (wie
+  Sims). Dazu Küche (Insel, Schrankwand, Haube, Weinschrank), Wohnen (Kamin, TV-Wand, Flügel, Skulpturen), Schlafen (Betten,
+  Glasschrank, Schminktisch), Bad & Spa (Wanne, Dusche, Waschtisch, WC, Sauna, Whirlpool), Fitness, Chef-Büro, Gaming (Setup mit
+  4 Monitoren, Gaming-Stuhl, Getränkekühlschrank, RGB, Arcade) und **„Ab 18“** (`FurnitureInfo.Adult`, `FurnitureFamilies.IsAdult`:
+  Dungeon-Bett, Andreaskreuz, Strafbank, Wandhalter, Käfig) – die Altersprüfung (18+ sieht/betritt das) fehlt noch.
+  Böden: Zonen und **Grundboden** `custom-floor-<material>` (ein Stück im Raum → ganzer Boden in dem Material) in carpet, wood,
+  stone, marble, darkmarble, herringbone, deck, rubber (ambientCG-Texturen); Teppiche dürfen auf Zonen liegen (`IsRugOnZone`).
+  Sitzplätze: Möbel setzen leere Kinder `SeatPoint`; `Seat` misst sonst im Koordinatensystem des Möbels. Möbel mit mehr als 16
+  Teilen und Wände werden zusammengebacken. Der Gebäudekern mit Farbe (`Colours`) wird edel (Holzlamellen, Marmor, Kunst,
+  Lichtdach) – verschieben darf man ihn nicht, umfärben schon. Pools gehen auch in Turmetagen (Boden mit Aussparungen,
+  `PolygonMesh.AroundHoles`; das Turmmodell endet 2,4 m unter der Etage).
+- **Penthouse:** `ResidenceDesigns.Penthouse` (Seed-Design, geprüft in `SeedRoomLayoutTests`) – Pool in der Südost-Ecke Richtung
+  Hardbrücke, Spa, Gym, Wohnen, Küche/Essen, Master-Suite, Büro, Gaming. Anwenden auf eine gekaufte Etage:
+  `RECONNECT_EXPORT_PENTHOUSE=<datei> dotnet test --filter Export_penthouse` und die JSON per `PUT /v1/rooms/{id}/layout`.
+  Renders + Budget: `PenthouseTests` (client/Logs/penthouse-*.png).
 - **3D-Modelle:** Kenney Furniture Kit + Mini Characters (CC0) in `Assets/ThirdParty/Kenney` (Low-Poly, Figuren nicht mehr genutzt), dazu
   realistische **Poly-Haven-Modelle** (CC0, kommerziell frei, keine Namensnennung nötig) in `Assets/ThirdParty/PolyHaven`
   als glTF (Import über `com.unity.cloud.gltfast`, 1k-Texturen für Mobile). Neue Poly-Haven-Modelle: Namen in
