@@ -6,6 +6,7 @@ using Reconnect.Contracts.Buildings;
 using Reconnect.Contracts.Rooms;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Reconnect.Client.City
 {
@@ -27,6 +28,7 @@ namespace Reconnect.Client.City
         [SerializeField] private Cesium3DTileset terrain;
         [SerializeField] private Cesium3DTileset buildings;
         [SerializeField] private Cesium3DTileset googleTiles;
+        private bool _cityShadowsOff;
         [SerializeField] private CesiumRasterOverlay aerialOverlay;
         [SerializeField] private CesiumRasterOverlay mapOverlay;
         [SerializeField] private CityCameraController cameraController;
@@ -100,6 +102,10 @@ namespace Reconnect.Client.City
             // Google's tiles and the terrain use Cesium's material, which supports clipping the real tower out.
             var lit = Shader.Find("Universal Render Pipeline/Lit");
             _cutaway = new TowerCutaway(georeference.transform, new[] { googleTiles, terrain }, new Material(lit), new Material(lit));
+            foreach (var tileset in Tilesets)
+            {
+                tileset.OnTileGameObjectCreated += tile => SetShadows(tile, !_cityShadowsOff);
+            }
             if (DataOnlyLayer >= 0)
             {
                 Camera.cullingMask &= ~(1 << DataOnlyLayer);   // that layer is loaded but never drawn
@@ -175,6 +181,7 @@ namespace Reconnect.Client.City
             {
                 SetSwisstopoBuildingsHidden(true);
             }
+            SetCityShadows(false);
         }
 
         public void HideTowerCutaway()
@@ -183,6 +190,34 @@ namespace Reconnect.Client.City
             if (!IsGoogle)
             {
                 SetSwisstopoBuildingsHidden(false);
+            }
+            SetCityShadows(true);
+        }
+
+        private IEnumerable<Cesium3DTileset> Tilesets => new[] { terrain, buildings, googleTiles }.Where(t => t != null);
+
+        /// <summary>
+        /// On a tower storey the room view cuts everything above the windows away (see RoomView's section cut), but a cut
+        /// away neighbour would still throw its shadow into the room: the city casts no shadows meanwhile.
+        /// </summary>
+        private void SetCityShadows(bool cast)
+        {
+            if (_cityShadowsOff == !cast)
+            {
+                return;
+            }
+            _cityShadowsOff = !cast;
+            foreach (var tileset in Tilesets)
+            {
+                SetShadows(tileset.gameObject, cast);
+            }
+        }
+
+        private static void SetShadows(GameObject root, bool cast)
+        {
+            foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                renderer.shadowCastingMode = cast ? ShadowCastingMode.On : ShadowCastingMode.Off;
             }
         }
 

@@ -61,6 +61,13 @@ namespace Reconnect.Client.PlayModeTests
             var nearby = api.GetAsync<System.Collections.Generic.List<BuildingDto>>(ApiRoutes.Buildings.Nearby + "?lat=47.38622&lng=8.51733&radiusMeters=50");
             yield return Wait(nearby, 15f);
             Assert.IsNotNull(nearby.Result.Value.Single(b => b.Id == PrimeTowerId).Footprint, "Prime Tower has a ground plan");
+            if (Environment.GetEnvironmentVariable("RECONNECT_TEST_GOOGLE") == "1")
+            {
+                // Opt-in (a Google session is billed): the same views over the photorealistic city.
+                var session = api.PostAsync<MapSessionDto>(ApiRoutes.Maps.Session, new { });
+                yield return Wait(session, 15f);
+                city.ApplyMap(session.Result.Value);
+            }
             city.ShowBuildings(nearby.Result.Value);
             city.SetVisible(true);
             for (var i = 0; i < 300 && (city.RoofPosition(PrimeTowerId)?.y ?? 0f) < 50f; i++)
@@ -77,7 +84,7 @@ namespace Reconnect.Client.PlayModeTests
             Assert.That(tower.SizeX, Is.InRange(15f, 75f));
             Assert.That(tower.SizeZ, Is.InRange(15f, 75f));
 
-            foreach (var storey in new[] { 0, 12, 35 })
+            foreach (var storey in new[] { 0, 12, 24, 35 })
             {
                 var floor = floors.Result.Value.Floors.First(f => f.Floor == storey && f.IsPublic);
                 var detail = api.GetAsync<RoomDto>(ApiRoutes.Rooms.ById(floor.RoomId));
@@ -107,7 +114,7 @@ namespace Reconnect.Client.PlayModeTests
                 yield return WaitForCity(city);
                 Save(view.Camera, $"tower-city-{storey:00}.png");
                 // What a player sees: close to the people, turned all four ways.
-                view.LookAt(new Vector2(room.Width / 2f, room.Depth / 2f), 16f);
+                view.LookAt(new Vector2(room.Width / 2f, room.Depth / 2f), 22f);
                 for (var turn = 0; turn < 4; turn++)
                 {
                     for (var frame = 0; frame < 40; frame++)
