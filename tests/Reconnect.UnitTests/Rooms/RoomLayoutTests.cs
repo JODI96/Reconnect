@@ -65,6 +65,16 @@ public sealed class RoomLayoutTests
     }
 
     [Fact]
+    public void Glass_walls_meet_in_a_corner_but_do_not_stack()
+    {
+        var front = At("custom-glasswall", 2, 2);
+        var side = At("custom-glasswall", 2, 2, quarter: 1);   // shares the corner cell with the front wall
+
+        Assert.Empty(Check(front, side));
+        Assert.Contains(Check(front, At("custom-glasswall", 2, 2)), p => p.Message.Contains("überlappt"));
+    }
+
+    [Fact]
     public void A_tidy_room_is_valid()
     {
         var table = At("table", 2, 2);

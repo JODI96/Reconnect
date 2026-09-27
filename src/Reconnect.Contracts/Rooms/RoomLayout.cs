@@ -283,6 +283,14 @@ namespace Reconnect.Contracts.Rooms
         }
 
         /// <summary>Where an item stands: its footprint (cells × 25 cm) turned with it, centred on the item.</summary>
+        /// <summary>Partition walls that may share the corner cells where they meet at a right angle (glass rooms).</summary>
+        public static readonly IReadOnlyCollection<string> Partitions = new HashSet<string> { "custom-glasswall" };
+
+        /// <summary>Two partition walls meeting at a right angle: they share their corner cells instead of overlapping.</summary>
+        public static bool IsCornerJoint(RoomItemDto a, RoomItemDto b) =>
+            Partitions.Contains(a.ItemId) && Partitions.Contains(b.ItemId)
+            && IsQuarterTurn(a.Rotation) && IsQuarterTurn(b.Rotation) && (Quarter(a.Rotation) + Quarter(b.Rotation)) % 2 == 1;
+
         public static OrientedArea Shape(RoomItemDto item, ItemDefinition definition)
         {
             if (IsQuarterTurn(item.Rotation))
@@ -469,6 +477,10 @@ namespace Reconnect.Contracts.Rooms
                             continue;
                         }
                         var otherDefinition = ItemDefinitions.Find(items[other].ItemId);
+                        if (IsCornerJoint(items[index], items[other]))
+                        {
+                            continue;
+                        }
                         var overlaps = IsQuarterTurn(items[index].Rotation) && IsQuarterTurn(items[other].Rotation)
                             || Shape(items[index], definition).Grown(-Tolerance).Overlaps(Shape(items[other], otherDefinition).Grown(-Tolerance));
                         if (overlaps)

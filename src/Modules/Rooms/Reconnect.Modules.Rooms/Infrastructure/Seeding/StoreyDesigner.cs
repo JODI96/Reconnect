@@ -391,8 +391,8 @@ internal sealed class StoreyDesigner
                 }
                 else
                 {
-                    // Side walls stand just outside the corners so they don't cut into the front and back walls.
-                    Put("custom-glasswall", ax + (ax <= Math.Min(x0, x1) ? -0.125f : 0.125f), az + t, 90f);
+                    // Side walls meet the front and back walls in the corner (partitions may share corner cells).
+                    Put("custom-glasswall", ax, az + t, 90f);
                 }
             }
         }
