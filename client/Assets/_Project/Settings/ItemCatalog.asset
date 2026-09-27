@@ -649,7 +649,7 @@ MonoBehaviour:
     scale: 1
   - itemId: ph-steel_frame_shelves_01
     model: {fileID: -3492864601849917174, guid: 92dc1fc8a05547742ae79e796d8fdafe, type: 3}
-    scale: 1
+    scale: 0.1
   - itemId: ph-steel_frame_shelves_02
     model: {fileID: -7192362939705380017, guid: dad87d54bbc33af469198761c8a5f785, type: 3}
     scale: 1

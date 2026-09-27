@@ -42,6 +42,30 @@ namespace Reconnect.Contracts.Rooms
 
         private bool[,] _cellMask;
 
+        /// <summary>
+        /// Outline geometry (which cells and tiles are on the floor) only depends on the outline, so it is worked out once
+        /// per outline instance, not for every layout checked against it.
+        /// </summary>
+        private sealed class Shape
+        {
+            public int Width;
+            public int Depth;
+            public bool[,] Cells;
+            public bool[,] Tiles;
+        }
+
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IReadOnlyList<RoomPointDto>, Shape> Shapes =
+            new System.Runtime.CompilerServices.ConditionalWeakTable<IReadOnlyList<RoomPointDto>, Shape>();
+
+        private Shape OutlineShape
+        {
+            get
+            {
+                var shape = Shapes.GetValue(Outline, _ => new Shape { Width = Width, Depth = Depth });
+                return shape.Width == Width && shape.Depth == Depth ? shape : new Shape { Width = Width, Depth = Depth };
+            }
+        }
+
         public RoomLayoutContext(int width, int depth, WallSides walls, IReadOnlyList<CellRect> reserved = null,
             IReadOnlyList<RoomPointDto> outline = null)
         {
@@ -94,9 +118,23 @@ namespace Reconnect.Contracts.Rooms
             {
                 return true;
             }
-            var cx = x + 0.5f;
-            var cz = z + 0.5f;
-            return RoomOutline.Contains(Outline, cx, cz) && RoomOutline.DistanceToEdge(Outline, cx, cz) >= FacadeClearance;
+            var shape = OutlineShape;
+            var tiles = shape.Tiles;
+            if (tiles == null)
+            {
+                tiles = new bool[Width, Depth];
+                for (var tx = 0; tx < Width; tx++)
+                {
+                    for (var tz = 0; tz < Depth; tz++)
+                    {
+                        var cx = tx + 0.5f;
+                        var cz = tz + 0.5f;
+                        tiles[tx, tz] = RoomOutline.Contains(Outline, cx, cz) && RoomOutline.DistanceToEdge(Outline, cx, cz) >= FacadeClearance;
+                    }
+                }
+                shape.Tiles = tiles;
+            }
+            return tiles[x, z];
         }
 
         private bool[,] CellMask
@@ -106,6 +144,11 @@ namespace Reconnect.Contracts.Rooms
                 if (_cellMask != null)
                 {
                     return _cellMask;
+                }
+                var shape = OutlineShape;
+                if (shape.Cells != null)
+                {
+                    return _cellMask = shape.Cells;
                 }
                 var cells = Cells;
                 var mask = new bool[cells.Width, cells.Depth];
@@ -120,7 +163,7 @@ namespace Reconnect.Contracts.Rooms
                                      && RoomOutline.Contains(Outline, x0, z1) && RoomOutline.Contains(Outline, x1, z1);
                     }
                 }
-                return _cellMask = mask;
+                return _cellMask = shape.Cells = mask;
             }
         }
 

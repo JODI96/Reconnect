@@ -183,6 +183,12 @@ namespace Reconnect.Client.Editor
         /// ItemId = model file name, e.g. "loungeSofa" (Kenney Furniture Kit, CC0), plus "ph-" + name for the
         /// realistic Poly Haven models (CC0, glTF via glTFast, already in metres – see tools/fetch_polyhaven.py).
         /// </summary>
+        /// <summary>Poly Haven models that are not in metres (the shelf is modelled in decimetres).</summary>
+        private static readonly Dictionary<string, float> PolyHavenScales = new()
+        {
+            ["ph-steel_frame_shelves_01"] = 0.1f,
+        };
+
         /// <summary>The Kenney kit is not to one scale: these models get their real height (metres) instead of ×0.2.</summary>
         private static readonly Dictionary<string, float> KenneyRealHeights = new()
         {
@@ -219,7 +225,7 @@ namespace Reconnect.Client.Editor
                     {
                         itemId = "ph-" + Path.GetFileNameWithoutExtension(path),
                         model = AssetDatabase.LoadAssetAtPath<GameObject>(path),
-                        scale = 1f,
+                        scale = PolyHavenScales.TryGetValue("ph-" + Path.GetFileNameWithoutExtension(path), out var fix) ? fix : 1f,
                     })
                 : Enumerable.Empty<ItemCatalog.Entry>();
             catalog.items = kenney.Concat(polyHaven).ToList();

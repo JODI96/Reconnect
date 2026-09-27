@@ -20,7 +20,7 @@ namespace Reconnect.Contracts.Rooms
             new ItemDefinition("bookcaseClosed", "Schrank", "Aufbewahrung", ItemKind.Floor, 3, 2, 1.7f, 1.7f, 0f, 0.8f, 0.5f, 0.8f, 0.5f),
             new ItemDefinition("bookcaseClosedDoors", "Schrank mit Türen", "Aufbewahrung", ItemKind.Floor, 3, 2, 1.7f, 1.7f, 0f, 0.8f, 0.5f, 0.8f, 0.5f),
             new ItemDefinition("ph-modern_wooden_cabinet", "Sideboard", "Aufbewahrung", ItemKind.Floor, 10, 2, 0.68f, 0.68f, 0f, 2.44f, 0.52f, 2.44f, 0.52f),
-            new ItemDefinition("ph-steel_frame_shelves_01", "Stahlregal", "Aufbewahrung", ItemKind.Floor, 44, 20, 21.41f, 21.31f, 0f, 10.97f, 5.02f, 10.29f, 5.02f),
+            new ItemDefinition("ph-steel_frame_shelves_01", "Stahlregal", "Aufbewahrung", ItemKind.Floor, 4, 2, 2.14f, 2.13f, 0f, 1.1f, 0.5f, 1.1f, 0.5f),
             new ItemDefinition("ph-steel_frame_shelves_02", "Stahlregal breit", "Aufbewahrung", ItemKind.Floor, 2, 2, 2.14f, 2.13f, 0f, 0.59f, 0.5f, 0.59f, 0.5f),
             new ItemDefinition("cabinetTelevision", "TV-Möbel", "Aufbewahrung", ItemKind.Floor, 6, 2, 0.62f, 0.62f, 0f, 1.6f, 0.5f, 1.6f, 0.5f),
             new ItemDefinition("cabinetTelevisionDoors", "TV-Möbel mit Türen", "Aufbewahrung", ItemKind.Floor, 6, 2, 0.62f, 0.62f, 0f, 1.6f, 0.52f, 1.6f, 0.52f),

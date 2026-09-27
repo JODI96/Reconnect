@@ -26,6 +26,61 @@ public sealed class SeedRoomExport
         File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(dump));
     }
 
+    /// <summary>With RECONNECT_DUMP_PLAN=&lt;file&gt;: the tower floor plan (outline, size, core footprint) for designing.</summary>
+    [Fact]
+    public void Dump_tower_plan()
+    {
+        var file = Environment.GetEnvironmentVariable("RECONNECT_DUMP_PLAN");
+        if (string.IsNullOrEmpty(file))
+        {
+            return;
+        }
+        var plan = TowerFurnishing.PrimeTower;
+        var core = TowerFurnishing.Core(plan).ToDto();
+        var cells = RoomLayout.Footprint(core, ItemDefinitions.Find(core.ItemId)!);
+        var lines = new List<string> { $"size {plan.Width} {plan.Depth}", $"core {cells.X} {cells.Z} {cells.Width} {cells.Depth}" };
+        lines.AddRange(plan.Outline.Select(p => FormattableString.Invariant($"{p.X:0.00} {p.Z:0.00}")));
+        File.WriteAllLines(file, lines);
+    }
+
+    /// <summary>
+    /// With RECONNECT_TILEMAP=&lt;folder&gt;: per room a walking-tile map ('#' furniture, '.' reachable, 'o' free but cut off,
+    /// ' ' outside the outline) – to see why a seat is "zugestellt".
+    /// </summary>
+    [Fact]
+    public void Dump_tile_maps()
+    {
+        var folder = Environment.GetEnvironmentVariable("RECONNECT_TILEMAP");
+        if (string.IsNullOrEmpty(folder))
+        {
+            return;
+        }
+        Directory.CreateDirectory(folder);
+        foreach (var (name, theme, width, depth, layout, outline) in SeedRooms())
+        {
+            var items = layout.Select(i => i.ToDto()).ToList();
+            var room = RoomZones.ContextFor(theme, width, depth, items, outline);
+            var blocked = RoomLayout.BlockedTiles(items);
+            var outside = RoomLayout.OutsideTiles(room);
+            var all = new HashSet<(int X, int Z)>(blocked);
+            all.UnionWith(outside);
+            var reachable = RoomLayout.Reachable(room, all);
+            var map = new StringBuilder();
+            map.AppendLine("    " + string.Concat(Enumerable.Range(0, width).Select(x => x % 10 == 0 ? (char)('0' + x / 10) : ' ')));
+            for (var z = depth - 1; z >= 0; z--)
+            {
+                map.Append($"{z,3} ");
+                for (var x = 0; x < width; x++)
+                {
+                    map.Append(outside.Contains((x, z)) ? ' ' : blocked.Contains((x, z)) ? '#' : reachable.Contains((x, z)) ? '.' : 'o');
+                }
+                map.AppendLine();
+            }
+            map.AppendLine("    " + string.Concat(Enumerable.Range(0, width).Select(x => (char)('0' + x % 10))));
+            File.WriteAllText(Path.Combine(folder, string.Concat(name.Where(char.IsLetterOrDigit)) + ".tiles.txt"), map.ToString());
+        }
+    }
+
     internal static List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout, IReadOnlyList<RoomPointDto>? Outline)> SeedRooms()
     {
         var rooms = new List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout, IReadOnlyList<RoomPointDto>? Outline)>();
