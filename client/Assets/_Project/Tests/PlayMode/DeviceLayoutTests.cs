@@ -171,6 +171,11 @@ namespace Reconnect.Client.PlayModeTests
                 yield return Capture("room-tictactoe");
                 roomScreen.OpenGame("quiz");
                 yield return Capture("room-quiz");
+                foreach (var game in BoardGames.All)
+                {
+                    roomScreen.OpenGame(game);
+                    yield return Capture("room-" + game);
+                }
                 roomScreen.OpenGame(null);
                 roomScreen.OpenBuild();
                 yield return Capture("room-build", 1f);
@@ -206,7 +211,9 @@ namespace Reconnect.Client.PlayModeTests
                 {
                     yield return $"{id} outside the safe area ({box} vs {safeRect})";
                 }
-                if (control is Button && !InsideScrollView(control) && (box.height < MinTouch - 0.5f || box.width < MinTouch - 0.5f))
+                // Game boards are dense on purpose (8 chess squares must fit 360 pt): at least 36 pt there.
+                var minTouch = control.ClassListContains("board-cell") ? 36f : MinTouch;
+                if (control is Button && !InsideScrollView(control) && (box.height < minTouch - 0.5f || box.width < minTouch - 0.5f))
                 {
                     yield return $"{id} too small to tap ({box.width:0}×{box.height:0})";
                 }

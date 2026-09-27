@@ -24,6 +24,7 @@ public interface IRoomClient
     Task PlayerSeated(PlayerSeatDto seat);
     Task TicTacToeUpdated(TicTacToeStateDto state);
     Task QuizUpdated(QuizStateDto state);
+    Task BoardGameUpdated(BoardGameStateDto state);
     Task QueueUpdated(QueueStatusDto status);
     Task ElevatorArrived(RoomSnapshotDto snapshot);
     Task RoomLayoutChanged(RoomLayoutChangedDto change);
@@ -192,6 +193,14 @@ internal sealed class RoomHub(
 
     public Task<QuizStateDto> QuizNext() => UpdateQuizAsync((game, _) => game.Next());
 
+    public Task<BoardGameStateDto> BoardGameJoin(string game) =>
+        UpdateBoardGameAsync(game, (board, me) => board.Join(me.UserId, me.DisplayName));
+
+    public Task<BoardGameStateDto> BoardGameMove(string game, string move) =>
+        UpdateBoardGameAsync(game, (board, me) => board.Move(me.UserId, move));
+
+    public Task<BoardGameStateDto> BoardGameReset(string game) => UpdateBoardGameAsync(game, (board, _) => board.Reset());
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         // Whoever goes offline gives up their place in the lift queue.
@@ -245,9 +254,15 @@ internal sealed class RoomHub(
 
         var ticTacToe = await games.GetAsync<TicTacToeGame>(room.Id, TicTacToeId);
         var quiz = await games.GetAsync<QuizGame>(room.Id, QuizId);
+        var boardGames = new List<BoardGameStateDto>
+        {
+            ((await games.GetAsync<ConnectFourGame>(room.Id, BoardGames.ConnectFour)) ?? new ConnectFourGame()).ToDto(),
+            ((await games.GetAsync<MemoryGame>(room.Id, BoardGames.Memory)) ?? new MemoryGame()).ToDto(),
+            ((await games.GetAsync<ChessGame>(room.Id, BoardGames.Chess)) ?? new ChessGame()).ToDto(),
+        };
         return new RoomSnapshotDto(room, room.Width, room.Depth,
             visibleOthers.Select(ToDto).Append(ToDto(me)).ToList(),
-            (ticTacToe ?? new TicTacToeGame()).ToDto(), (quiz ?? new QuizGame()).ToDto());
+            (ticTacToe ?? new TicTacToeGame()).ToDto(), (quiz ?? new QuizGame()).ToDto(), boardGames);
     }
 
     /// <summary>Everything that happens in a room someone left (on foot, by lift or by going offline).</summary>
@@ -265,6 +280,14 @@ internal sealed class RoomHub(
         if (freed)
         {
             await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false, CancellationToken.None)).TicTacToeUpdated(table.ToDto());
+        }
+        // … and at the games for two.
+        foreach (var game in BoardGames.All)
+        {
+            if (await LeaveBoardGameAsync(me, game) is { } state)
+            {
+                await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false, CancellationToken.None)).BoardGameUpdated(state);
+            }
         }
 
         // Don't use ConnectionAborted here: it is already cancelled when the client disconnected.
@@ -368,6 +391,33 @@ internal sealed class RoomHub(
         var state = (await UpdateGameAsync<QuizGame>(me, QuizId, game => action(game, me))).ToDto();
         await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).QuizUpdated(state);
         return state;
+    }
+
+    private async Task<BoardGameStateDto> UpdateBoardGameAsync(string game, Action<TwoPlayerGame, PresenceEntry> action)
+    {
+        var me = await CurrentEntryAsync();
+        var state = game switch
+        {
+            BoardGames.ConnectFour => (await UpdateGameAsync<ConnectFourGame>(me, game, g => action(g, me))).ToDto(),
+            BoardGames.Memory => (await UpdateGameAsync<MemoryGame>(me, game, g => action(g, me))).ToDto(),
+            BoardGames.Chess => (await UpdateGameAsync<ChessGame>(me, game, g => action(g, me))).ToDto(),
+            _ => throw new HubException("Unknown game."),
+        };
+        await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: false)).BoardGameUpdated(state);
+        return state;
+    }
+
+    /// <summary>Frees the seat of someone who left; the new state if they were playing, else null.</summary>
+    private async Task<BoardGameStateDto?> LeaveBoardGameAsync(PresenceEntry me, string game)
+    {
+        var freed = false;
+        BoardGameStateDto state = game switch
+        {
+            BoardGames.ConnectFour => (await games.UpdateAsync<ConnectFourGame>(me.RoomId, game, g => freed = g.Leave(me.UserId))).ToDto(),
+            BoardGames.Memory => (await games.UpdateAsync<MemoryGame>(me.RoomId, game, g => freed = g.Leave(me.UserId))).ToDto(),
+            _ => (await games.UpdateAsync<ChessGame>(me.RoomId, game, g => freed = g.Leave(me.UserId))).ToDto(),
+        };
+        return freed ? state : null;
     }
 
     private async Task<T> UpdateGameAsync<T>(PresenceEntry me, string gameId, Action<T> action) where T : class, new()

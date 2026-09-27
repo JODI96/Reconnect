@@ -11,6 +11,38 @@ namespace Reconnect.Api.Tests.Minigames;
 public sealed class MinigameHubTests(ReconnectApiFactory factory)
 {
     [Fact]
+    public async Task Two_players_play_chess_and_connect_four_and_leaving_frees_the_table()
+    {
+        var (roomId, anna, ben) = await TwoPlayersInRoomAsync();
+
+        await anna.BoardGameJoinAsync(BoardGames.Chess);
+        var started = await ben.BoardGameJoinAsync(BoardGames.Chess);
+        Assert.Equal(GameStatus.Playing, started.Status);
+        Assert.Equal(anna.User.Id, started.Turn);   // Anna has white
+        await Assert.ThrowsAsync<HubException>(() => anna.BoardGameMoveAsync(BoardGames.Chess, "e2e5"));
+        await anna.BoardGameMoveAsync(BoardGames.Chess, "f2f3");
+        await ben.BoardGameMoveAsync(BoardGames.Chess, "e7e5");
+        await anna.BoardGameMoveAsync(BoardGames.Chess, "g2g4");
+        var mate = await ben.BoardGameMoveAsync(BoardGames.Chess, "d8h4");
+        Assert.Equal(GameStatus.Won, mate.Status);
+        Assert.Equal(ben.User.Id, mate.Winner);
+        await RoomHubClient.Eventually(() => anna.BoardGames.Any(s => s.Game == BoardGames.Chess && s.Status == GameStatus.Won), "Anna sees the mate");
+
+        await anna.BoardGameJoinAsync(BoardGames.ConnectFour);
+        await ben.BoardGameJoinAsync(BoardGames.ConnectFour);
+        var dropped = await anna.BoardGameMoveAsync(BoardGames.ConnectFour, "3");
+        Assert.Equal('A', dropped.Board[3]);
+
+        // Someone entering later sees the games in the snapshot; when Ben goes, his seats are free again.
+        await using var carl = await RoomHubClient.ConnectAsync(factory, await factory.RegisterAsync("Carl"));
+        var snapshot = await carl.JoinAsync(roomId);
+        Assert.Equal('A', snapshot.BoardGames!.Single(g => g.Game == BoardGames.ConnectFour).Board[3]);
+        await ben.DisposeAsync();
+        await RoomHubClient.Eventually(() => carl.BoardGames.Any(s => s.Game == BoardGames.ConnectFour && s.Status == GameStatus.Waiting),
+            "the Connect Four table is free again");
+    }
+
+    [Fact]
     public async Task Two_players_play_tic_tac_toe_and_the_room_sees_the_result()
     {
         var (roomId, anna, ben) = await TwoPlayersInRoomAsync();

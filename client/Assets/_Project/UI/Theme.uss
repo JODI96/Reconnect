@@ -350,3 +350,24 @@
 .build-footer { flex-direction: row; align-items: center; }
 .build-footer > .button { margin: 0 0 0 6px; padding: 0 10px; }
 .build-footer > .button:first-child { margin-left: 0; }
+
+/* Games for two: Connect Four, Memory, chess */
+.board-grid { align-self: center; margin: 6px 0; flex-shrink: 0; }
+.board-row { flex-direction: row; flex-shrink: 0; }
+.board-cell { margin: 0; padding: 0; border-width: 0; flex-shrink: 0; -unity-background-scale-mode: scale-to-fit; }
+.board-cell:disabled { opacity: 1; }
+.c4-cell { width: 40px; height: 40px; margin: 2px; border-radius: 20px; background-color: rgb(20, 40, 90); }
+.c4-cell--a { background-color: var(--color-primary); }
+.c4-cell--b { background-color: rgb(255, 208, 64); }
+.memory-card {
+    width: 64px; height: 64px; margin: 3px; border-radius: 10px;
+    background-color: var(--color-surface-hover); font-size: 24px; color: var(--color-text);
+}
+.memory-card--back { background-color: rgb(255, 92, 138); }
+.memory-card--found { opacity: 0.45; }
+.chess-square { width: 38px; height: 38px; border-radius: 0; font-size: 20px; -unity-font-style: bold; color: rgb(250, 248, 240); }
+.chess-square--light { background-color: rgb(238, 226, 200); }
+.chess-square--dark { background-color: rgb(166, 124, 90); }
+.chess-square--last { background-color: rgb(214, 196, 110); }
+.chess-square--selected { background-color: rgb(130, 190, 120); }
+.chess-piece--black { color: rgb(30, 26, 22); }

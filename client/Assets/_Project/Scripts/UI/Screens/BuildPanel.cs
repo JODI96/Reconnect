@@ -18,7 +18,7 @@ namespace Reconnect.Client.UI.Screens
     {
         private static readonly string[] Categories =
         {
-            "Sitzen", "Tische", "Aufbewahrung", "Küche & Bar", "Licht", "Pflanzen", "Deko", "Wand", "Teppiche", "Spezial",
+            "Sitzen", "Tische", "Aufbewahrung", "Küche & Bar", "Licht", "Pflanzen", "Deko", "Wand", "Teppiche", "Spiele", "Spezial",
         };
 
         private readonly VisualElement _panel;

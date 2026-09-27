@@ -131,7 +131,8 @@ namespace Reconnect.Client.Editor
             ["custom-pool-6x3"] = "Pool klein", ["custom-pool-12x6"] = "Pool gross",
             ["custom-glasswall"] = "Glastrennwand", ["custom-phonebooth"] = "Telefonkabine", ["custom-officechair"] = "Bürostuhl modern",
             ["custom-benchdesk"] = "Arbeitstisch modern", ["custom-stage"] = "Bühne", ["custom-buffet"] = "Buffet",
-            ["custom-greenwall"] = "Pflanzenwand",
+            ["custom-greenwall"] = "Pflanzenwand", ["game-connectfour"] = "Vier gewinnt", ["game-memory"] = "Memory",
+            ["game-chess"] = "Schach", ["game-quizshow"] = "Quiz-Show",
             ["ph-anthurium_botany_01"] = "Anthurie", ["ph-calathea_orbifolia_01"] = "Calathea", ["ph-fern_02"] = "Farn",
             ["ph-planter_pot_clay"] = "Tontopf", ["ph-steel_frame_shelves_01"] = "Stahlregal", ["ph-steel_frame_shelves_02"] = "Stahlregal breit",
             ["ph-caged_hanging_light"] = "Gitter-Pendelleuchte", ["ph-hanging_industrial_lamp"] = "Industrie-Pendelleuchte",
@@ -186,6 +187,7 @@ namespace Reconnect.Client.Editor
                 ids.AddRange(CustomItems.Ids);
                 ids.Add("game-tictactoe");
                 ids.Add("game-quiz");
+                ids.AddRange(CustomItems.GameStations.Keys);
                 foreach (var id in ids)
                 {
                     var pivot = Spawn(catalog, custom, root.transform, id);
@@ -341,6 +343,99 @@ namespace Reconnect.Client.Editor
         }
 
         /// <summary>
+        /// Pictures of the 12 chess pieces for the chess panel ("chess-white-k" … "chess-black-p"), cut out from the
+        /// Poly Haven chess set on a chroma-key background so they stand on the board squares.
+        /// </summary>
+        private static List<(string Id, string Path)> RenderChessPieces(ItemCatalog catalog)
+        {
+            var result = new List<(string, string)>();
+            var model = catalog.Find("ph-chess_set");
+            if (model == null)
+            {
+                return result;
+            }
+            var force = Environment.GetEnvironmentVariable("RECONNECT_RENDER_ICONS") == "1";
+            var pieces = new Dictionary<char, string>
+            {
+                ['K'] = "piece_king_white", ['Q'] = "piece_queen_white", ['R'] = "piece_rook_white_01", ['B'] = "piece_bishop_white_01",
+                ['N'] = "piece_knight_white_01", ['P'] = "piece_pawn_white_01", ['k'] = "piece_king_black", ['q'] = "piece_queen_black",
+                ['r'] = "piece_rook_black_01", ['b'] = "piece_bishop_black_01", ['n'] = "piece_knight_black_01", ['p'] = "piece_pawn_black_01",
+            };
+            var stage = new GameObject("Chess Stage");
+            stage.transform.position = new Vector3(0f, -6000f, 0f);
+            var camera = new GameObject("Chess Camera").AddComponent<Camera>();
+            camera.transform.SetParent(stage.transform, false);
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0f, 1f, 0f, 1f);
+            camera.cullingMask = 1 << MeasureLayer;
+            camera.fieldOfView = 18f;
+            camera.nearClipPlane = 0.01f;
+            var key = new GameObject("Key").AddComponent<Light>();
+            key.transform.SetParent(stage.transform, false);
+            key.type = LightType.Directional;
+            key.intensity = 1.5f;
+            key.cullingMask = 1 << MeasureLayer;
+            key.transform.rotation = Quaternion.Euler(35f, 30f, 0f);
+            const int size = 128;
+            var target = new RenderTexture(size, size, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            camera.targetTexture = target;
+            var read = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            try
+            {
+                foreach (var (letter, node) in pieces)
+                {
+                    // Ids like the files: the icon catalog ignores case, so "chess-K" and "chess-k" would clash.
+                    var id = (char.IsUpper(letter) ? "chess-white-" : "chess-black-") + char.ToLowerInvariant(letter);
+                    var path = $"{IconsDir}/{id}.png";
+                    result.Add((id, path));
+                    if (!force && File.Exists(path))
+                    {
+                        continue;
+                    }
+                    var set = (GameObject)Object.Instantiate(model, stage.transform);
+                    set.transform.localScale = Vector3.one * catalog.ScaleFor("ph-chess_set");
+                    var piece = set.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == node);
+                    foreach (var renderer in set.GetComponentsInChildren<Renderer>(true))
+                    {
+                        renderer.enabled = piece != null && renderer.transform.IsChildOf(piece);
+                        renderer.gameObject.layer = MeasureLayer;
+                    }
+                    var bounds = piece != null ? Bounds(piece.gameObject) : Bounds(set);
+                    var rotation = Quaternion.Euler(12f, char.ToLowerInvariant(letter) == 'n' ? (char.IsUpper(letter) ? 90f : -90f) : 20f, 0f);
+                    var distance = bounds.extents.magnitude / Mathf.Sin(camera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 1.05f;
+                    camera.transform.SetPositionAndRotation(bounds.center - rotation * Vector3.forward * distance, rotation);
+                    camera.Render();
+                    var previous = RenderTexture.active;
+                    RenderTexture.active = target;
+                    read.ReadPixels(new Rect(0, 0, size, size), 0, 0);
+                    RenderTexture.active = previous;
+                    // Chroma key: green → transparent, green fringes removed.
+                    var pixels = read.GetPixels();
+                    for (var i = 0; i < pixels.Length; i++)
+                    {
+                        var c = pixels[i];
+                        var spill = c.g - Mathf.Max(c.r, c.b);
+                        c.a = 1f - Mathf.Clamp01(spill * 2.2f);
+                        c.g = Mathf.Min(c.g, Mathf.Max(c.r, c.b));
+                        pixels[i] = c;
+                    }
+                    read.SetPixels(pixels);
+                    read.Apply();
+                    File.WriteAllBytes(path, read.EncodeToPNG());
+                    Object.DestroyImmediate(set);
+                }
+            }
+            finally
+            {
+                camera.targetTexture = null;
+                Object.DestroyImmediate(target);
+                Object.DestroyImmediate(read);
+                Object.DestroyImmediate(stage);
+            }
+            return result;
+        }
+
+        /// <summary>
         /// One picture per item from the game's camera angle (looking north-east from above), on the catalog card colour,
         /// saved as PNG in the project and collected in the icon catalog.
         /// </summary>
@@ -434,6 +529,7 @@ namespace Reconnect.Client.Editor
                 Object.DestroyImmediate(stage);
             }
 
+            paths.AddRange(RenderChessPieces(catalog));
             AssetDatabase.Refresh();
             var entries = new List<BuildIconCatalog.Entry>();
             foreach (var (id, path) in paths)
@@ -441,6 +537,7 @@ namespace Reconnect.Client.Editor
                 if (AssetImporter.GetAtPath(path) is TextureImporter importer)
                 {
                     importer.textureType = TextureImporterType.Default;
+                    importer.alphaIsTransparency = id.StartsWith("chess-", StringComparison.Ordinal);
                     importer.mipmapEnabled = false;
                     importer.maxTextureSize = 256;
                     importer.SaveAndReimport();
@@ -528,7 +625,11 @@ namespace Reconnect.Client.Editor
             {
                 return "Wand";
             }
-            if (id.StartsWith("custom-") || id.StartsWith("game-"))
+            if (id.StartsWith("game-"))
+            {
+                return "Spiele";
+            }
+            if (id.StartsWith("custom-"))
             {
                 return Has("lounger", "officechair") ? "Sitzen"
                     : Has("pendant", "lightstring", "ledstrip") ? "Licht"

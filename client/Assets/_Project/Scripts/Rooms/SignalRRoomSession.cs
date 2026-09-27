@@ -28,6 +28,7 @@ namespace Reconnect.Client.Rooms
         public event Action<EmoteDto> EmoteReceived;
         public event Action<PlayerSeatDto> PlayerSeated;
         public event Action<TicTacToeStateDto> TicTacToeUpdated;
+        public event Action<BoardGameStateDto> BoardGameUpdated;
         public event Action<QuizStateDto> QuizUpdated;
         public event Action<QueueStatusDto> QueueUpdated;
         public event Action<RoomSnapshotDto> ElevatorArrived;
@@ -56,6 +57,15 @@ namespace Reconnect.Client.Rooms
         public Task<TicTacToeStateDto> TicTacToeMoveAsync(int cell) => _connection.InvokeAsync<TicTacToeStateDto>(RoomHubContract.Server.TicTacToeMove, cell);
 
         public Task<TicTacToeStateDto> TicTacToeResetAsync() => _connection.InvokeAsync<TicTacToeStateDto>(RoomHubContract.Server.TicTacToeReset);
+
+        public Task<BoardGameStateDto> BoardGameJoinAsync(string game) =>
+            _connection.InvokeAsync<BoardGameStateDto>(RoomHubContract.Server.BoardGameJoin, game);
+
+        public Task<BoardGameStateDto> BoardGameMoveAsync(string game, string move) =>
+            _connection.InvokeAsync<BoardGameStateDto>(RoomHubContract.Server.BoardGameMove, game, move);
+
+        public Task<BoardGameStateDto> BoardGameResetAsync(string game) =>
+            _connection.InvokeAsync<BoardGameStateDto>(RoomHubContract.Server.BoardGameReset, game);
 
         public Task<QuizStateDto> QuizStartAsync() => _connection.InvokeAsync<QuizStateDto>(RoomHubContract.Server.QuizStart);
 
@@ -110,6 +120,7 @@ namespace Reconnect.Client.Rooms
             connection.On<EmoteDto>(RoomHubContract.Client.PlayerEmote, e => EmoteReceived?.Invoke(e));
             connection.On<PlayerSeatDto>(RoomHubContract.Client.PlayerSeated, s => PlayerSeated?.Invoke(s));
             connection.On<TicTacToeStateDto>(RoomHubContract.Client.TicTacToeUpdated, t => TicTacToeUpdated?.Invoke(t));
+            connection.On<BoardGameStateDto>(RoomHubContract.Client.BoardGameUpdated, b => BoardGameUpdated?.Invoke(b));
             connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => QuizUpdated?.Invoke(q));
             connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdated?.Invoke(q));
             connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => ElevatorArrived?.Invoke(s));

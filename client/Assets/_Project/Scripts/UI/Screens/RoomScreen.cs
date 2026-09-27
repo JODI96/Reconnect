@@ -43,10 +43,12 @@ namespace Reconnect.Client.UI.Screens
         private VisualElement _gamePanel;
         private TicTacToePanel _ticTacToe;
         private QuizPanel _quiz;
+        private BoardGamePanel _boardGame;
         private VisualElement _liftPanel;
         private VisualElement _queueBanner;
         private IVisualElementScheduledItem _liftRefresh;
         private bool _riding;
+        private bool _towerCredit;
 
         public RoomScreen(VisualTreeAsset template, RoomView room, CityView city, IRoomSession session, TowerService tower,
             RoomService rooms, Guid roomId, Guid localUserId, bool isAdmin, Action leave)
@@ -80,6 +82,8 @@ namespace Reconnect.Client.UI.Screens
             _gamePanel = Q<VisualElement>("game-panel");
             _ticTacToe = new TicTacToePanel(Q<VisualElement>("ttt-panel"), _session, _localUserId, RunGameAction);
             _quiz = new QuizPanel(Q<VisualElement>("quiz-panel"), _session, _localUserId, RunGameAction);
+            _boardGame = new BoardGamePanel(Q<VisualElement>("board-panel"), _session, _localUserId, RunGameAction,
+                id => _room.BuildIcons != null ? _room.BuildIcons.Find(id) : null);
             Q<Button>("game-close").clicked += () => OpenGame(null);
             _liftPanel = Q<VisualElement>("lift-panel");
             _queueBanner = Q<VisualElement>("queue-banner");
@@ -130,6 +134,7 @@ namespace Reconnect.Client.UI.Screens
             _room.SeatTapped += OnSeatTapped;
             _session.TicTacToeUpdated += _ticTacToe.Render;
             _session.QuizUpdated += _quiz.Render;
+            _session.BoardGameUpdated += _boardGame.Render;
             _session.QueueUpdated += OnQueueUpdated;
             _session.ElevatorArrived += OnElevatorArrived;
             _session.LayoutChanged += OnLayoutChanged;
@@ -164,6 +169,7 @@ namespace Reconnect.Client.UI.Screens
             }
             _session.TicTacToeUpdated -= _ticTacToe.Render;
             _session.QuizUpdated -= _quiz.Render;
+            _session.BoardGameUpdated -= _boardGame.Render;
             _session.QueueUpdated -= OnQueueUpdated;
             _session.ElevatorArrived -= OnElevatorArrived;
             _liftRefresh?.Pause();
@@ -206,7 +212,8 @@ namespace Reconnect.Client.UI.Screens
             Q<Label>("room-name").text = snapshot.Room.Name;
             Q<Label>("room-owner").text = (snapshot.Room.Floor is { } floor ? FloorLabel(floor) + " · " : "") + "von " + snapshot.Room.OwnerDisplayName;
             Q<Button>("lift").style.display = snapshot.Room.Floor != null ? DisplayStyle.Flex : DisplayStyle.None;
-            Q<Label>("tower-credit").style.display = snapshot.Room.Floor != null ? DisplayStyle.Flex : DisplayStyle.None;
+            _towerCredit = snapshot.Room.Floor != null;
+            Q<Label>("tower-credit").style.display = _towerCredit ? DisplayStyle.Flex : DisplayStyle.None;
             OpenGame(null);
 
             foreach (var overlay in _overlays.Values)
@@ -256,6 +263,10 @@ namespace Reconnect.Client.UI.Screens
             _room.Show(snapshot, _localUserId, anchor, yaw);
             _ticTacToe.Render(snapshot.TicTacToe);
             _quiz.Render(snapshot.Quiz);
+            foreach (var state in snapshot.BoardGames ?? Array.Empty<BoardGameStateDto>())
+            {
+                _boardGame.Render(state);
+            }
             foreach (var player in snapshot.Players)
             {
                 AddOverlay(player.UserId, player.DisplayName);
@@ -355,6 +366,8 @@ namespace Reconnect.Client.UI.Screens
             var panelOpen = _liftPanel.style.display == DisplayStyle.Flex || _gamePanel.style.display == DisplayStyle.Flex
                 || (_build != null && _build.IsOpen);
             Q<VisualElement>("emote-bar").style.display = panelOpen ? DisplayStyle.None : DisplayStyle.Flex;
+            // The panels cover the city behind: the building credit comes back as soon as they close.
+            Q<Label>("tower-credit").style.display = _towerCredit && !panelOpen ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         /// <summary>Floors top to bottom, like a real lift panel, with live occupancy.</summary>
@@ -545,9 +558,22 @@ namespace Reconnect.Client.UI.Screens
                 CloseLift();
             }
             _gamePanel.style.display = gameId == null ? DisplayStyle.None : DisplayStyle.Flex;
+            var boardGame = gameId != null && BoardGames.All.Contains(gameId);
             Q<VisualElement>("ttt-panel").style.display = gameId == "tictactoe" ? DisplayStyle.Flex : DisplayStyle.None;
             Q<VisualElement>("quiz-panel").style.display = gameId == "quiz" ? DisplayStyle.Flex : DisplayStyle.None;
-            Q<Label>("game-title").text = gameId == "tictactoe" ? "Tic-Tac-Toe" : "Zürich-Quiz";
+            Q<VisualElement>("board-panel").style.display = boardGame ? DisplayStyle.Flex : DisplayStyle.None;
+            if (boardGame)
+            {
+                _boardGame.Open(gameId);
+            }
+            Q<Label>("game-title").text = gameId switch
+            {
+                "tictactoe" => "Tic-Tac-Toe",
+                BoardGames.ConnectFour => "Vier gewinnt",
+                BoardGames.Memory => "Memory",
+                BoardGames.Chess => "Schach",
+                _ => "Zürich-Quiz",
+            };
             UpdateEmoteBar();
         }
 

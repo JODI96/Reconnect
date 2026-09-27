@@ -483,7 +483,39 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: 5efb0b99374abb44898b94051ffedca1, type: 3}
   - itemId: game-quiz
     icon: {fileID: 2800000, guid: 9cd8358411d3479479fe8f1e95d1766f, type: 3}
+  - itemId: game-connectfour
+    icon: {fileID: 2800000, guid: df8f9aaccd9fb13458eda13ed953c6a4, type: 3}
+  - itemId: game-memory
+    icon: {fileID: 2800000, guid: 3ae462639f4d013428768769bfdae7d7, type: 3}
+  - itemId: game-chess
+    icon: {fileID: 2800000, guid: bfeac7f30701ce74f8916a35c046fe78, type: 3}
+  - itemId: game-quizshow
+    icon: {fileID: 2800000, guid: 2f5d1e434cb34934fbf75e8d6e877ea4, type: 3}
   - itemId: custom-pool-6x3
     icon: {fileID: 2800000, guid: 73e7be0f0423b68418fd05d584faeb2c, type: 3}
   - itemId: custom-pool-12x6
     icon: {fileID: 2800000, guid: f88a74101195f3349b60e3f78abc34dc, type: 3}
+  - itemId: chess-white-k
+    icon: {fileID: 2800000, guid: cfe8a356cc63d6345b877f5d9ea476f6, type: 3}
+  - itemId: chess-white-q
+    icon: {fileID: 2800000, guid: 41aae34f6ab70284ba7b4dacb7b02a5f, type: 3}
+  - itemId: chess-white-r
+    icon: {fileID: 2800000, guid: e2656d598668fb34ba388d3b5546fa67, type: 3}
+  - itemId: chess-white-b
+    icon: {fileID: 2800000, guid: 33746810b8bdb8e479deceda8b85d223, type: 3}
+  - itemId: chess-white-n
+    icon: {fileID: 2800000, guid: 0d9c22ee338219b48afc871bb8a25d62, type: 3}
+  - itemId: chess-white-p
+    icon: {fileID: 2800000, guid: 84d95085fad2dea419de5e7283e9366f, type: 3}
+  - itemId: chess-black-k
+    icon: {fileID: 2800000, guid: 8d0ee639f44aa784297fb6bc66701173, type: 3}
+  - itemId: chess-black-q
+    icon: {fileID: 2800000, guid: 7010ecd69325f4040809804ef3425a5f, type: 3}
+  - itemId: chess-black-r
+    icon: {fileID: 2800000, guid: 546e2857ec68b734c90d34f048fa0c3a, type: 3}
+  - itemId: chess-black-b
+    icon: {fileID: 2800000, guid: cc6dccce4f6fdc74096262cefccc4cba, type: 3}
+  - itemId: chess-black-n
+    icon: {fileID: 2800000, guid: 1768e6beb16031d4eb54b455b0cbe851, type: 3}
+  - itemId: chess-black-p
+    icon: {fileID: 2800000, guid: b0f4d0acf90eb0a4b9e4d8aaae37cb0f, type: 3}

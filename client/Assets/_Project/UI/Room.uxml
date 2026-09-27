@@ -59,6 +59,15 @@
                 </ui:VisualElement>
             </ui:VisualElement>
 
+            <ui:VisualElement name="board-panel">
+                <ui:Label name="board-status" class="status" />
+                <ui:VisualElement name="board-grid" class="board-grid" />
+                <ui:VisualElement class="button-row">
+                    <ui:Button name="board-join" text="Mitspielen" class="button button--primary" />
+                    <ui:Button name="board-reset" text="Neues Spiel" class="button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
             <ui:VisualElement name="quiz-panel">
                 <ui:Label name="quiz-question" class="quiz-question" />
                 <ui:Button name="answer-0" class="button quiz-answer" />

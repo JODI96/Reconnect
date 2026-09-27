@@ -162,7 +162,18 @@ namespace Reconnect.Client.Rooms
             _themeId = snapshot.Room.Theme;
             _outline = snapshot.Room.Outline is { Count: >= 3 } outline ? outline : null;
             _theme = RoomTheme.For(snapshot.Room.Theme);
-            _custom = new CustomItems(wallMaterial, waterMaterial, glassMaterial, _theme);
+            _custom = new CustomItems(wallMaterial, waterMaterial, glassMaterial, _theme, (id, parent) =>
+            {
+                // Catalog models inside custom items (the chess set on the chess table).
+                if (itemCatalog == null || itemCatalog.Find(id) == null)
+                {
+                    return null;
+                }
+                var holder = new GameObject(id).transform;
+                holder.SetParent(parent, false);
+                Spawn(holder, id);
+                return holder.gameObject;
+            });
             _lampLights = 0;
 
             _storey = snapshot.Room.Floor;
@@ -1177,6 +1188,12 @@ namespace Reconnect.Client.Rooms
                     BuildElevatorStation(pivot, item);
                     continue;
                 }
+                if (CustomItems.GameStations.TryGetValue(item.ItemId, out var gameId) && _custom.TryBuild(item.ItemId, pivot, out _))
+                {
+                    _obstacles.Add(Bounds(pivot));
+                    RegisterStation(pivot, gameId);
+                    continue;
+                }
                 if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks))
                 {
                     if (blocks)
@@ -1251,7 +1268,8 @@ namespace Reconnect.Client.Rooms
             {
                 return Spawn(pivot, item.ItemId == TicTacToeItem ? "table" : "cabinetTelevision");
             }
-            if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out _))
+            if ((item.ItemId.StartsWith(CustomItems.Prefix) || CustomItems.GameStations.ContainsKey(item.ItemId))
+                && _custom.TryBuild(item.ItemId, pivot, out _))
             {
                 return Bounds(pivot);
             }
@@ -1361,8 +1379,13 @@ namespace Reconnect.Client.Rooms
             var bounds = Spawn(pivot, baseModel);
             decorate(pivot);
             _obstacles.Add(bounds);
-            bounds = Bounds(pivot);
+            RegisterStation(pivot, gameId);
+        }
 
+        /// <summary>Makes the built item a tappable game station with a soft glowing ring on the floor.</summary>
+        private void RegisterStation(Transform pivot, string gameId)
+        {
+            var bounds = Bounds(pivot);
             var station = pivot.gameObject.AddComponent<GameStation>();
             station.Initialize(gameId, WorldToTile(transform.InverseTransformPoint(bounds.center)));
             var collider = pivot.gameObject.AddComponent<BoxCollider>();

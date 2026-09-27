@@ -28,7 +28,8 @@ namespace Reconnect.Contracts.Rooms
         int Depth,
         IReadOnlyList<RoomPlayerDto> Players,
         TicTacToeStateDto? TicTacToe = null,
-        QuizStateDto? Quiz = null);
+        QuizStateDto? Quiz = null,
+        IReadOnlyList<BoardGameStateDto>? BoardGames = null);
 
     public sealed record PlayerMovedDto(Guid UserId, TilePosition Tile);
 

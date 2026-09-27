@@ -54,6 +54,15 @@ namespace Reconnect.Contracts.Hubs
             /// <summary>() → QuizStateDto. Reveals the answer, then moves to the next question.</summary>
             public const string QuizNext = "QuizNext";
 
+            /// <summary>(string game) → BoardGameStateDto. Takes a free seat at a game for two (<c>BoardGames</c>).</summary>
+            public const string BoardGameJoin = "BoardGameJoin";
+
+            /// <summary>(string game, string move) → BoardGameStateDto. See <c>BoardGameStateDto</c> for the moves.</summary>
+            public const string BoardGameMove = "BoardGameMove";
+
+            /// <summary>(string game) → BoardGameStateDto. Clears the board and the seats.</summary>
+            public const string BoardGameReset = "BoardGameReset";
+
             /// <summary>
             /// (Guid targetRoomId) → ElevatorResultDto. Rides to another floor of the same tower: arrives at once if
             /// there is room (and nobody waiting), otherwise joins the queue and rides up automatically.
@@ -90,6 +99,9 @@ namespace Reconnect.Contracts.Hubs
 
             /// <summary>Payload: QuizStateDto</summary>
             public const string QuizUpdated = "QuizUpdated";
+
+            /// <summary>Payload: BoardGameStateDto (Connect Four, Memory, chess).</summary>
+            public const string BoardGameUpdated = "BoardGameUpdated";
 
             /// <summary>Payload: QueueStatusDto – my place in the lift queue changed (Position 0 = left the queue).</summary>
             public const string QueueUpdated = "QueueUpdated";

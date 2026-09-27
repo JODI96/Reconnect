@@ -24,6 +24,7 @@ public sealed class RoomHubClient : IAsyncDisposable
         connection.On<EmoteDto>(RoomHubContract.Client.PlayerEmote, e => EmotesSeen.Add(e));
         connection.On<PlayerSeatDto>(RoomHubContract.Client.PlayerSeated, s => Seats.Enqueue(s));
         connection.On<TicTacToeStateDto>(RoomHubContract.Client.TicTacToeUpdated, t => TicTacToe.Enqueue(t));
+        connection.On<BoardGameStateDto>(RoomHubContract.Client.BoardGameUpdated, b => BoardGames.Enqueue(b));
         connection.On<QuizStateDto>(RoomHubContract.Client.QuizUpdated, q => Quiz.Enqueue(q));
         connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdates.Enqueue(q));
         connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => Arrivals.Enqueue(s));
@@ -39,6 +40,7 @@ public sealed class RoomHubClient : IAsyncDisposable
     public ConcurrentQueue<PlayerSeatDto> Seats { get; } = new();
     public ConcurrentQueue<RoomLayoutChangedDto> LayoutChanges { get; } = new();
     public ConcurrentQueue<TicTacToeStateDto> TicTacToe { get; } = new();
+    public ConcurrentQueue<BoardGameStateDto> BoardGames { get; } = new();
     public ConcurrentQueue<QuizStateDto> Quiz { get; } = new();
     public ConcurrentQueue<QueueStatusDto> QueueUpdates { get; } = new();
     public ConcurrentQueue<RoomSnapshotDto> Arrivals { get; } = new();
@@ -73,6 +75,11 @@ public sealed class RoomHubClient : IAsyncDisposable
     public Task LeaveAsync() => _connection.InvokeAsync(RoomHubContract.Server.LeaveRoom);
 
     public Task EmoteAsync(string emote) => _connection.InvokeAsync(RoomHubContract.Server.Emote, emote);
+
+    public Task<BoardGameStateDto> BoardGameJoinAsync(string game) => _connection.InvokeAsync<BoardGameStateDto>(RoomHubContract.Server.BoardGameJoin, game);
+
+    public Task<BoardGameStateDto> BoardGameMoveAsync(string game, string move) =>
+        _connection.InvokeAsync<BoardGameStateDto>(RoomHubContract.Server.BoardGameMove, game, move);
 
     public Task<TicTacToeStateDto> TicTacToeJoinAsync() => _connection.InvokeAsync<TicTacToeStateDto>(RoomHubContract.Server.TicTacToeJoin);
 

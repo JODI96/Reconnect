@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Reconnect.Client.Rooms
@@ -57,13 +59,25 @@ namespace Reconnect.Client.Rooms
             "custom-greenwall",
         };
 
+        /// <summary>Game stations built here (item id → game id the room hub knows).</summary>
+        public static readonly IReadOnlyDictionary<string, string> GameStations = new Dictionary<string, string>
+        {
+            ["game-connectfour"] = "connectfour",
+            ["game-memory"] = "memory",
+            ["game-chess"] = "chess",
+            ["game-quizshow"] = "quiz",
+        };
+
         private readonly Material _litBase;
+        private readonly Func<string, Transform, GameObject> _spawnModel;
         private readonly Material _water;
         private readonly Material _glass;
         private readonly RoomTheme _theme;
 
-        public CustomItems(Material litBase, Material water, Material glass, RoomTheme theme)
+        /// <param name="spawnModel">Places a catalog model (e.g. the Poly Haven chess set) under a transform; optional.</param>
+        public CustomItems(Material litBase, Material water, Material glass, RoomTheme theme, Func<string, Transform, GameObject> spawnModel = null)
         {
+            _spawnModel = spawnModel;
             _litBase = litBase;
             _water = water;
             _glass = glass;
@@ -108,6 +122,10 @@ namespace Reconnect.Client.Rooms
                 case "custom-stage": Stage(pivot); return true;
                 case "custom-buffet": Buffet(pivot); return true;
                 case "custom-greenwall": GreenWall(pivot); return true;
+                case "game-connectfour": ConnectFourStation(pivot); return true;
+                case "game-memory": MemoryStation(pivot); return true;
+                case "game-chess": ChessStation(pivot); return true;
+                case "game-quizshow": QuizShowStation(pivot); return true;
                 case "custom-turnstiles": Turnstiles(pivot); blocksTiles = false; return true;
                 case "custom-reception": Reception(pivot); return true;
                 case "custom-screenwall": ScreenWall(pivot); return true;
@@ -636,6 +654,109 @@ namespace Reconnect.Client.Rooms
             Box(pivot, Glow(new Color(1f, 0.93f, 0.8f), 1.2f), new Vector3(0f, height + 0.06f, -0.08f), new Vector3(width, 0.02f, 0.04f));
         }
 
+        /// <summary>A small café table (round top on a pedestal) that games stand on; returns the height of its top.</summary>
+        private float GameTable(Transform pivot, float radius, Color top)
+        {
+            const float height = 0.74f;
+            var dark = Lit(new Color(0.1f, 0.1f, 0.11f), 0.5f);
+            Cylinder(pivot, dark, new Vector3(0f, 0.02f, 0f), new Vector3(radius * 1.1f, 0.02f, radius * 1.1f));
+            Cylinder(pivot, dark, new Vector3(0f, height / 2f, 0f), new Vector3(0.08f, height / 2f, 0.08f));
+            Cylinder(pivot, Lit(top, 0.55f), new Vector3(0f, height - 0.02f, 0f), new Vector3(radius * 2f, 0.02f, radius * 2f));
+            return height;
+        }
+
+        /// <summary>Connect Four: an upright blue frame with a few discs on a table.</summary>
+        private void ConnectFourStation(Transform pivot)
+        {
+            var top = GameTable(pivot, 0.45f, new Color(0.93f, 0.93f, 0.91f));
+            var blue = Lit(new Color(0.1f, 0.3f, 0.75f), 0.5f);
+            Box(pivot, blue, new Vector3(0f, top + 0.26f, 0f), new Vector3(0.62f, 0.5f, 0.05f));
+            Box(pivot, blue, new Vector3(0f, top + 0.01f, 0f), new Vector3(0.7f, 0.02f, 0.2f));
+            var red = Lit(new Color(0.95f, 0.25f, 0.4f), 0.6f);
+            var yellow = Lit(new Color(1f, 0.82f, 0.2f), 0.6f);
+            var hole = Lit(new Color(0.05f, 0.1f, 0.2f), 0.3f);
+            for (var column = 0; column < 7; column++)
+            {
+                for (var row = 0; row < 6; row++)
+                {
+                    var filled = row < (column * 5 + 3) % 4;
+                    var disc = Cylinder(pivot, filled ? ((column + row) % 2 == 0 ? red : yellow) : hole,
+                        new Vector3(-0.255f + column * 0.085f, top + 0.06f + row * 0.075f, -0.03f), new Vector3(0.065f, 0.005f, 0.065f));
+                    disc.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                }
+            }
+        }
+
+        /// <summary>Memory: 16 cards face down on a square table, two turned.</summary>
+        private void MemoryStation(Transform pivot)
+        {
+            const float height = 0.74f;
+            var oak = Lit(new Color(0.62f, 0.45f, 0.3f), 0.45f);
+            Box(pivot, oak, new Vector3(0f, height - 0.02f, 0f), new Vector3(0.9f, 0.04f, 0.9f));
+            var dark = Lit(new Color(0.1f, 0.1f, 0.11f), 0.5f);
+            foreach (var (x, z) in new[] { (-0.38f, -0.38f), (0.38f, -0.38f), (-0.38f, 0.38f), (0.38f, 0.38f) })
+            {
+                Box(pivot, dark, new Vector3(x, height / 2f, z), new Vector3(0.04f, height, 0.04f));
+            }
+            var back = Lit(_theme.WallTrim, 0.4f);
+            var face = Lit(new Color(0.97f, 0.96f, 0.93f), 0.3f);
+            for (var i = 0; i < 16; i++)
+            {
+                var (x, z) = (-0.27f + i % 4 * 0.18f, -0.27f + i / 4 * 0.18f);
+                Box(pivot, i is 5 or 10 ? face : back, new Vector3(x, height + 0.004f, z), new Vector3(0.13f, 0.006f, 0.15f));
+            }
+        }
+
+        /// <summary>Chess: the real chess set (Poly Haven) on a walnut table; a board of squares if the model is missing.</summary>
+        private void ChessStation(Transform pivot)
+        {
+            const float height = 0.74f;
+            var walnut = Lit(new Color(0.3f, 0.19f, 0.12f), 0.55f);
+            Box(pivot, walnut, new Vector3(0f, height - 0.025f, 0f), new Vector3(0.8f, 0.05f, 0.8f));
+            foreach (var (x, z) in new[] { (-0.33f, -0.33f), (0.33f, -0.33f), (-0.33f, 0.33f), (0.33f, 0.33f) })
+            {
+                Box(pivot, walnut, new Vector3(x, height / 2f, z), new Vector3(0.05f, height, 0.05f));
+            }
+            var set = _spawnModel?.Invoke("ph-chess_set", pivot);
+            if (set != null)
+            {
+                set.transform.localPosition = new Vector3(0f, height, 0f);
+                return;
+            }
+            var light = Lit(new Color(0.9f, 0.86f, 0.76f), 0.5f);
+            var dark = Lit(new Color(0.25f, 0.16f, 0.1f), 0.5f);
+            for (var i = 0; i < 64; i++)
+            {
+                Box(pivot, (i % 8 + i / 8) % 2 == 0 ? dark : light, new Vector3(-0.21f + i % 8 * 0.06f, height + 0.005f, -0.21f + i / 8 * 0.06f),
+                    new Vector3(0.06f, 0.01f, 0.06f));
+            }
+        }
+
+        /// <summary>Quiz show: a small stage with two lecterns (glowing buzzers) and a big screen showing the ranking.</summary>
+        private void QuizShowStation(Transform pivot)
+        {
+            const float width = 4f, depth = 2.4f, height = 0.3f;
+            var black = Lit(new Color(0.06f, 0.06f, 0.07f), 0.3f);
+            var oak = Lit(new Color(0.24f, 0.17f, 0.12f), 0.5f);
+            Box(pivot, black, new Vector3(0f, height / 2f, 0f), new Vector3(width, height, depth));
+            Box(pivot, oak, new Vector3(0f, height, 0f), new Vector3(width + 0.04f, 0.03f, depth + 0.04f));
+            Box(pivot, Glow(_theme.WallTrim, 2.2f), new Vector3(0f, 0.05f, -depth / 2f - 0.01f), new Vector3(width, 0.03f, 0.02f));
+            // Screen at the back.
+            Box(pivot, black, new Vector3(0f, height + 1.25f, depth / 2f - 0.1f), new Vector3(2.8f, 1.7f, 0.08f));
+            Box(pivot, Glow(new Color(0.25f, 0.45f, 0.95f), 1.3f), new Vector3(0f, height + 1.25f, depth / 2f - 0.15f), new Vector3(2.6f, 1.5f, 0.01f));
+            foreach (var y in new[] { 0.45f, 0.1f, -0.25f })
+            {
+                Box(pivot, Glow(new Color(1f, 0.95f, 0.85f), 1.5f), new Vector3(-0.2f, height + 1.25f + y, depth / 2f - 0.16f), new Vector3(1.8f, 0.12f, 0.005f));
+            }
+            // Two lecterns with buzzers.
+            foreach (var x in new[] { -1.1f, 1.1f })
+            {
+                Box(pivot, Lit(new Color(0.93f, 0.93f, 0.91f), 0.4f), new Vector3(x, height + 0.5f, -0.3f), new Vector3(0.6f, 1f, 0.45f));
+                Box(pivot, Glow(_theme.WallTrim, 1.8f), new Vector3(x, height + 0.5f, -0.53f), new Vector3(0.6f, 0.08f, 0.01f));
+                Cylinder(pivot, Glow(new Color(1f, 0.25f, 0.3f), 2.2f), new Vector3(x, height + 1.02f, -0.3f), new Vector3(0.14f, 0.02f, 0.14f));
+            }
+        }
+
         /// <summary>Steel lift portals with door leaves, floor indicator and call buttons on the item's front (-Z) face.</summary>
         private void LiftDoors(Transform face, float width, float depth, float[] doorCentres)
         {
@@ -847,15 +968,15 @@ namespace Reconnect.Client.Rooms
         }
 
         /// <summary>Destroy that also works in the editor (the build catalog measures the items outside play mode).</summary>
-        private static void DestroyNow(Object target)
+        private static void DestroyNow(UnityEngine.Object target)
         {
             if (Application.isPlaying)
             {
-                Object.Destroy(target);
+                UnityEngine.Object.Destroy(target);
             }
             else
             {
-                Object.DestroyImmediate(target);
+                UnityEngine.Object.DestroyImmediate(target);
             }
         }
 

@@ -240,9 +240,20 @@ namespace Reconnect.Client.Editor
         private static void CreateBuildCatalog()
         {
             var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            var custom = new CustomItems(material, material, material, RoomTheme.For("default"));
+            var catalog = Load<ItemCatalog>(ItemCatalogPath);
+            var custom = new CustomItems(material, material, material, RoomTheme.For("default"), (id, parent) =>
+            {
+                var model = catalog.Find(id);
+                if (model == null)
+                {
+                    return null;
+                }
+                var instance = (GameObject)Object.Instantiate(model, parent);
+                instance.transform.localScale = Vector3.one * catalog.ScaleFor(id);
+                return instance;
+            });
             var icons = LoadOrCreate<BuildIconCatalog>(BuildIconsPath);
-            icons.items = BuildCatalogGenerator.Generate(Load<ItemCatalog>(ItemCatalogPath), custom);
+            icons.items = BuildCatalogGenerator.Generate(catalog, custom);
             EditorUtility.SetDirty(icons);
         }
 

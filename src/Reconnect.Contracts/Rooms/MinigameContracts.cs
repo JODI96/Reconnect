@@ -38,6 +38,34 @@ namespace Reconnect.Contracts.Rooms
         Guid? Turn,
         Guid? Winner);
 
+    /// <summary>Games for two at a table; the id is also the station item's game id.</summary>
+    public static class BoardGames
+    {
+        public const string ConnectFour = "connectfour";
+        public const string Memory = "memory";
+        public const string Chess = "chess";
+
+        public static readonly IReadOnlyList<string> All = new[] { ConnectFour, Memory, Chess };
+    }
+
+    /// <summary>
+    /// State of a game for two (<see cref="BoardGames"/>). Board encoding per game: Connect Four 42 cells bottom row
+    /// first ('A'/'B'/'.'), move = column "0"–"6"; Memory 16 cards ('?' covered, face letter open, lower case found),
+    /// move = card "0"–"15", Info = "pairsA:pairsB"; chess 64 squares a1 first (FEN letters), move = "e2e4"/"e7e8q",
+    /// Info = "check …" or the last move. Player A starts (white in chess).
+    /// </summary>
+    public sealed record BoardGameStateDto(
+        string Game,
+        string Status,
+        string Board,
+        Guid? PlayerA,
+        string? PlayerAName,
+        Guid? PlayerB,
+        string? PlayerBName,
+        Guid? Turn,
+        Guid? Winner,
+        string? Info);
+
     public sealed record QuizScoreDto(Guid UserId, string DisplayName, int Points);
 
     /// <param name="CorrectIndex">Only set while the answer is revealed.</param>

@@ -22,6 +22,9 @@ namespace Reconnect.Client.Rooms
         /// <summary>Someone sat down (Seat) or stood up (Seat null). A move stands up as well.</summary>
         event Action<PlayerSeatDto> PlayerSeated;
         event Action<TicTacToeStateDto> TicTacToeUpdated;
+
+        /// <summary>A game for two changed (Connect Four, Memory, chess).</summary>
+        event Action<BoardGameStateDto> BoardGameUpdated;
         event Action<QuizStateDto> QuizUpdated;
 
         /// <summary>My place in the lift queue changed (Position 0 = no longer waiting).</summary>
@@ -55,6 +58,10 @@ namespace Reconnect.Client.Rooms
         Task<TicTacToeStateDto> TicTacToeJoinAsync();
         Task<TicTacToeStateDto> TicTacToeMoveAsync(int cell);
         Task<TicTacToeStateDto> TicTacToeResetAsync();
+
+        Task<BoardGameStateDto> BoardGameJoinAsync(string game);
+        Task<BoardGameStateDto> BoardGameMoveAsync(string game, string move);
+        Task<BoardGameStateDto> BoardGameResetAsync(string game);
 
         Task<QuizStateDto> QuizStartAsync();
         Task<QuizStateDto> QuizAnswerAsync(int answerIndex);
