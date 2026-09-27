@@ -32,6 +32,23 @@ public sealed class SeedRoomLayoutTests
     }
 
     [Fact]
+    public void The_penthouse_has_everything_a_luxury_home_needs()
+    {
+        var layout = ResidenceDesigns.Penthouse(TowerFurnishing.PrimeTower).Select(i => i.ItemId).ToList();
+
+        foreach (var needed in new[]
+                 {
+                     "custom-pool-", "custom-sauna", "custom-hottub", "custom-treadmill", "custom-powerrack", "custom-kitchenisland-",
+                     "custom-kitchenwall-", "custom-fireplace", "custom-tvwall", "custom-bed-dungeon", "custom-wardrobe-", "custom-bathtub",
+                     "custom-shower", "custom-washstand", "custom-executivedesk", "custom-gamingdesk", "custom-drinkfridge", "custom-wall-art-",
+                 })
+        {
+            Assert.Contains(layout, id => id.StartsWith(needed, StringComparison.Ordinal));
+        }
+        Assert.Equal("walnut", ResidenceDesigns.Penthouse(TowerFurnishing.PrimeTower)[0].Colours);   // the dressed-up core
+    }
+
+    [Fact]
     public void Tower_storeys_have_the_real_floor_plan_with_the_core_in_the_middle()
     {
         var plan = TowerFurnishing.PrimeTower;
@@ -61,6 +78,7 @@ public sealed class SeedRoomLayoutTests
         }
         var plan = TowerFurnishing.PrimeTower;
         rooms["Büro (Start)"] = (RoomThemes.Office, plan.Width, plan.Depth, StarterOffice.Layout(plan), plan.Outline);
+        rooms["Penthouse"] = (RoomThemes.Office, plan.Width, plan.Depth, ResidenceDesigns.Penthouse(plan), plan.Outline);
         return rooms;
     }
 }

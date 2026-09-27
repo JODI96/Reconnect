@@ -95,7 +95,22 @@ public sealed class SeedRoomExport
         rooms.AddRange(PrimeTowerFloors.Floors().Select(f => (f.Name, f.Theme, f.Width, f.Depth, f.Layout, (IReadOnlyList<RoomPointDto>?)f.Plan.Outline)));
         var plan = TowerFurnishing.PrimeTower;
         rooms.Add(("Starter", RoomThemes.Office, plan.Width, plan.Depth, StarterOffice.Layout(plan), plan.Outline));
+        rooms.Add(("Penthouse", RoomThemes.Office, plan.Width, plan.Depth, ResidenceDesigns.Penthouse(plan), plan.Outline));
         return rooms;
+    }
+
+    /// <summary>With RECONNECT_EXPORT_PENTHOUSE=&lt;file&gt;: the penthouse as an UpdateRoomLayoutRequest (JSON) to apply via the API.</summary>
+    [Fact]
+    public void Export_penthouse()
+    {
+        var file = Environment.GetEnvironmentVariable("RECONNECT_EXPORT_PENTHOUSE");
+        if (string.IsNullOrEmpty(file))
+        {
+            return;
+        }
+        var items = ResidenceDesigns.Penthouse(TowerFurnishing.PrimeTower).Select(i => i.ToDto()).ToList();
+        File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(new UpdateRoomLayoutRequest(items),
+            new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)));
     }
 
     [Fact]
