@@ -30,7 +30,7 @@ internal static class PrimeTowerFloors
         [
             Storey(0, "Lobby", RoomThemes.Lobby, 150, Lobby()),
             Storey(12, "Coworking", RoomThemes.Coworking, 100, Coworking()),
-            Storey(24, "Sky Office", RoomThemes.Coworking, 80, SkyOffice()),
+            Storey(24, "Sky Office", RoomThemes.Office, 80, SkyOffice()),
             Storey(34, "Konferenzzentrum", RoomThemes.Conference, 140, Conference()),
             Storey(35, "Sky Lounge", RoomThemes.SkyLounge, 120, SkyLounge()),
         ];

@@ -226,7 +226,7 @@ internal sealed class RoomHub(
         var displayName = await profiles.GetDisplayNameAsync(userId, ct) ?? throw new HubException("Profile not found.");
         var blocked = RoomLayout.BlockedTiles(room.Layout);
         blocked.UnionWith(RoomLayout.OutsideTiles(RoomZones.ContextFor(room.Theme, room.Width, room.Depth, room.Layout, room.Outline)));
-        var (x, z) = FindFreeTile(others, blocked, room.Width, room.Depth, byElevator ? ElevatorLanding(room) : null);
+        var (x, z) = FindFreeTile(others, blocked, room.Width, room.Depth, byElevator || room.Floor != null ? ElevatorLanding(room) : null);
         var me = new PresenceEntry(room.Id, userId, connectionId, displayName, x, z, room.Width, room.Depth);
 
         var (added, replaced) = await presence.TryAddAsync(me, room.Capacity);

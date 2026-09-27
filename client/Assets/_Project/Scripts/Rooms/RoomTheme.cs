@@ -62,6 +62,7 @@ namespace Reconnect.Client.Rooms
         public static RoomTheme For(string id) => id switch
         {
             "lobby" => new RoomTheme(FloorPattern.Marble, Hex(0xD6D0C5), Hex(0xA69D8F), Hex(0x1E3B30), Hex(0xC9A45C), Hex(0xFFE6C4), 1.1f, Enclosure.StoneHall),
+            "office" => new RoomTheme(FloorPattern.Parquet, Hex(0x8A5A3B), Hex(0x6E472F), Hex(0x3E4A45), Hex(0xC9A45C), Hex(0xFFE9D0), 1.5f, Enclosure.GlassFacade),
             "coworking" => new RoomTheme(FloorPattern.Planks, Hex(0xCDAA7D), Hex(0xB38D62), Hex(0x55675F), Hex(0xFFB547), Hex(0xFFF1DC), 1.5f, Enclosure.GlassFacade),
             "conference" => new RoomTheme(FloorPattern.Concrete, Hex(0x4B505B), Hex(0x3C414B), Hex(0x6B7A74), Hex(0xFFC46B), Hex(0xFFEAD0), 1.6f, Enclosure.GlassFacade),
             "skylounge" => new RoomTheme(FloorPattern.Terrazzo, Hex(0xCFC9BE), Hex(0xBDB6AA), Hex(0x9FD8CF), Hex(0x5CE1FF), Hex(0xFFE2C0), 1.4f, Enclosure.GlassFacade),

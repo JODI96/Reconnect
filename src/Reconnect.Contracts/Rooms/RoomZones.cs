@@ -32,7 +32,7 @@ namespace Reconnect.Contracts.Rooms
         public static WallSides WallsFor(string theme) => theme switch
         {
             "lobby" => WallSides.North,
-            "coworking" or "conference" or "skylounge" or "rooftop" or "pool" => WallSides.None,
+            "coworking" or "office" or "conference" or "skylounge" or "rooftop" or "pool" => WallSides.None,
             _ => WallSides.North | WallSides.East,
         };
 

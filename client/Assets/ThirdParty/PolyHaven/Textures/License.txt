@@ -1,0 +1,2 @@
+All textures in this folder are from Poly Haven (https://polyhaven.com) and licensed CC0 1.0.
+Free for commercial use, no attribution required. Fetched by tools/fetch_textures.py.

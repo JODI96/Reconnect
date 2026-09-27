@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85e80476fb7f84d4c9f177261d5b8154, type: 3}
+  m_Name: FloorMaterials
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.FloorMaterialCatalog
+  entries:
+  - theme: lobby
+    material: {fileID: 2100000, guid: f5b9721ee12a3874a9a5a66694761dc8, type: 2}
+    metresPerTile: 2.5
+  - theme: coworking
+    material: {fileID: 2100000, guid: 32c26b973e256d8458e7b97adfc4f41c, type: 2}
+    metresPerTile: 1.6
+  - theme: office
+    material: {fileID: 2100000, guid: b0db3203cf8bb4a40873ed4256c43994, type: 2}
+    metresPerTile: 1.4
+  - theme: conference
+    material: {fileID: 2100000, guid: fbec67e3bd509ac4c8bebf9268bd5d43, type: 2}
+    metresPerTile: 1.2
+  - theme: skylounge
+    material: {fileID: 2100000, guid: a6bf66c5900b45345a5b499a51f2b3a0, type: 2}
+    metresPerTile: 2.5

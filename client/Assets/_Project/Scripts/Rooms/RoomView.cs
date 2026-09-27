@@ -44,6 +44,7 @@ namespace Reconnect.Client.Rooms
         [SerializeField] private Material waterMaterial;
         [SerializeField] private ItemCatalog itemCatalog;
         [SerializeField] private BuildIconCatalog buildIcons;
+        [SerializeField] private FloorMaterialCatalog floorMaterials;
         [SerializeField] private AvatarCatalog avatarCatalog;
 
         private readonly Dictionary<Guid, AvatarView> _avatars = new();
@@ -103,6 +104,9 @@ namespace Reconnect.Client.Rooms
         public IReadOnlyList<RoomItemDto> Layout => _layout;
 
         public int Width => _width;
+
+        /// <summary>Graphics setting "Hoch": reflections and more lamp lights (set by the app from GraphicsQuality).</summary>
+        public bool HighQuality { get; set; } = true;
 
         /// <summary>Pictures of the buildable items for the build catalog.</summary>
         public BuildIconCatalog BuildIcons => buildIcons;
@@ -266,6 +270,29 @@ namespace Reconnect.Client.Rooms
                 }
                 seat.ResolveApproaches(Pathfinder);
             }
+            BuildReflections();
+        }
+
+        /// <summary>
+        /// "Hoch": one reflection probe over the room, rendered once after building, so marble, glass and metal reflect
+        /// the room instead of the sky.
+        /// </summary>
+        private void BuildReflections()
+        {
+            if (!HighQuality)
+            {
+                return;
+            }
+            var probe = new GameObject("Reflections").AddComponent<ReflectionProbe>();
+            probe.transform.SetParent(_furnitureRoot, false);
+            probe.transform.localPosition = new Vector3(_width / 2f, 1.6f, _depth / 2f);
+            probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Realtime;
+            probe.refreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode.ViaScripting;
+            probe.timeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode.NoTimeSlicing;
+            probe.size = new Vector3(_width + 2f, 8f, _depth + 2f);
+            probe.resolution = 128;
+            probe.boxProjection = true;
+            probe.RenderProbe();
         }
 
         private void ClearLayout()
@@ -751,19 +778,30 @@ namespace Reconnect.Client.Rooms
 
         private void BuildFloor()
         {
-            var material = new Material(floorMaterial) { mainTexture = FloorTextures.Create(_theme.Floor, _theme.FloorA, _theme.FloorB) };
-            material.SetColor("_BaseColor", Color.white);
-            material.SetFloat("_Smoothness", _theme.Floor switch
+            Material material;
+            var metresPerTile = FloorTextures.MetersPerTexture;
+            if (floorMaterials != null && floorMaterials.For(_themeId) is { material: not null } real)
             {
-                FloorPattern.Marble => 0.75f,
-                FloorPattern.Terrazzo => 0.55f,   // polished, without mirror-like light spots
-                _ => 0.3f,
-            });
-            material.mainTextureScale = new Vector2(_width / FloorTextures.MetersPerTexture, _depth / FloorTextures.MetersPerTexture);
+                // Real floor (Poly Haven, CC0): colour, normal and smoothness maps.
+                material = new Material(real.material);
+                metresPerTile = real.metresPerTile;
+            }
+            else
+            {
+                material = new Material(floorMaterial) { mainTexture = FloorTextures.Create(_theme.Floor, _theme.FloorA, _theme.FloorB) };
+                material.SetColor("_BaseColor", Color.white);
+                material.SetFloat("_Smoothness", _theme.Floor switch
+                {
+                    FloorPattern.Marble => 0.75f,
+                    FloorPattern.Terrazzo => 0.55f,   // polished, without mirror-like light spots
+                    _ => 0.3f,
+                });
+            }
+            material.mainTextureScale = new Vector2(_width / metresPerTile, _depth / metresPerTile);
 
             if (_outline != null)
             {
-                BuildOutlineFloor(material);
+                BuildOutlineFloor(material, metresPerTile);
                 return;
             }
 
@@ -806,13 +844,13 @@ namespace Reconnect.Client.Rooms
         }
 
         /// <summary>Tower storey: floor and the building's floor slab in the shape of the outline.</summary>
-        private void BuildOutlineFloor(Material material)
+        private void BuildOutlineFloor(Material material, float metresPerTile)
         {
             var points = _outline.Select(p => new Vector2(p.X, p.Z)).ToList();
-            material.mainTextureScale = Vector2.one;   // the mesh carries metre UVs
+            material.mainTextureScale = Vector2.one;   // the mesh carries UVs in texture repeats
             var floor = new GameObject("Floor", typeof(MeshFilter), typeof(MeshRenderer));
             floor.transform.SetParent(_floorRoot, false);
-            floor.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(points, 0f, 0.1f, FloorTextures.MetersPerTexture);
+            floor.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(points, 0f, 0.1f, metresPerTile);
             floor.GetComponent<MeshRenderer>().sharedMaterial = material;
 
             var slab = new GameObject("Floor Base", typeof(MeshFilter), typeof(MeshRenderer));
@@ -863,9 +901,25 @@ namespace Reconnect.Client.Rooms
                 {
                     Part(edge, "Mullion", frame, from + direction * (length * k / count) + Vector3.up * height / 2f, rotation, new Vector3(0.05f, height, 0.05f));
                 }
+                // Structural columns in the facade line every ~6.5 m (the tower's steel columns), white with a dark foot.
+                var columns = Mathf.Max(1, Mathf.RoundToInt(length / 6.5f));
+                for (var k = 1; k < columns; k++)
+                {
+                    var at = from + direction * (length * k / columns);
+                    var column = Primitive(PrimitiveType.Cylinder, "Column", ColumnMaterial, edge);
+                    column.transform.localPosition = at + Vector3.up * height / 2f;
+                    column.transform.localScale = new Vector3(0.32f, height / 2f, 0.32f);
+                    var foot = Primitive(PrimitiveType.Cylinder, "Column Foot", frame, edge);
+                    foot.transform.localPosition = at + Vector3.up * 0.06f;
+                    foot.transform.localScale = new Vector3(0.36f, 0.06f, 0.36f);
+                }
                 _wallParts.Add((edge.gameObject, outward));
             }
         }
+
+        private Material _columnMaterial;
+
+        private Material ColumnMaterial => _columnMaterial ??= Tinted(wallMaterial, new Color(0.93f, 0.93f, 0.91f));
 
         private void Part(Transform parent, string name, Material material, Vector3 position, Quaternion rotation, Vector3 size)
         {
@@ -1148,7 +1202,7 @@ namespace Reconnect.Client.Rooms
                 {
                     _obstacles.Add(bounds);
                 }
-                if (IsLamp(item.ItemId) && _lampLights++ < MaxLampLights)
+                if (IsLamp(item.ItemId) && _lampLights++ < (HighQuality ? MaxLampLights * 2 : MaxLampLights))
                 {
                     AddLampLight(pivot, bounds);
                 }

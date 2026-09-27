@@ -32,7 +32,7 @@ public sealed class SeedRoomExport
         rooms.AddRange(ShowcaseRooms.Definitions().Select(r => (r.Name, r.Theme, r.Width, r.Depth, r.Layout, (IReadOnlyList<RoomPointDto>?)null)));
         rooms.AddRange(PrimeTowerFloors.Floors().Select(f => (f.Name, f.Theme, f.Width, f.Depth, f.Layout, (IReadOnlyList<RoomPointDto>?)f.Plan.Outline)));
         var plan = TowerFurnishing.PrimeTower;
-        rooms.Add(("Starter", RoomThemes.Coworking, plan.Width, plan.Depth, StarterOffice.Layout(plan), plan.Outline));
+        rooms.Add(("Starter", RoomThemes.Office, plan.Width, plan.Depth, StarterOffice.Layout(plan), plan.Outline));
         return rooms;
     }
 

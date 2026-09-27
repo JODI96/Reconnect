@@ -44,8 +44,10 @@ namespace Reconnect.Client.UI.Screens
 
         public CityScreen(VisualTreeAsset template, CityView city, CitySettings settings, BuildingService buildings,
             MapService maps, TowerService tower, WalletService wallet, RoomService rooms, AuthService auth,
-            Action openRoomList, Action<Guid> openRoom, Action<Guid> enterRoom, Action<Guid> openOffices)
+            Action openRoomList, Action<Guid> openRoom, Action<Guid> enterRoom, Action<Guid> openOffices,
+            Reconnect.Client.Core.GraphicsQuality graphics = null)
         {
+            _graphics = graphics;
             _tower = tower;
             _wallet = wallet;
             _enterRoom = enterRoom;
@@ -85,6 +87,13 @@ namespace Reconnect.Client.UI.Screens
                 ShowMenu(false);
             };
             Q<Button>("menu").clicked += () => ShowMenu(Q<VisualElement>("menu-panel").style.display == DisplayStyle.None);
+            var graphicsButton = Q<Button>("graphics");
+            ShowGraphics(graphicsButton);
+            graphicsButton.clicked += () =>
+            {
+                _graphics?.Set(!_graphics.High);
+                ShowGraphics(graphicsButton);
+            };
             Q<Button>("rooms").clicked += _openRoomList;
             Q<Button>("logout").clicked += _auth.Logout;
             Q<Button>("sheet-close").clicked += () => Select(null);
@@ -213,6 +222,15 @@ namespace Reconnect.Client.UI.Screens
         }
 
         /// <summary>Menu with the map layer, the room list and logout; closes the building panel to make room.</summary>
+        private readonly Reconnect.Client.Core.GraphicsQuality _graphics;
+
+        /// <summary>"Grafik: Hoch" (ambient occlusion, reflections) or "Grafik: Normal" (older phones).</summary>
+        private void ShowGraphics(Button button)
+        {
+            button.style.display = _graphics == null ? DisplayStyle.None : DisplayStyle.Flex;
+            button.text = _graphics is { High: true } ? "Grafik: Hoch" : "Grafik: Normal";
+        }
+
         internal void ShowMenu(bool open)
         {
             Q<VisualElement>("menu-panel").style.display = open ? DisplayStyle.Flex : DisplayStyle.None;

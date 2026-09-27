@@ -25,6 +25,9 @@ namespace Reconnect.Client.Core
         [SerializeField] private CityView city;
         [SerializeField] private RoomView room;
 
+        [Tooltip("URP renderers whose ambient occlusion follows the graphics setting.")]
+        [SerializeField] private UnityEngine.Rendering.Universal.ScriptableRendererData[] renderers;
+
         internal UiCatalog Ui => ui;
         internal CitySettings CitySettings => citySettings;
 
@@ -37,6 +40,7 @@ namespace Reconnect.Client.Core
         private WalletService _wallet;
         private RealEstateService _realEstate;
         private IRoomSession _roomSession;
+        private GraphicsQuality _graphics;
 
         private async void Start()
         {
@@ -51,6 +55,9 @@ namespace Reconnect.Client.Core
             _realEstate = new RealEstateService(api);
             _roomSession = new SignalRRoomSession(apiSettings.BaseUrl, _auth);
             city.Initialize(citySettings);
+            _graphics = new GraphicsQuality(renderers);
+            room.HighQuality = _graphics.High;
+            _graphics.Changed += () => room.HighQuality = _graphics.High;
 
             // Runtime copy: the navigator scales the panel per device, the asset stays untouched.
             var document = GetComponent<UIDocument>();
@@ -99,7 +106,7 @@ namespace Reconnect.Client.Core
         private void ShowRegister() => _navigator.Show(new RegisterScreen(ui.register, _auth, ShowLogin));
 
         private void ShowCity() => _navigator.Show(new CityScreen(ui.city, city, citySettings, _buildings, _maps, _tower, _wallet, _rooms, _auth,
-            openRoomList: ShowRooms, openRoom: id => ShowRoom(id, back: ShowCity), enterRoom: EnterRoom, openOffices: ShowOffices));
+            openRoomList: ShowRooms, openRoom: id => ShowRoom(id, back: ShowCity), enterRoom: EnterRoom, openOffices: ShowOffices, graphics: _graphics));
 
         private void ShowOffices(Guid buildingId) =>
             _navigator.Show(new OfficesScreen(ui.offices, _realEstate, _wallet, buildingId, back: ShowCity));

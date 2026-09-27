@@ -5,7 +5,9 @@
         "Unity.InputSystem",
         "CesiumForUnity",
         "Unity.Mathematics",
-        "Unity.Splines"
+        "Unity.Splines",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

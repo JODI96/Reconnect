@@ -6,7 +6,7 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Seeding;
 internal static class StarterOffice
 {
     /// <summary>The core of the storey plus a small lounge and a plant or two, fitted to the floor plan.</summary>
-    public static List<RoomItem> Layout(TowerFloorPlan plan) => TowerFurnishing.Fit(plan, RoomThemes.Coworking, Furniture(), 20f, 12f);
+    public static List<RoomItem> Layout(TowerFloorPlan plan) => TowerFurnishing.Fit(plan, RoomThemes.Office, Furniture(), 20f, 12f);
 
     private static List<RoomItem> Furniture() =>
     [

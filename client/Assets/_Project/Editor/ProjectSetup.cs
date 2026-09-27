@@ -50,6 +50,19 @@ namespace Reconnect.Client.Editor
         private const string BuildingsMaterialPath = MaterialsDir + "/Buildings.mat";
         private const string ItemCatalogPath = SettingsDir + "/ItemCatalog.asset";
         private const string BuildIconsPath = SettingsDir + "/BuildIcons.asset";
+        private const string FloorMaterialsPath = SettingsDir + "/FloorMaterials.asset";
+        private const string FloorMaterialsDir = MaterialsDir + "/Floors";
+        private const string TexturesDir = "Assets/ThirdParty/PolyHaven/Textures";
+
+        /// <summary>Theme → Poly Haven texture (tools/fetch_textures.py) and how many metres one repeat covers.</summary>
+        private static readonly (string Theme, string Texture, float MetresPerTile, float Smoothness)[] Floors =
+        {
+            ("lobby", "marble_01", 2.5f, 1f),
+            ("coworking", "rectangular_parquet", 1.6f, 0.8f),
+            ("office", "herringbone_parquet", 1.4f, 0.85f),
+            ("conference", "poly_wool_herringbone", 1.2f, 0.4f),
+            ("skylounge", "granite_tile", 2.5f, 1f),
+        };
         private const string AvatarCatalogPath = SettingsDir + "/AvatarCatalog.asset";
         private const string MusicCatalogPath = SettingsDir + "/MusicCatalog.asset";
         private const string MusicDir = "Assets/ThirdParty/Music";
@@ -82,6 +95,7 @@ namespace Reconnect.Client.Editor
             CreateCityMaterials();
             CreateItemCatalog();
             CreateBuildCatalog();
+            CreateFloorMaterials();
             CreateAvatarCatalog();
             CreateMusicCatalog();
             CreatePostProcessing();
@@ -230,6 +244,96 @@ namespace Reconnect.Client.Editor
             var icons = LoadOrCreate<BuildIconCatalog>(BuildIconsPath);
             icons.items = BuildCatalogGenerator.Generate(Load<ItemCatalog>(ItemCatalogPath), custom);
             EditorUtility.SetDirty(icons);
+        }
+
+        /// <summary>Real floors (URP Lit with colour, normal and smoothness maps) for the tower themes.</summary>
+        private static void CreateFloorMaterials()
+        {
+            Directory.CreateDirectory(FloorMaterialsDir);
+            var catalog = LoadOrCreate<FloorMaterialCatalog>(FloorMaterialsPath);
+            catalog.entries.Clear();
+            var lit = Shader.Find("Universal Render Pipeline/Lit");
+            foreach (var (theme, texture, metresPerTile, smoothness) in Floors)
+            {
+                var folder = $"{TexturesDir}/{texture}";
+                if (!AssetDatabase.IsValidFolder(folder))
+                {
+                    Debug.LogWarning($"[Reconnect] Floor texture {texture} missing – run tools/fetch_textures.py");
+                    continue;
+                }
+                ConfigureTexture($"{folder}/{texture}_normal.jpg", normal: true, linear: true);
+                ConfigureTexture($"{folder}/{texture}_smooth.png", normal: false, linear: true);
+                ConfigureTexture($"{folder}/{texture}_color.jpg", normal: false, linear: false);
+
+                var path = $"{FloorMaterialsDir}/{theme}.mat";
+                var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material == null)
+                {
+                    material = new Material(lit);
+                    AssetDatabase.CreateAsset(material, path);
+                }
+                material.shader = lit;
+                material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{texture}_color.jpg"));
+                material.SetColor("_BaseColor", Color.white);
+                material.SetTexture("_BumpMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{texture}_normal.jpg"));
+                material.SetFloat("_BumpScale", 1f);
+                material.EnableKeyword("_NORMALMAP");
+                material.SetTexture("_MetallicGlossMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{texture}_smooth.png"));
+                material.EnableKeyword("_METALLICSPECGLOSSMAP");
+                material.SetFloat("_SmoothnessTextureChannel", 0f);   // smoothness from the metallic map's alpha
+                material.SetFloat("_Smoothness", smoothness);
+                material.SetFloat("_Metallic", 0f);
+                EditorUtility.SetDirty(material);
+                catalog.entries.Add(new FloorMaterialCatalog.Entry { theme = theme, material = material, metresPerTile = metresPerTile });
+            }
+            EditorUtility.SetDirty(catalog);
+        }
+
+        private static void ConfigureTexture(string path, bool normal, bool linear)
+        {
+            if (AssetImporter.GetAtPath(path) is not TextureImporter importer)
+            {
+                return;
+            }
+            importer.textureType = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
+            importer.sRGBTexture = !linear;
+            importer.maxTextureSize = 1024;
+            importer.mipmapEnabled = true;
+            importer.wrapMode = TextureWrapMode.Repeat;
+            importer.SaveAndReimport();
+        }
+
+        /// <summary>
+        /// Ambient occlusion also on phones (switchable, "Grafik: Hoch"): a copy of the PC renderer's SSAO feature on the
+        /// mobile renderer.
+        /// </summary>
+        private static void AddMobileAmbientOcclusion()
+        {
+            var pc = AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/Settings/PC_Renderer.asset");
+            var mobile = AssetDatabase.LoadAssetAtPath<UniversalRendererData>("Assets/Settings/Mobile_Renderer.asset");
+            if (pc == null || mobile == null || mobile.rendererFeatures.Exists(f => f != null && f.GetType().Name.Contains("AmbientOcclusion")))
+            {
+                return;
+            }
+            var source = pc.rendererFeatures.Find(f => f != null && f.GetType().Name.Contains("AmbientOcclusion"));
+            if (source == null)
+            {
+                return;
+            }
+            var copy = Object.Instantiate(source);
+            copy.name = "SSAO";
+            AssetDatabase.AddObjectToAsset(copy, mobile);
+            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(copy, out _, out long localId);
+            var data = new SerializedObject(mobile);
+            var features = data.FindProperty("m_RendererFeatures");
+            var map = data.FindProperty("m_RendererFeatureMap");
+            features.arraySize++;
+            features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue = copy;
+            map.arraySize++;
+            map.GetArrayElementAtIndex(map.arraySize - 1).longValue = localId;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(mobile);
+            AssetDatabase.SaveAssets();
         }
 
         /// <summary>One CC0 track per room theme: file name = theme id (tools/fetch_music.py), "default" for the rest.</summary>
@@ -397,6 +501,7 @@ namespace Reconnect.Client.Editor
                 ("waterMaterial", Load<Material>(WaterMaterialPath)),
                 ("itemCatalog", Load<ItemCatalog>(ItemCatalogPath)),
                 ("buildIcons", Load<BuildIconCatalog>(BuildIconsPath)),
+                ("floorMaterials", Load<FloorMaterialCatalog>(FloorMaterialsPath)),
                 ("avatarCatalog", Load<AvatarCatalog>(AvatarCatalogPath)));
             roomView.gameObject.AddComponent<AudioSource>();
             Assign(roomView.gameObject.AddComponent<RoomMusic>(), ("catalog", Load<MusicCatalog>(MusicCatalogPath)));
@@ -411,6 +516,14 @@ namespace Reconnect.Client.Editor
                 ("ui", Load<UiCatalog>(UiCatalogPath)),
                 ("city", cityView),
                 ("room", roomView));
+            var rendererList = new SerializedObject(bootstrap).FindProperty("renderers");
+            var rendererPaths = new[] { "Assets/Settings/Mobile_Renderer.asset", "Assets/Settings/PC_Renderer.asset" };
+            rendererList.arraySize = rendererPaths.Length;
+            for (var i = 0; i < rendererPaths.Length; i++)
+            {
+                rendererList.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(rendererPaths[i]);
+            }
+            rendererList.serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -466,6 +579,7 @@ namespace Reconnect.Client.Editor
         /// </summary>
         private static void ConfigureRendering()
         {
+            AddMobileAmbientOcclusion();
             foreach (var path in new[] { "Assets/Settings/Mobile_RPAsset.asset", "Assets/Settings/PC_RPAsset.asset" })
             {
                 var asset = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(path);

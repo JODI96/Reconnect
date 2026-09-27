@@ -60,7 +60,7 @@ public sealed class SeedRoomLayoutTests
             rooms[floor.Name] = (floor.Theme, floor.Width, floor.Depth, floor.Layout, floor.Plan.Outline);
         }
         var plan = TowerFurnishing.PrimeTower;
-        rooms["Büro (Start)"] = (RoomThemes.Coworking, plan.Width, plan.Depth, StarterOffice.Layout(plan), plan.Outline);
+        rooms["Büro (Start)"] = (RoomThemes.Office, plan.Width, plan.Depth, StarterOffice.Layout(plan), plan.Outline);
         return rooms;
     }
 }

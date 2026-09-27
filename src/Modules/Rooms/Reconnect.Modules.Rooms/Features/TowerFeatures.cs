@@ -57,7 +57,7 @@ internal sealed class RoomProvisioning(RoomsDbContext db, ICityDirectory city) :
     {
         var footprint = await city.GetFootprintAsync(buildingId, ct);
         var plan = footprint is { Count: >= 3 } ? TowerFloorPlan.FromFootprint(footprint) : TowerFurnishing.PrimeTower;
-        var room = Room.Create(ownerId, buildingId, name, isPublic: false, RoomThemes.Coworking);
+        var room = Room.Create(ownerId, buildingId, name, isPublic: false, RoomThemes.Office);
         room.PlaceOnFloor(floor, capacity);
         room.ShapeAs(plan);
         room.ReplaceLayout(StarterOffice.Layout(plan));
