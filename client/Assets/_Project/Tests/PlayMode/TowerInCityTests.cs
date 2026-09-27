@@ -40,6 +40,7 @@ namespace Reconnect.Client.PlayModeTests
         }
 
         [UnityTest]
+        [Timeout(900000)]   // streams the city for every storey and view
         public IEnumerator Tower_floors_stand_at_their_real_height_in_the_cut_away_tower()
         {
             var api = new ApiClient(new UnityWebRequestTransport(10), BaseUrl);
@@ -105,6 +106,18 @@ namespace Reconnect.Client.PlayModeTests
                 view.FrameWholeRoom();
                 yield return WaitForCity(city);
                 Save(view.Camera, $"tower-city-{storey:00}.png");
+                // What a player sees: close to the people, turned all four ways.
+                view.LookAt(new Vector2(room.Width / 2f, room.Depth / 2f), 16f);
+                for (var turn = 0; turn < 4; turn++)
+                {
+                    for (var frame = 0; frame < 40; frame++)
+                    {
+                        yield return null;   // the view turns smoothly
+                    }
+                    yield return WaitForCity(city);
+                    Save(view.Camera, $"tower-city-{storey:00}-view{turn}.png");
+                    view.RotateView(1);
+                }
                 view.Hide();
             }
 

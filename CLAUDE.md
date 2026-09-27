@@ -147,7 +147,7 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   Material (`ItemMeshMerger` → `_Project/Build/Merged/*.mesh|.prefab`, LFS); aus Primitiven gebaute Items (Bar, Kern,
   Fassade, Spielstationen) fasst `MeshBaker.MergeStill` zur Laufzeit pro Material zusammen (bewegte Teile mit Skript
   bleiben einzeln), `CustomItems` teilt Materialien gleicher Farbe; kleine Dinge werden ab 1,2 % Bildhöhe nicht gezeichnet
-  (`CullWhenTiny`). Auf grossen Etagen lässt sich nur bis ~22 m Bildbreite herauszoomen (`MaxPlayViewWidth`).
+  (`CullWhenTiny`). Auf grossen Etagen lässt sich nur bis ~22 m Bildbreite herauszoomen (`MaxPlayViewWidth`). Im Raum schneidet eine schräge Near-Plane (`ApplySectionCut`, Etagenboden + 3.65 m) alles oberhalb der Fenster weg, damit Nachbarbauten und Decken die Sicht nicht versperren (nur Turm-Etagen mit Umriss).
   `CrowdPerformanceTests`: volle Lobby (150 Personen, ganz herausgezoomt über der Etagenmitte) auf „Normal“ ≤ 400 Draw
   Calls, ≤ 80 Set-Pass-Calls, ≤ 400k Dreiecke; „Hoch“ (SSAO zeichnet alles ein zweites Mal in einen Tiefen-Vorabdurchgang)
   das Doppelte bei Draw Calls/Dreiecken. Das Log listet die teuersten Items („Draws by item“).

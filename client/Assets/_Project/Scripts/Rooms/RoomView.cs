@@ -382,6 +382,7 @@ namespace Reconnect.Client.Rooms
             }
             _layout = Array.Empty<RoomItemDto>();
             _avatars.Clear();
+            roomCamera.ResetProjectionMatrix();   // no section cut outside the room
             _savedCamera?.Restore(roomCamera);
             _savedCamera = null;
             if (Music != null)
@@ -1643,6 +1644,34 @@ namespace Reconnect.Client.Rooms
                     part.SetActive(show);
                 }
             }
+            ApplySectionCut();
+        }
+
+        /// <summary>A tower storey is cut open just above its windows: nothing higher is drawn.</summary>
+        private const float SectionCutAboveFloor = FacadeHeight + 0.25f;
+
+        /// <summary>
+        /// Doll's-house view of a tower storey: everything higher than the top of its windows (neighbouring buildings, the
+        /// tower's podium, the city) is cut away, so nothing hangs into the picture from above. Done with an oblique near
+        /// plane: the camera's near clipping plane becomes the horizontal plane at that height.
+        /// </summary>
+        private void ApplySectionCut()
+        {
+            roomCamera.ResetProjectionMatrix();
+            if (_outline == null)
+            {
+                return;
+            }
+            var point = transform.position + Vector3.up * SectionCutAboveFloor;
+            var toCamera = roomCamera.worldToCameraMatrix;
+            if (toCamera.MultiplyPoint(point).z > -roomCamera.nearClipPlane)
+            {
+                return;   // camera below the cut (never in the room view): leave the projection alone
+            }
+            var cameraPoint = toCamera.MultiplyPoint(point);
+            var cameraNormal = toCamera.MultiplyVector(Vector3.down).normalized;   // what is below the cut stays visible
+            var plane = new Vector4(cameraNormal.x, cameraNormal.y, cameraNormal.z, -Vector3.Dot(cameraPoint, cameraNormal));
+            roomCamera.projectionMatrix = roomCamera.CalculateObliqueMatrix(plane);
         }
 
         /// <summary>The main camera is shared with the city; remember and restore its setup.</summary>
