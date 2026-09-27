@@ -182,9 +182,9 @@ namespace Reconnect.Client.City
             {
                 googleTiles.url = map.GoogleTilesetUrl;   // setting the URL reloads the tileset
             }
-            else if (google && wasGoogle)
+            else if (google)
             {
-                googleTiles.RecreateTileset();   // same URL, new session
+                googleTiles.RecreateTileset();   // same URL, new session (also when switched back on from swisstopo)
             }
             Provider = google ? MapProviders.Google : MapProviders.Swisstopo;
             if (googleTiles != null)

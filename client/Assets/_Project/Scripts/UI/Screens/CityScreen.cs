@@ -86,6 +86,21 @@ namespace Reconnect.Client.UI.Screens
                 UpdateLayerButton(layerButton);
                 ShowMenu(false);
             };
+            var providerButton = Q<Button>("map-provider");
+            ShowProvider(providerButton);
+            providerButton.clicked += () =>
+            {
+                _maps.SetGoogleWanted(!_maps.GoogleWanted);
+                ShowProvider(providerButton);
+                ShowMenu(false);
+                RunAsync(async () =>
+                {
+                    var map = await _maps.GetAsync(Lifetime);
+                    _city.ApplyMap(map);
+                    ShowMapInfo(map);
+                    UpdateLayerButton(layerButton);
+                });
+            };
             Q<Button>("menu").clicked += () => ShowMenu(Q<VisualElement>("menu-panel").style.display == DisplayStyle.None);
             var graphicsButton = Q<Button>("graphics");
             ShowGraphics(graphicsButton);
@@ -223,6 +238,10 @@ namespace Reconnect.Client.UI.Screens
 
         /// <summary>Menu with the map layer, the room list and logout; closes the building panel to make room.</summary>
         private readonly Reconnect.Client.Core.GraphicsQuality _graphics;
+
+        /// <summary>"Stadt: Google 3D" (photorealistic, if the account gets it) or "Stadt: swisstopo" (default, free).</summary>
+        private void ShowProvider(Button button) =>
+            button.text = _maps.GoogleWanted ? "Stadt: Google 3D" : "Stadt: swisstopo";
 
         /// <summary>"Grafik: Hoch" (ambient occlusion, reflections) or "Grafik: Normal" (older phones).</summary>
         private void ShowGraphics(Button button)

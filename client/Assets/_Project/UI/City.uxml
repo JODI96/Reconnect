@@ -9,6 +9,7 @@
         </ui:VisualElement>
         <ui:VisualElement name="menu-panel" class="menu-panel" style="display: none;">
             <ui:Button name="rooms" text="Alle Räume" class="button" />
+            <ui:Button name="map-provider" text="Stadt: swisstopo" class="button" />
             <ui:Button name="layer" text="Karte" class="button" />
             <ui:Button name="graphics" text="Grafik: Hoch" class="button" />
             <ui:Button name="logout" text="Abmelden" class="button" />

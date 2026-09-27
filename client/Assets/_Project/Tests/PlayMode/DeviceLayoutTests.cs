@@ -95,7 +95,7 @@ namespace Reconnect.Client.PlayModeTests
                 Assert.Ignore("Backend with dev admin not running on " + BaseUrl + ".");
             }
             var rooms = new RoomService(api);
-            var maps = new MapService(api);
+            var maps = new MapService(api, googleAllowed: false);
             var tower = new TowerService(api);
             var wallet = new WalletService(api);
             var realEstate = new RealEstateService(api);

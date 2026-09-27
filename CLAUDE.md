@@ -205,7 +205,8 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
 - **Stadt-Darstellung pro Sitzung (Backend entscheidet, `POST /v1/maps/session`):** Premium (Rolle `Premium`
   oder `Admin`) bekommt immer **Google Photorealistic 3D Tiles**, Gratis-Nutzer `Maps:FreeGoogleSessionsPerMonth`
   Sitzungen pro Monat, danach swisstopo; `Maps:MonthlyFreeGoogleSessionBudget` begrenzt die Kosten aller
-  Gratis-Nutzer. Ohne Key bekommt jeder swisstopo. Der Client (`MapService`) merkt sich die Antwort ~3 h
+  Gratis-Nutzer. Ohne Key bekommt jeder swisstopo. **Schalter im Stadt-Menü** „Stadt: swisstopo / Google 3D“ (pro Gerät
+  gemerkt, Standard swisstopo – dann wird das Backend gar nicht gefragt und nichts abgerechnet, auch nicht im Editor). Der Client (`MapService`) merkt sich die Antwort ~3 h
   (eine Google-Sitzung wird einmal abgerechnet). Im Google-Modus läuft swisstopo **unsichtbar** weiter
   (Layer `CityData`): Dachhöhen, Marker, Rooftop-Platzierung und Kamera-Kollisionen kommen nie aus Google-Daten
   (Google-Bedingungen verbieten das Extrahieren). Google-Höhen sind ellipsoidisch, swisstopo über Meer: der

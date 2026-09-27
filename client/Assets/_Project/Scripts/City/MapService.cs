@@ -4,52 +4,56 @@ using System.Threading.Tasks;
 using Reconnect.Client.Networking;
 using Reconnect.Contracts;
 using Reconnect.Contracts.Buildings;
+using UnityEngine;
 
 namespace Reconnect.Client.City
 {
     /// <summary>
-    /// Asks the backend which city map this app session gets (Google Photorealistic 3D Tiles or swisstopo).
-    /// The answer is kept for its validity (a Google session is billed once and lasts up to 3 h), so switching
-    /// screens doesn't start – and pay for – a new session. Falls back to swisstopo if the backend can't be asked.
+    /// Which city map to show. By default swisstopo (free, nothing is asked); with the switch "Karte: Google 3D" in the
+    /// city menu (remembered per device) the backend decides whether this user gets Google Photorealistic 3D Tiles
+    /// (Premium/Admin always, others a few sessions per month). That answer is kept for its validity (a Google session is
+    /// billed once and lasts up to 3 h), so switching screens – or the switch back and forth – doesn't pay again. Falls
+    /// back to swisstopo if the backend can't be asked.
     /// </summary>
     public sealed class MapService
     {
         private static readonly MapSessionDto Offline =
             new(MapProviders.Swisstopo, null, false, null, null, 5);
 
-#if UNITY_EDITOR
-        /// <summary>
-        /// Every Play in the editor would start a billed Google session. So the editor shows swisstopo
-        /// unless the developer switches on "Reconnect > Google 3D im Editor" (per machine, EditorPrefs).
-        /// </summary>
-        public const string GoogleInEditorPref = "Reconnect.GoogleInEditor";
+        /// <summary>swisstopo chosen: always the same instance, so the city doesn't reload when asked again.</summary>
+        private static readonly MapSessionDto Swisstopo =
+            new(MapProviders.Swisstopo, null, false, null, null, 60);
 
-        private static readonly MapSessionDto EditorSwisstopo =
-            new(MapProviders.Swisstopo, null, false, null, null, 1);
-
-        private static bool GoogleAllowed => UnityEditor.EditorPrefs.GetBool(GoogleInEditorPref, false);
-#else
-        private static bool GoogleAllowed => true;
-#endif
+        private const string GooglePref = "map.google";
 
         private readonly ApiClient _api;
+        private readonly bool _googleAllowed;
         private MapSessionDto _current;
         private DateTime _validUntilUtc;
         private Task<MapSessionDto> _pending;
 
-        public MapService(ApiClient api)
+        /// <param name="googleAllowed">False in automated tests: they never start a billed Google session.</param>
+        public MapService(ApiClient api, bool googleAllowed = true)
         {
             _api = api;
+            _googleAllowed = googleAllowed;
+        }
+
+        /// <summary>The switch in the city menu: photorealistic Google city wanted (default: off → swisstopo).</summary>
+        public bool GoogleWanted => _googleAllowed && PlayerPrefs.GetInt(GooglePref, 0) == 1;
+
+        public void SetGoogleWanted(bool wanted)
+        {
+            PlayerPrefs.SetInt(GooglePref, wanted ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         public Task<MapSessionDto> GetAsync(CancellationToken ct = default)
         {
-#if UNITY_EDITOR
-            if (!GoogleAllowed)
+            if (!GoogleWanted)
             {
-                return Task.FromResult(EditorSwisstopo);   // the backend isn't asked – nothing is counted
+                return Task.FromResult(Swisstopo);   // the backend isn't asked – nothing is counted
             }
-#endif
             // Wall-clock time: on phones the app can sit in the background for hours.
             if (_current != null && DateTime.UtcNow < _validUntilUtc)
             {
