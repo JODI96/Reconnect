@@ -52,6 +52,8 @@ namespace Reconnect.Client.Editor
         private const string BuildIconsPath = SettingsDir + "/BuildIcons.asset";
         private const string FloorMaterialsPath = SettingsDir + "/FloorMaterials.asset";
         private const string FloorMaterialsDir = MaterialsDir + "/Floors";
+        private const string SurfaceMaterialsDir = MaterialsDir + "/Surfaces";
+        private const string SurfaceMaterialsPath = SettingsDir + "/SurfaceMaterials.asset";
         private const string TexturesDir = "Assets/ThirdParty/PolyHaven/Textures";
 
         /// <summary>Theme → Poly Haven texture (tools/fetch_textures.py) and how many metres one repeat covers.</summary>
@@ -94,6 +96,7 @@ namespace Reconnect.Client.Editor
             CreatePanelSettings();
             CreateCityMaterials();
             CreateItemCatalog();
+            CreateSurfaceMaterials();
             CreateBuildCatalog();
             CreateFloorMaterials();
             CreateAvatarCatalog();
@@ -264,7 +267,7 @@ namespace Reconnect.Client.Editor
                 var instance = (GameObject)Object.Instantiate(model, parent);
                 instance.transform.localScale = Vector3.one * catalog.ScaleFor(id);
                 return instance;
-            });
+            }, Load<SurfaceMaterials>(SurfaceMaterialsPath));
             var icons = LoadOrCreate<BuildIconCatalog>(BuildIconsPath);
             icons.items = BuildCatalogGenerator.Generate(catalog, custom);
             EditorUtility.SetDirty(icons);
@@ -311,6 +314,71 @@ namespace Reconnect.Client.Editor
                 catalog.entries.Add(new FloorMaterialCatalog.Entry { theme = theme, material = material, metresPerTile = metresPerTile });
             }
             EditorUtility.SetDirty(catalog);
+        }
+
+        /// <summary>
+        /// Materials for our own furniture (tools/fetch_textures.py SURFACES): name, texture, base tint, smoothness, metres per
+        /// texture repeat, tintable (fabrics: grey texture, each piece brings its colour).
+        /// </summary>
+        private static readonly (string Name, string Texture, Color Tint, float Smoothness, float Metres, bool Tintable)[] Surfaces =
+        {
+            (SurfaceMaterials.Walnut, "natural_walnut_veneer", new Color(0.62f, 0.45f, 0.33f), 0.5f, 1.2f, false),
+            (SurfaceMaterials.Oak, "oak_veneer_01", Color.white, 0.42f, 1.2f, false),
+            (SurfaceMaterials.WhiteOak, "white_oak_veneer", Color.white, 0.4f, 1.2f, false),
+            (SurfaceMaterials.Cognac, "fabric_leather_02", Color.white, 0.55f, 0.8f, false),
+            (SurfaceMaterials.CreamLeather, "leather_white", Color.white, 0.45f, 0.8f, true),
+            (SurfaceMaterials.Velvet, "velour_velvet", Color.white, 0.32f, 0.5f, true),
+            (SurfaceMaterials.Boucle, "terry_cloth", Color.white, 0.08f, 0.35f, true),
+            (SurfaceMaterials.Linen, "rough_linen", Color.white, 0.12f, 0.6f, true),
+            (SurfaceMaterials.Marble, "Marble012", Color.white, 0.8f, 1.2f, false),
+            (SurfaceMaterials.BlackMarble, "Marble016", Color.white, 0.82f, 1.2f, false),
+            (SurfaceMaterials.Travertine, "Travertine009", Color.white, 0.4f, 1.2f, false),
+        };
+
+        private static void CreateSurfaceMaterials()
+        {
+            Directory.CreateDirectory(SurfaceMaterialsDir);
+            var catalog = LoadOrCreate<SurfaceMaterials>(SurfaceMaterialsPath);
+            catalog.entries.Clear();
+            var lit = Shader.Find("Universal Render Pipeline/Lit");
+            foreach (var (name, texture, tint, smoothness, metres, tintable) in Surfaces)
+            {
+                var folder = $"{TexturesDir}/{texture}";
+                if (!AssetDatabase.IsValidFolder(folder))
+                {
+                    Debug.LogWarning($"[Reconnect] Surface texture {texture} missing – run tools/fetch_textures.py");
+                    continue;
+                }
+                var colourPath = File.Exists($"{folder}/{texture}_grey.png") ? $"{folder}/{texture}_grey.png" : $"{folder}/{texture}_color.jpg";
+                ConfigureTexture($"{folder}/{texture}_normal.jpg", normal: true, linear: true);
+                ConfigureTexture($"{folder}/{texture}_smooth.png", normal: false, linear: true);
+                ConfigureTexture(colourPath, normal: false, linear: false);
+
+                var path = $"{SurfaceMaterialsDir}/{name}.mat";
+                var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material == null)
+                {
+                    material = new Material(lit);
+                    AssetDatabase.CreateAsset(material, path);
+                }
+                material.shader = lit;
+                material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(colourPath));
+                material.SetColor("_BaseColor", tint);
+                material.SetTextureScale("_BaseMap", Vector2.one / metres);
+                material.SetTexture("_BumpMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{texture}_normal.jpg"));
+                material.SetFloat("_BumpScale", 1f);
+                material.EnableKeyword("_NORMALMAP");
+                material.SetTexture("_MetallicGlossMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{folder}/{texture}_smooth.png"));
+                material.EnableKeyword("_METALLICSPECGLOSSMAP");
+                material.SetFloat("_SmoothnessTextureChannel", 0f);
+                material.SetFloat("_Smoothness", smoothness);
+                material.SetFloat("_Metallic", 0f);
+                material.enableInstancing = true;
+                EditorUtility.SetDirty(material);
+                catalog.entries.Add(new SurfaceMaterials.Entry { name = name, material = material, tintable = tintable });
+            }
+            EditorUtility.SetDirty(catalog);
+            AssetDatabase.SaveAssets();
         }
 
         private static void ConfigureTexture(string path, bool normal, bool linear)
@@ -540,6 +608,7 @@ namespace Reconnect.Client.Editor
                 ("itemCatalog", Load<ItemCatalog>(ItemCatalogPath)),
                 ("buildIcons", Load<BuildIconCatalog>(BuildIconsPath)),
                 ("floorMaterials", Load<FloorMaterialCatalog>(FloorMaterialsPath)),
+                ("surfaceMaterials", Load<SurfaceMaterials>(SurfaceMaterialsPath)),
                 ("avatarCatalog", Load<AvatarCatalog>(AvatarCatalogPath)));
             roomView.gameObject.AddComponent<AudioSource>();
             Assign(roomView.gameObject.AddComponent<RoomMusic>(), ("catalog", Load<MusicCatalog>(MusicCatalogPath)));

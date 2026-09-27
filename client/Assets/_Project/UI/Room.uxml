@@ -91,6 +91,10 @@
                 <ui:Button name="build-cancel" text="Zurück" class="button button--small" />
                 <ui:Button name="build-place" text="Setzen" class="button button--primary button--small" />
             </ui:VisualElement>
+            <ui:VisualElement name="build-colours" class="build-colours" style="display: none;">
+                <ui:VisualElement name="build-zones" class="build-zones" />
+                <ui:ScrollView name="build-swatches" mode="Horizontal" class="build-swatches" />
+            </ui:VisualElement>
             <ui:ScrollView name="build-categories" mode="Horizontal" class="build-categories" />
             <ui:ScrollView name="build-items" mode="Horizontal" class="build-items" />
             <ui:VisualElement class="build-footer">

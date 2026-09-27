@@ -8,7 +8,7 @@ namespace Reconnect.Client.Rooms
     /// Room items that the Kenney kit doesn't have (pool, fire pit, fairy lights …), built from
     /// primitives in the same low-poly style. Ids start with "custom-". Sizes in metres.
     /// </summary>
-    public sealed class CustomItems
+    public sealed partial class CustomItems
     {
         public const string Prefix = "custom-";
 
@@ -73,10 +73,14 @@ namespace Reconnect.Client.Rooms
         private readonly Material _water;
         private readonly Material _glass;
         private readonly RoomTheme _theme;
+        private readonly SurfaceMaterials _surfaces;
 
         /// <param name="spawnModel">Places a catalog model (e.g. the Poly Haven chess set) under a transform; optional.</param>
-        public CustomItems(Material litBase, Material water, Material glass, RoomTheme theme, Func<string, Transform, GameObject> spawnModel = null)
+        /// <param name="surfaces">Real materials for our own furniture (wood, fabrics, stone); plain colours without.</param>
+        public CustomItems(Material litBase, Material water, Material glass, RoomTheme theme, Func<string, Transform, GameObject> spawnModel = null,
+            SurfaceMaterials surfaces = null)
         {
+            _surfaces = surfaces;
             _spawnModel = spawnModel;
             _litBase = litBase;
             _water = water;
@@ -86,9 +90,14 @@ namespace Reconnect.Client.Rooms
 
         /// <summary>Builds the item under <paramref name="pivot"/>. Returns false if the id is unknown.</summary>
         /// <param name="blocksTiles">Whether avatars must walk around it.</param>
-        public bool TryBuild(string itemId, Transform pivot, out bool blocksTiles)
+        /// <param name="colours">Chosen swatches of the item's colour zones ("sage/walnut", see ItemColours); null = defaults.</param>
+        public bool TryBuild(string itemId, Transform pivot, out bool blocksTiles, string colours = null)
         {
             blocksTiles = true;
+            if (TryBuildFamily(itemId, pivot, colours, out blocksTiles))
+            {
+                return true;
+            }
             if (TryPoolSize(itemId, out var poolSize))
             {
                 Pool(pivot, poolSize);   // one can swim in it: the room makes its tiles water, not obstacles

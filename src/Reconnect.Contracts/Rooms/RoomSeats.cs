@@ -26,7 +26,7 @@ namespace Reconnect.Contracts.Rooms
 
         /// <summary>Places on the item (0 = not a seat).</summary>
         public static int PlacesFor(string itemId) =>
-            itemId != null && Places.TryGetValue(itemId, out var places) ? places : 0;
+            itemId != null && Places.TryGetValue(itemId, out var places) ? places : FurnitureFamilies.Seats(itemId);
 
         public static bool IsSeat(string itemId) => PlacesFor(itemId) > 0;
     }

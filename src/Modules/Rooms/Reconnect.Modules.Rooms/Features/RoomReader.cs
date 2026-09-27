@@ -48,12 +48,13 @@ internal static class RoomMappings
         RoomZones.ContextFor(room.Theme, room.Width, room.Depth, items, room.OutlineDto());
 
     public static RoomItemDto ToDto(this RoomItem item) =>
-        new(item.ItemId, new Vector3Dto(item.Position.X, item.Position.Y, item.Position.Z), item.Rotation);
+        new(item.ItemId, new Vector3Dto(item.Position.X, item.Position.Y, item.Position.Z), item.Rotation, item.Colours);
 
     public static RoomItem ToDomain(RoomItemDto dto) => new()
     {
         ItemId = dto.ItemId,
         Position = new Position3 { X = dto.Position.X, Y = dto.Position.Y, Z = dto.Position.Z },
         Rotation = dto.Rotation,
+        Colours = string.IsNullOrEmpty(dto.Colours) ? null : dto.Colours,
     };
 }

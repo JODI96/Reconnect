@@ -1,2 +1,2 @@
-All textures in this folder are from Poly Haven (https://polyhaven.com) and licensed CC0 1.0.
+All textures in this folder are from Poly Haven (https://polyhaven.com) or ambientCG (https://ambientcg.com: Marble012, Marble016, Travertine009) and licensed CC0 1.0.
 Free for commercial use, no attribution required. Fetched by tools/fetch_textures.py.

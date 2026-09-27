@@ -22,11 +22,12 @@ internal sealed class RoomsDbContext(DbContextOptions<RoomsDbContext> options) :
             room.Property(r => r.Depth).HasDefaultValue(Room.DefaultSize);
             room.Property(r => r.Capacity).HasDefaultValue(Room.DefaultCapacity);
 
-            // Layout is stored as a single jsonb column: [{ ItemId, Position: { X, Y, Z }, Rotation }, ...]
+            // Layout is stored as a single jsonb column: [{ ItemId, Position: { X, Y, Z }, Rotation, Colours }, ...]
             room.OwnsMany(r => r.Layout, item =>
             {
                 item.ToJson();
                 item.OwnsOne(i => i.Position);
+                item.Property(i => i.Colours).HasMaxLength(RoomItem.ColoursMaxLength);
             });
 
             // Outline of tower floors as jsonb: [{ X, Z }, ...]

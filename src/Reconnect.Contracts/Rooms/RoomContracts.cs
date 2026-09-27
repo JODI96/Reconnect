@@ -7,7 +7,8 @@ namespace Reconnect.Contracts.Rooms
     public sealed record Vector3Dto(float X, float Y, float Z);
 
     /// <param name="Rotation">Rotation around the Y axis in degrees.</param>
-    public sealed record RoomItemDto(string ItemId, Vector3Dto Position, float Rotation);
+    /// <param name="Colours">Chosen swatch per colour zone ("sage/walnut", see <see cref="ItemColours"/>); null = defaults.</param>
+    public sealed record RoomItemDto(string ItemId, Vector3Dto Position, float Rotation, string Colours = null);
 
     public sealed record RoomSummaryDto(
         Guid Id,

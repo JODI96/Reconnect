@@ -13,6 +13,11 @@ internal sealed class RoomItem
     /// <summary>Rotation around the Y axis in degrees.</summary>
     public float Rotation { get; init; }
 
+    public const int ColoursMaxLength = 64;
+
+    /// <summary>Chosen swatch per colour zone ("sage/walnut", see <see cref="ItemColours"/>); null = the item's defaults.</summary>
+    public string? Colours { get; init; }
+
     /// <summary>
     /// An item placed like the build editor does: its footprint starts at build cell (<paramref name="x"/>,
     /// <paramref name="z"/>) – 50 cm cells, see <see cref="RoomLayout"/> – turned by <paramref name="rotation"/> (0/90/180/270).

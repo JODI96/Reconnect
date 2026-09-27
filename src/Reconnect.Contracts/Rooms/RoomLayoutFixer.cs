@@ -78,7 +78,7 @@ namespace Reconnect.Contracts.Rooms
                 }
                 placed.Add((definition, found));
                 var (x, z) = RoomLayout.Centre(found);
-                result[index] = new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), quarter * 90f);
+                result[index] = item with { Position = new Vector3Dto(x, 0f, z), Rotation = quarter * 90f };
                 placedItems.Add((definition, result[index]));
             }
             TuckSeats(room, result);
@@ -148,7 +148,7 @@ namespace Reconnect.Contracts.Rooms
                     if (room.IsInside(candidate) && !room.Reserved.Any(r => r.Overlaps(candidate)) && !others.Any(o => o.Cells.Overlaps(candidate)))
                     {
                         var (x, z) = RoomLayout.Centre(candidate);
-                        items[i] = new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), item.Rotation);
+                        items[i] = item with { Position = new Vector3Dto(x, 0f, z) };
                         break;
                     }
                 }
@@ -202,7 +202,7 @@ namespace Reconnect.Contracts.Rooms
                 {
                     foreach (var (x, z) in DecorSpots(surface.Bounds, item.Position.X, item.Position.Z))
                     {
-                        var candidate = new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), rotation);
+                        var candidate = item with { Position = new Vector3Dto(x, 0f, z), Rotation = rotation };
                         var area = RoomLayout.DecorShape(candidate, definition);
                         if (surface.Contains(area, 0.02f) && !others.Any(o => o.Overlaps(area, 0.01f)))
                         {

@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce4b6184f6d993545b29b8435fee26c6, type: 3}
+  m_Name: SurfaceMaterials
+  m_EditorClassIdentifier: Reconnect.Client::Reconnect.Client.Rooms.SurfaceMaterials
+  entries:
+  - name: walnut
+    material: {fileID: 2100000, guid: bc50b04e99c3c4447b27008086a1cead, type: 2}
+    tintable: 0
+  - name: oak
+    material: {fileID: 2100000, guid: e22cff27c8cb2fd4cafa3fb21b04dc06, type: 2}
+    tintable: 0
+  - name: whiteoak
+    material: {fileID: 2100000, guid: f5b2e19bfd6525c4484d4ab158a648e5, type: 2}
+    tintable: 0
+  - name: cognac
+    material: {fileID: 2100000, guid: 78ad3515f77d40248b91e91f71e8ef34, type: 2}
+    tintable: 0
+  - name: cream
+    material: {fileID: 2100000, guid: f5047d82f98539a4abaac0052395ec48, type: 2}
+    tintable: 1
+  - name: velvet
+    material: {fileID: 2100000, guid: cc27bc0fc5854ae4f8de3dbab3cf4041, type: 2}
+    tintable: 1
+  - name: boucle
+    material: {fileID: 2100000, guid: b8f45cd1d7065f74eb932822019a1f77, type: 2}
+    tintable: 1
+  - name: linen
+    material: {fileID: 2100000, guid: 5f83ef963f28d8d4f83e55e422f5e597, type: 2}
+    tintable: 1
+  - name: marble
+    material: {fileID: 2100000, guid: 69ceb8b54c030a448b79f311cac375e7, type: 2}
+    tintable: 0
+  - name: blackmarble
+    material: {fileID: 2100000, guid: c6fcb6f55dd32b343be475b9c938f4a5, type: 2}
+    tintable: 0
+  - name: travertine
+    material: {fileID: 2100000, guid: 7c94f1bfa8667364187427f36a485906, type: 2}
+    tintable: 0

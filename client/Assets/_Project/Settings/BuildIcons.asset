@@ -479,6 +479,302 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: ffe4e3015558f074ebc92630fd700915, type: 3}
   - itemId: custom-greenwall
     icon: {fileID: 2800000, guid: 819daad6259389b458cd6a0dd154a710, type: 3}
+  - itemId: custom-sofa-box-2
+    icon: {fileID: 2800000, guid: 5b33fc99619b4554c9cb8f843e4e2eac, type: 3}
+  - itemId: custom-sofa-box-3
+    icon: {fileID: 2800000, guid: dd606aa5377697f47b14185c27078b56, type: 3}
+  - itemId: custom-sofa-box-corner
+    icon: {fileID: 2800000, guid: aaf4750f28ce4574f937004a869ded6c, type: 3}
+  - itemId: custom-armchair-box
+    icon: {fileID: 2800000, guid: 1fa2aa26627d19f468865080c90933dc, type: 3}
+  - itemId: custom-ottoman-box
+    icon: {fileID: 2800000, guid: 67512eec4263f0d429650b42a359c639, type: 3}
+  - itemId: custom-sofa-round-2
+    icon: {fileID: 2800000, guid: 81368068072d0de4a8c228f5ab4ebd6c, type: 3}
+  - itemId: custom-sofa-round-3
+    icon: {fileID: 2800000, guid: c10b9385cbbe61b448214cb5c55a158b, type: 3}
+  - itemId: custom-sofa-round-corner
+    icon: {fileID: 2800000, guid: f2bf1b56e07fc1f40b6e746995870191, type: 3}
+  - itemId: custom-armchair-round
+    icon: {fileID: 2800000, guid: 434dc19e3dbb8034f8a6efbaf9cc12f0, type: 3}
+  - itemId: custom-ottoman-round
+    icon: {fileID: 2800000, guid: e00d1ee2ae776374ab38062be866ce1a, type: 3}
+  - itemId: custom-sofa-tufted-2
+    icon: {fileID: 2800000, guid: f5c068641f0a3b145a124275b42f4948, type: 3}
+  - itemId: custom-sofa-tufted-3
+    icon: {fileID: 2800000, guid: aec574e7420b4b74daf9679225f51dbb, type: 3}
+  - itemId: custom-sofa-tufted-corner
+    icon: {fileID: 2800000, guid: 480a179bb50c344489612c1d116f7334, type: 3}
+  - itemId: custom-armchair-tufted
+    icon: {fileID: 2800000, guid: b6fcc163e97d35d448592477626fb15e, type: 3}
+  - itemId: custom-ottoman-tufted
+    icon: {fileID: 2800000, guid: 2a4061a4464202c419661eb35b05158e, type: 3}
+  - itemId: custom-sofa-low-2
+    icon: {fileID: 2800000, guid: fcc7f61fffbcc8049b3278e31e63bfc5, type: 3}
+  - itemId: custom-sofa-low-3
+    icon: {fileID: 2800000, guid: 59e1105ff73c7af48bfd43f20717e376, type: 3}
+  - itemId: custom-sofa-low-corner
+    icon: {fileID: 2800000, guid: 718999f82a3bf5a44bc71f46aceacf11, type: 3}
+  - itemId: custom-armchair-low
+    icon: {fileID: 2800000, guid: 3330c7241db656542bea6a296c4e10f3, type: 3}
+  - itemId: custom-ottoman-low
+    icon: {fileID: 2800000, guid: f724a02cedccb1b4a82a3ef17dd6b26c, type: 3}
+  - itemId: custom-sofa-slim-2
+    icon: {fileID: 2800000, guid: 1df42e87654fdff4f98458dad6b62b08, type: 3}
+  - itemId: custom-sofa-slim-3
+    icon: {fileID: 2800000, guid: ef9e2e90fdeabc5458f100eef10e073e, type: 3}
+  - itemId: custom-sofa-slim-corner
+    icon: {fileID: 2800000, guid: bcfee20d86254d143afd8543b94594f1, type: 3}
+  - itemId: custom-armchair-slim
+    icon: {fileID: 2800000, guid: 33121fbf79581874293dbe1dcbde41fe, type: 3}
+  - itemId: custom-ottoman-slim
+    icon: {fileID: 2800000, guid: 54d1556919363654aa0a1502b968aa78, type: 3}
+  - itemId: custom-lounge-shell
+    icon: {fileID: 2800000, guid: 635bf52a1971cc94b818162b428b27aa, type: 3}
+  - itemId: custom-lounge-sling
+    icon: {fileID: 2800000, guid: 9d8f9a81c81dd20478edf25a4e3b2a05, type: 3}
+  - itemId: custom-banquette-160
+    icon: {fileID: 2800000, guid: 1ba6f39bb843bd34982ee73bc8de1034, type: 3}
+  - itemId: custom-banquette-240
+    icon: {fileID: 2800000, guid: 0b55f0bbe12231945a0579c786a217fc, type: 3}
+  - itemId: custom-banquette-320
+    icon: {fileID: 2800000, guid: a4faa3b90c008214899f357bc667eabb, type: 3}
+  - itemId: custom-banquette-corner
+    icon: {fileID: 2800000, guid: 6b92df16539a10141adb004edc3e6840, type: 3}
+  - itemId: custom-chair-classic
+    icon: {fileID: 2800000, guid: 51bc8b01673734840aa3afaeef82f05f, type: 3}
+  - itemId: custom-chair-shell
+    icon: {fileID: 2800000, guid: 0683c865ed5a22847a5d5cd89deb088f, type: 3}
+  - itemId: custom-chair-wood
+    icon: {fileID: 2800000, guid: 2677f7a2373cb5f4d8448a2d897e2896, type: 3}
+  - itemId: custom-chair-cantilever
+    icon: {fileID: 2800000, guid: d44b27d08bebb3543a2c0428a53b190f, type: 3}
+  - itemId: custom-chair-velvet
+    icon: {fileID: 2800000, guid: 1a61b84cb78ed1c449256102166f4241, type: 3}
+  - itemId: custom-chair-ladder
+    icon: {fileID: 2800000, guid: 5de92cbd0232a5543bdd9085bb2940f3, type: 3}
+  - itemId: custom-barstool-round
+    icon: {fileID: 2800000, guid: a0500ebe8d6d7fd4db12ad757bf06c56, type: 3}
+  - itemId: custom-barstool-back
+    icon: {fileID: 2800000, guid: 4f00c7586e5dfda458637031735c3d24, type: 3}
+  - itemId: custom-barstool-saddle
+    icon: {fileID: 2800000, guid: 2d6a8c3c0a3919148800f35d5a6cddf6, type: 3}
+  - itemId: custom-pouf-round
+    icon: {fileID: 2800000, guid: 9c29e15e14159f940a0f54a3a3d77a31, type: 3}
+  - itemId: custom-pouf-cube
+    icon: {fileID: 2800000, guid: 31bd012531c63ef489b847c55f9c2cc6, type: 3}
+  - itemId: custom-bench-wood-120
+    icon: {fileID: 2800000, guid: b1ecaf2ba523c2a4883eb2201e531fb4, type: 3}
+  - itemId: custom-bench-soft-120
+    icon: {fileID: 2800000, guid: 45bec363c825bb14a9632ef75ea54ecf, type: 3}
+  - itemId: custom-bench-wood-180
+    icon: {fileID: 2800000, guid: 1dff4650769c73d429fc39faa39f5981, type: 3}
+  - itemId: custom-bench-soft-180
+    icon: {fileID: 2800000, guid: ad4c3a59fde215d4eb739220d2f87998, type: 3}
+  - itemId: custom-table-sled-120
+    icon: {fileID: 2800000, guid: c081370dcf029cf4392b3a1f85045e5c, type: 3}
+  - itemId: custom-table-legs-120
+    icon: {fileID: 2800000, guid: b2195322a0a1c9247b10ef82ba71e532, type: 3}
+  - itemId: custom-table-sled-160
+    icon: {fileID: 2800000, guid: b91cbd1d2c36cc948b072e78d0e90133, type: 3}
+  - itemId: custom-table-legs-160
+    icon: {fileID: 2800000, guid: f817fabf538bd8c4890cd809a01367df, type: 3}
+  - itemId: custom-table-sled-200
+    icon: {fileID: 2800000, guid: d447a81b22c47b740877ab65db073663, type: 3}
+  - itemId: custom-table-legs-200
+    icon: {fileID: 2800000, guid: 6d2df567a09bc054b9841d5a9144a0b3, type: 3}
+  - itemId: custom-table-sled-240
+    icon: {fileID: 2800000, guid: 773582ff70cc0d84d8b3dc3c36dd162c, type: 3}
+  - itemId: custom-table-legs-240
+    icon: {fileID: 2800000, guid: 7c65186bf3a0cf446adec5587068a575, type: 3}
+  - itemId: custom-table-sled-300
+    icon: {fileID: 2800000, guid: 8fa073170bdaff644b1febe9b6ccbcdc, type: 3}
+  - itemId: custom-table-legs-300
+    icon: {fileID: 2800000, guid: 1476cadb4f0fb624eb99e8931824036a, type: 3}
+  - itemId: custom-table-sled-360
+    icon: {fileID: 2800000, guid: 16e6b41b716d9b247b965c8f96aba040, type: 3}
+  - itemId: custom-table-legs-360
+    icon: {fileID: 2800000, guid: 36606c4b19772cb43a83c0f84e57b67c, type: 3}
+  - itemId: custom-table-stone-160
+    icon: {fileID: 2800000, guid: b427a60c343a3b8499ae9e2cd2f60665, type: 3}
+  - itemId: custom-table-stone-200
+    icon: {fileID: 2800000, guid: 61b9d966198cb5845a4965cc56f2dcfe, type: 3}
+  - itemId: custom-table-stone-240
+    icon: {fileID: 2800000, guid: 158ec731d35ff0e4fa19a97cf840a853, type: 3}
+  - itemId: custom-table-stone-300
+    icon: {fileID: 2800000, guid: 00278dcfc9bcbe24caa9b7131512800d, type: 3}
+  - itemId: custom-roundtable-wood-80
+    icon: {fileID: 2800000, guid: 9c34fae18ed941742bbfad2acb9b55a6, type: 3}
+  - itemId: custom-roundtable-stone-80
+    icon: {fileID: 2800000, guid: 1fce164cd7c9fb74b9157cfdd14dee3f, type: 3}
+  - itemId: custom-roundtable-wood-100
+    icon: {fileID: 2800000, guid: 3707eaa677059f14082dabc980483ca3, type: 3}
+  - itemId: custom-roundtable-stone-100
+    icon: {fileID: 2800000, guid: f4aece4866bfd9546a2b2e6913d26d79, type: 3}
+  - itemId: custom-roundtable-wood-120
+    icon: {fileID: 2800000, guid: 31b6c1c1e9efaa44f9e4e6e696f9b0a4, type: 3}
+  - itemId: custom-roundtable-stone-120
+    icon: {fileID: 2800000, guid: 275a982b2f997e547940f5d161ec0907, type: 3}
+  - itemId: custom-roundtable-wood-140
+    icon: {fileID: 2800000, guid: 2442ec3de39a0254b93858997ec98b4c, type: 3}
+  - itemId: custom-roundtable-stone-140
+    icon: {fileID: 2800000, guid: bb3f7464048980a43bf0690798be3506, type: 3}
+  - itemId: custom-bistro
+    icon: {fileID: 2800000, guid: 8a098b18cf7d02d48819d0ec0f9393fe, type: 3}
+  - itemId: custom-bistro-square
+    icon: {fileID: 2800000, guid: b32bdbaaa2d49894faefb15e76b22df9, type: 3}
+  - itemId: custom-hightable
+    icon: {fileID: 2800000, guid: fcb9c8f1da0db084eb664cc8fd2cb3f5, type: 3}
+  - itemId: custom-hightable-long
+    icon: {fileID: 2800000, guid: 156fb8f548de0f94ab40145d9b934100, type: 3}
+  - itemId: custom-dinner-2
+    icon: {fileID: 2800000, guid: 2eef0d858f2dd7a4b80782179a63807d, type: 3}
+  - itemId: custom-dinner-4
+    icon: {fileID: 2800000, guid: 5a17c716dc066af4ca6569ecd1d4135f, type: 3}
+  - itemId: custom-dinner-6
+    icon: {fileID: 2800000, guid: 31c64375dfff29944bbd56246b95019c, type: 3}
+  - itemId: custom-dinner-round-120
+    icon: {fileID: 2800000, guid: b27f91e32a75bc54a8ebce2fd36107e9, type: 3}
+  - itemId: custom-dinner-round-160
+    icon: {fileID: 2800000, guid: 270185704a8afd149bdaed53056ba0d6, type: 3}
+  - itemId: custom-coffeetable-rect
+    icon: {fileID: 2800000, guid: cc693a519d0dea74696a5f31df705f92, type: 3}
+  - itemId: custom-coffeetable-round
+    icon: {fileID: 2800000, guid: c942edcfe0e3b994fa9a11f639753db3, type: 3}
+  - itemId: custom-coffeetable-oval
+    icon: {fileID: 2800000, guid: 488af4a2fb87492468948334c5ad00fb, type: 3}
+  - itemId: custom-coffeetable-nesting
+    icon: {fileID: 2800000, guid: 6be7c49dfb26a8a40965178af0345d51, type: 3}
+  - itemId: custom-coffeetable-cube
+    icon: {fileID: 2800000, guid: f55e4ee57d8d7a2458265ee6a6228757, type: 3}
+  - itemId: custom-sidetable-round
+    icon: {fileID: 2800000, guid: bb09f96001fdfff409d6df6579545e83, type: 3}
+  - itemId: custom-sidetable-cube
+    icon: {fileID: 2800000, guid: a6291695a0a1bca43b0c4576e8f27eaf, type: 3}
+  - itemId: custom-sidetable-drum
+    icon: {fileID: 2800000, guid: af74c936150ed1c49803dd311a037e64, type: 3}
+  - itemId: custom-console
+    icon: {fileID: 2800000, guid: ce33f32e3a0e394498c0be4f71d5db9e, type: 3}
+  - itemId: custom-desk-120
+    icon: {fileID: 2800000, guid: 54878ea9b90179746b49b03d8f35185f, type: 3}
+  - itemId: custom-desk-140
+    icon: {fileID: 2800000, guid: 6e1abf961fce45c4dbd467c25b0b550c, type: 3}
+  - itemId: custom-desk-160
+    icon: {fileID: 2800000, guid: 97bed9770a03957499c0b84cb4c03973, type: 3}
+  - itemId: custom-sideboard-120
+    icon: {fileID: 2800000, guid: 047e53e6476a11e4db5e36565a1133cf, type: 3}
+  - itemId: custom-sideboard-180
+    icon: {fileID: 2800000, guid: 003ece43e3f19534ebea66f4bbda3ed8, type: 3}
+  - itemId: custom-sideboard-240
+    icon: {fileID: 2800000, guid: d5c3cf6a7429f7a4992c1effb74a0bea, type: 3}
+  - itemId: custom-shelf-wide
+    icon: {fileID: 2800000, guid: 0b16d68468eaf6743b72c36c85913f3d, type: 3}
+  - itemId: custom-shelf-tall
+    icon: {fileID: 2800000, guid: c9035a9fbd19b824d96d2f4f2212de61, type: 3}
+  - itemId: custom-shelf-grid
+    icon: {fileID: 2800000, guid: 0b2d5158fce25ac4785439beb3aedfe1, type: 3}
+  - itemId: custom-cabinet-tall
+    icon: {fileID: 2800000, guid: 36f88ec5d110a164691c993df62ec6c1, type: 3}
+  - itemId: custom-vitrine
+    icon: {fileID: 2800000, guid: 3954870805ed62d49a30ef73d1597391, type: 3}
+  - itemId: custom-barcabinet
+    icon: {fileID: 2800000, guid: d2b79d69edfbc5f4d8bd866438d1a40e, type: 3}
+  - itemId: custom-floorlamp-arc
+    icon: {fileID: 2800000, guid: 2f984a5f0886bcc498f6fa11a3707533, type: 3}
+  - itemId: custom-floorlamp-tripod
+    icon: {fileID: 2800000, guid: d6feb3377e0f9b241a35e214ef94b879, type: 3}
+  - itemId: custom-floorlamp-globe
+    icon: {fileID: 2800000, guid: 7a22251409202cb4da6532fccfc9f3e7, type: 3}
+  - itemId: custom-floorlamp-column
+    icon: {fileID: 2800000, guid: 1dcfac1be771d6f44803c758a0c4ea39, type: 3}
+  - itemId: custom-tablelamp-dome
+    icon: {fileID: 2800000, guid: ad950769e25f84645922cde8c118dc18, type: 3}
+  - itemId: custom-tablelamp-mushroom
+    icon: {fileID: 2800000, guid: d57383b05fd08144f80d127a659835d2, type: 3}
+  - itemId: custom-tablelamp-globe
+    icon: {fileID: 2800000, guid: c577e3da7f4c14042a6f850a2c2028fe, type: 3}
+  - itemId: custom-pendantlamp-dome
+    icon: {fileID: 2800000, guid: 89641942c0f860649900d193b65902dd, type: 3}
+  - itemId: custom-pendantlamp-globe
+    icon: {fileID: 2800000, guid: 556884bde64f52d4e8b5ce37d4020b8f, type: 3}
+  - itemId: custom-pendantlamp-linear
+    icon: {fileID: 2800000, guid: 7034974f75e87fd48a85a6721d2d11cf, type: 3}
+  - itemId: custom-pendantlamp-cluster
+    icon: {fileID: 2800000, guid: cb7ea491c3b29ca4aa4ca5f4184a9d5c, type: 3}
+  - itemId: custom-plant-tall-cylinder
+    icon: {fileID: 2800000, guid: 09e3201566591744286141849bfbaa7f, type: 3}
+  - itemId: custom-plant-tall-bowl
+    icon: {fileID: 2800000, guid: 3067475f0b507db48acfe16860bb8f1a, type: 3}
+  - itemId: custom-plant-tall-tapered
+    icon: {fileID: 2800000, guid: 7c95a7b2b39ddd94ca65655109827ce6, type: 3}
+  - itemId: custom-plant-bush-cylinder
+    icon: {fileID: 2800000, guid: d6815041e60db3f4aaf67d4d23311c9a, type: 3}
+  - itemId: custom-plant-bush-bowl
+    icon: {fileID: 2800000, guid: 2855e8d1fb267a34e83104883fec0a14, type: 3}
+  - itemId: custom-plant-bush-tapered
+    icon: {fileID: 2800000, guid: 48ce7db4e770bcf4c9aa3b3e88997d20, type: 3}
+  - itemId: custom-plant-leafy-cylinder
+    icon: {fileID: 2800000, guid: 0105bab6a9576c4458d997e0d30aeacd, type: 3}
+  - itemId: custom-plant-leafy-bowl
+    icon: {fileID: 2800000, guid: ffcb642918be3624088c3fdf6b11a8e2, type: 3}
+  - itemId: custom-plant-leafy-tapered
+    icon: {fileID: 2800000, guid: 948585b3bd53bdb4896405303a569063, type: 3}
+  - itemId: custom-planterbench
+    icon: {fileID: 2800000, guid: 43e35f24f2b13734aab363321a9a3a04, type: 3}
+  - itemId: custom-acoustic
+    icon: {fileID: 2800000, guid: e0a2484eee23ee145aa0079ccf1825fe, type: 3}
+  - itemId: custom-acoustic-curved
+    icon: {fileID: 2800000, guid: d4ae8e2604085bf4ea69a032968fa102, type: 3}
+  - itemId: custom-whiteboard
+    icon: {fileID: 2800000, guid: f2b15c31fc5775b458ea8158ca5228fd, type: 3}
+  - itemId: custom-screen
+    icon: {fileID: 2800000, guid: 75c1df8c7a76ea04aa5fb29c0ed47e71, type: 3}
+  - itemId: custom-vase-bottle
+    icon: {fileID: 2800000, guid: 5fac960233f138d42b7be1bf6be10a0e, type: 3}
+  - itemId: custom-vase-round
+    icon: {fileID: 2800000, guid: 02627743ecf5c474885a15c5562d7694, type: 3}
+  - itemId: custom-vase-tall
+    icon: {fileID: 2800000, guid: c62b2b207444d594e8145bd9ebc3b29c, type: 3}
+  - itemId: custom-vase-bowl
+    icon: {fileID: 2800000, guid: 99bdedc7e4def0a40be73472da301a3a, type: 3}
+  - itemId: custom-candles
+    icon: {fileID: 2800000, guid: a2c082c6bbe2dc3429e5216729d4f1c0, type: 3}
+  - itemId: custom-books
+    icon: {fileID: 2800000, guid: fbcdffaa4cf9d0d4c90cf86668d8a151, type: 3}
+  - itemId: custom-tray
+    icon: {fileID: 2800000, guid: 8d836c35b128b0a46b94d884d0cb38be, type: 3}
+  - itemId: custom-zone-carpet-3x2
+    icon: {fileID: 2800000, guid: 33e05fcfd6da43841a76e49b2d13d657, type: 3}
+  - itemId: custom-zone-wood-3x2
+    icon: {fileID: 2800000, guid: 9d032890e90544f42bb345b64853c302, type: 3}
+  - itemId: custom-zone-stone-3x2
+    icon: {fileID: 2800000, guid: b2f62c47f8f30ab40b7bd37ca6fd63ed, type: 3}
+  - itemId: custom-zone-carpet-4x3
+    icon: {fileID: 2800000, guid: 0cf9690eeb461ea4b958b47a39dfdda4, type: 3}
+  - itemId: custom-zone-wood-4x3
+    icon: {fileID: 2800000, guid: 797d3c6eaaaded744ba2ad0784c311e5, type: 3}
+  - itemId: custom-zone-stone-4x3
+    icon: {fileID: 2800000, guid: 1448ae2ca228a204aba5d584e1c89bae, type: 3}
+  - itemId: custom-zone-carpet-6x4
+    icon: {fileID: 2800000, guid: 7ca9681716b62e143acd80d9f4f6c839, type: 3}
+  - itemId: custom-zone-wood-6x4
+    icon: {fileID: 2800000, guid: 25e7cebc248c00943afaab25b3180385, type: 3}
+  - itemId: custom-zone-stone-6x4
+    icon: {fileID: 2800000, guid: 1c3341b6757dc374190144d0372c32b1, type: 3}
+  - itemId: custom-zone-carpet-8x6
+    icon: {fileID: 2800000, guid: 171cac8a2e64feb4395c78af06e3bf4b, type: 3}
+  - itemId: custom-zone-wood-8x6
+    icon: {fileID: 2800000, guid: 00826315ecedefa40967892ab9706297, type: 3}
+  - itemId: custom-zone-stone-8x6
+    icon: {fileID: 2800000, guid: 6df5ba7cd8c2782409ed1ca667d6ae4f, type: 3}
+  - itemId: custom-rugmodern-round-200
+    icon: {fileID: 2800000, guid: be074d93c6c4a3d47b383e8854b04a87, type: 3}
+  - itemId: custom-rugmodern-round-300
+    icon: {fileID: 2800000, guid: 598ad14a7fc629a478dc800afe9e1cff, type: 3}
+  - itemId: custom-rugmodern-250x170
+    icon: {fileID: 2800000, guid: f2dabcb73c87b494fb3bb3803ed01818, type: 3}
+  - itemId: custom-rugmodern-300x200
+    icon: {fileID: 2800000, guid: 00cd36b5b570bd64688176e69244b2c9, type: 3}
   - itemId: game-tictactoe
     icon: {fileID: 2800000, guid: 5efb0b99374abb44898b94051ffedca1, type: 3}
   - itemId: game-quiz

@@ -362,10 +362,10 @@ namespace Reconnect.Contracts.Rooms
             var rotation = SnapRotation(definition, item.Rotation);
             if (definition.Kind == ItemKind.Decor || !IsQuarterTurn(rotation))
             {
-                return new RoomItemDto(item.ItemId, new Vector3Dto(SnapDecor(item.Position.X), 0f, SnapDecor(item.Position.Z)), rotation);
+                return item with { Position = new Vector3Dto(SnapDecor(item.Position.X), 0f, SnapDecor(item.Position.Z)), Rotation = rotation };
             }
             var (x, z) = Centre(Footprint(definition, item.Position.X, item.Position.Z, Quarter(rotation)));
-            return new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), rotation);
+            return item with { Position = new Vector3Dto(x, 0f, z), Rotation = rotation };
         }
 
         /// <summary>Small things stand on a finer grid (<see cref="BuildGrid.DecorStep"/>).</summary>
@@ -429,6 +429,11 @@ namespace Reconnect.Contracts.Rooms
                 if (Math.Abs(centreX - item.Position.X) > Tolerance || Math.Abs(centreZ - item.Position.Z) > Tolerance)
                 {
                     problems.Add(new LayoutProblem(i, $"„{definition.Name}“ steht nicht auf dem Raster."));
+                    continue;
+                }
+                if (ItemColours.Problem(item.ItemId, item.Colours) is { } colourProblem)
+                {
+                    problems.Add(new LayoutProblem(i, $"„{definition.Name}“: {colourProblem}."));
                     continue;
                 }
                 var covered = Cells(item, definition).ToList();

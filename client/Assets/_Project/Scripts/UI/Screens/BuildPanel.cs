@@ -18,7 +18,8 @@ namespace Reconnect.Client.UI.Screens
     {
         private static readonly string[] Categories =
         {
-            "Sitzen", "Tische", "Aufbewahrung", "Küche & Bar", "Licht", "Pflanzen", "Deko", "Wand", "Teppiche", "Spiele", "Spezial",
+            "Sofas & Sessel", "Stühle & Hocker", "Tische", "Aufbewahrung", "Licht", "Pflanzen", "Teppiche & Böden", "Deko", "Arbeiten",
+            "Küche & Bar", "Wand", "Spiele", "Spezial", "Klassisch", "Retro",
         };
 
         private readonly VisualElement _panel;
@@ -30,6 +31,11 @@ namespace Reconnect.Client.UI.Screens
         private readonly VisualElement _actions;
         private readonly ScrollView _categories;
         private readonly ScrollView _items;
+        private readonly VisualElement _colours;
+        private readonly VisualElement _zones;
+        private readonly ScrollView _swatches;
+        private int _zone;
+        private string _colouredItem;
         private readonly bool _isAdmin;
         private BuildEditor _editor;
         private IReadOnlyList<RoomItemDto> _original;
@@ -53,7 +59,10 @@ namespace Reconnect.Client.UI.Screens
             _actions = _panel.Q<VisualElement>("build-actions");
             _categories = _panel.Q<ScrollView>("build-categories");
             _items = _panel.Q<ScrollView>("build-items");
-            foreach (var scroll in new[] { _categories, _items })
+            _colours = _panel.Q<VisualElement>("build-colours");
+            _zones = _panel.Q<VisualElement>("build-zones");
+            _swatches = _panel.Q<ScrollView>("build-swatches");
+            foreach (var scroll in new[] { _categories, _items, _swatches })
             {
                 scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
                 scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
@@ -225,6 +234,52 @@ namespace Reconnect.Client.UI.Screens
             }
         }
 
+        // ---------- Colours ----------
+
+        /// <summary>Colour zones of the item in hand (tabs) and the swatches of the chosen zone (round chips).</summary>
+        private void RefreshColours()
+        {
+            var zones = _editor.SelectionZones;
+            _colours.style.display = zones.Count > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            if (zones.Count == 0)
+            {
+                _colouredItem = null;
+                return;
+            }
+            if (_colouredItem != _editor.Selection.ItemId)
+            {
+                _colouredItem = _editor.Selection.ItemId;
+                _zone = 0;
+            }
+            _zone = Mathf.Clamp(_zone, 0, zones.Count - 1);
+            var current = _editor.SelectionSwatches;
+            _zones.Clear();
+            _zones.style.display = zones.Count > 1 ? DisplayStyle.Flex : DisplayStyle.None;
+            for (var i = 0; i < zones.Count; i++)
+            {
+                var index = i;
+                var tab = new Button(() =>
+                {
+                    _zone = index;
+                    Refresh();
+                }) { text = zones[i].Label, name = "build-zone-" + i };
+                tab.AddToClassList("build-zone");
+                tab.EnableInClassList("build-zone--selected", i == _zone);
+                _zones.Add(tab);
+            }
+            _swatches.Clear();
+            var zone = zones[_zone];
+            foreach (var swatch in ItemColours.Swatches[zone.Kind])
+            {
+                var chosen = swatch;
+                var chip = new Button(() => _editor.SetSelectionColour(_zone, chosen)) { name = "swatch-" + swatch, tooltip = swatch };
+                chip.AddToClassList("swatch");
+                chip.style.backgroundColor = SwatchLook.Chip(zone.Kind, swatch);
+                chip.EnableInClassList("swatch--selected", current[_zone] == swatch);
+                _swatches.Add(chip);
+            }
+        }
+
         // ---------- Catalog ----------
 
         private void BuildCategories()
@@ -303,6 +358,7 @@ namespace Reconnect.Client.UI.Screens
                 card.EnableInClassList("build-card--selected", hasSelection && _editor.SelectionIsNew && card.name == "build-item-" + _editor.Selection.ItemId);
             }
 
+            RefreshColours();
             var problem = hasSelection ? _editor.SelectionProblems.FirstOrDefault() : null;
             var text = _turning
                 ? "Ziehe in die Richtung, in die es schauen soll – an Wänden rastet es parallel ein. „Drehen“ beendet."

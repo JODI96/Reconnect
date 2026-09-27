@@ -47,6 +47,7 @@ namespace Reconnect.Client.Rooms
         [SerializeField] private ItemCatalog itemCatalog;
         [SerializeField] private BuildIconCatalog buildIcons;
         [SerializeField] private FloorMaterialCatalog floorMaterials;
+        [SerializeField] private SurfaceMaterials surfaceMaterials;
         [SerializeField] private AvatarCatalog avatarCatalog;
 
         private readonly Dictionary<Guid, AvatarView> _avatars = new();
@@ -175,7 +176,7 @@ namespace Reconnect.Client.Rooms
                 holder.SetParent(parent, false);
                 Spawn(holder, id);
                 return holder.gameObject;
-            });
+            }, surfaceMaterials);
             _lampLights = 0;
 
             _storey = snapshot.Room.Floor;
@@ -594,6 +595,15 @@ namespace Reconnect.Client.Rooms
             _follow = false;
             _focus = new Vector3(focus.x, 0f, focus.y);
             _viewWidth = MaxZoomOut;
+            ApplyCamera();
+        }
+
+        /// <summary>Looks at <paramref name="focus"/> (room metres) with <paramref name="viewWidth"/> metres of floor across the screen (tests, previews).</summary>
+        public void LookAt(Vector2 focus, float viewWidth)
+        {
+            _follow = false;
+            _focus = new Vector3(focus.x, 0f, focus.y);
+            _viewWidth = Mathf.Clamp(viewWidth, MinViewWidth, MaxViewWidth);
             ApplyCamera();
         }
 
@@ -1212,7 +1222,7 @@ namespace Reconnect.Client.Rooms
                     RegisterStation(pivot, gameId);
                     continue;
                 }
-                if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks))
+                if (item.ItemId.StartsWith(CustomItems.Prefix) && _custom.TryBuild(item.ItemId, pivot, out var blocks, item.Colours))
                 {
                     MeshBaker.MergeStill(pivot);
                     if (blocks)
@@ -1290,7 +1300,7 @@ namespace Reconnect.Client.Rooms
                 return Spawn(pivot, item.ItemId == TicTacToeItem ? "table" : "cabinetTelevision");
             }
             if ((item.ItemId.StartsWith(CustomItems.Prefix) || CustomItems.GameStations.ContainsKey(item.ItemId))
-                && _custom.TryBuild(item.ItemId, pivot, out _))
+                && _custom.TryBuild(item.ItemId, pivot, out _, item.Colours))
             {
                 return Bounds(pivot);
             }
@@ -1330,7 +1340,7 @@ namespace Reconnect.Client.Rooms
             return transform.TransformDirection(new Vector3(x, 0f, z));
         }
 
-        private static bool IsLamp(string itemId) => itemId.StartsWith("lamp") || itemId.Contains("_lamp");
+        private static bool IsLamp(string itemId) => itemId.StartsWith("lamp") || itemId.Contains("_lamp") || itemId.Contains("lamp-");
 
         /// <summary>Height of the table top under a room point (measured on the models; 0 = floor).</summary>
         private float TopAt(float x, float z)

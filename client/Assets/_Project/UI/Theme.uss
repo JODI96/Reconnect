@@ -63,6 +63,14 @@
 .button--small { min-height: 44px; min-width: 44px; font-size: 15px; padding: 0 12px; margin: 0 0 0 6px; flex-shrink: 0; }
 .button:disabled { opacity: 0.5; }
 .button--off { opacity: 0.6; }
+.build-colours { flex-direction: column; flex-shrink: 0; margin: 4px 0; }
+.build-zones { flex-direction: row; flex-shrink: 0; }
+.build-zone { min-height: 44px; font-size: 14px; padding: 0 10px; margin: 0 6px 4px 0; border-radius: 22px; background-color: rgba(255, 255, 255, 0.12); color: var(--color-text); border-width: 0; }
+.build-zone--selected { background-color: var(--color-primary); color: rgb(255, 255, 255); }
+.build-swatches { flex-shrink: 0; height: 52px; }
+.build-swatches > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container { flex-direction: row; }
+.swatch { width: 44px; height: 44px; min-width: 44px; margin: 0 6px 0 0; border-radius: 22px; border-width: 2px; border-color: rgba(255, 255, 255, 0.25); padding: 0; }
+.swatch--selected { border-width: 4px; border-color: rgb(255, 255, 255); }
 .button--active { background-color: var(--color-primary); color: rgb(255, 255, 255); }
 
 .status { color: var(--color-text-muted); font-size: 15px; white-space: normal; margin: 8px 0; -unity-text-align: middle-center; }

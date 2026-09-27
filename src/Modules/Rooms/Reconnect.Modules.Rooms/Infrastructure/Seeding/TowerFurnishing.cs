@@ -31,7 +31,7 @@ internal static class TowerFurnishing
         var items = new List<RoomItemDto> { Core(plan).ToDto() };
         items.AddRange(furniture
             .Where(i => !RoomZones.IsLift(i.ItemId))
-            .Select(i => new RoomItemDto(i.ItemId, new Vector3Dto(i.Position.X + dx, 0f, i.Position.Z + dz), i.Rotation)));
+            .Select(i => new RoomItemDto(i.ItemId, new Vector3Dto(i.Position.X + dx, 0f, i.Position.Z + dz), i.Rotation, i.Colours)));
         return RoomLayoutFixer.Legalize(theme, plan.Width, plan.Depth, items, outline: plan.Outline)
             .Select(RoomMappings.ToDomain)
             .ToList();

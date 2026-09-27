@@ -159,7 +159,7 @@ namespace Reconnect.Client.Rooms
             var rotation = Selection.Rotation;
             if (definition.Kind == ItemKind.Decor)
             {
-                SetSelection(new RoomItemDto(Selection.ItemId, new Vector3Dto(x, 0f, z), rotation));
+                SetSelection(Selection with { Position = new Vector3Dto(x, 0f, z), Rotation = rotation });
                 return;
             }
             if (definition.Kind == ItemKind.Wall)
@@ -179,7 +179,7 @@ namespace Reconnect.Client.Rooms
                 var halfZ = (shape.MaxZ - shape.MinZ) / 2f;
                 x = Math.Max(halfX, Math.Min(_width - halfX, x));
                 z = Math.Max(halfZ, Math.Min(_depth - halfZ, z));
-                SetSelection(new RoomItemDto(Selection.ItemId, new Vector3Dto(RoomLayout.SnapDecor(x), 0f, RoomLayout.SnapDecor(z)), rotation));
+                SetSelection(Selection with { Position = new Vector3Dto(RoomLayout.SnapDecor(x), 0f, RoomLayout.SnapDecor(z)), Rotation = rotation });
                 return;
             }
             var cells = RoomLayout.Footprint(definition, x, z, RoomLayout.Quarter(rotation));
@@ -189,7 +189,7 @@ namespace Reconnect.Client.Rooms
             }
             cells = Inside(cells, context.Cells);
             var (cx, cz) = RoomLayout.Centre(cells);
-            SetSelection(new RoomItemDto(Selection.ItemId, new Vector3Dto(cx, 0f, cz), rotation));
+            SetSelection(Selection with { Position = new Vector3Dto(cx, 0f, cz), Rotation = rotation });
         }
 
         /// <summary>Turns the item in hand a quarter turn (paintings turn with their wall instead).</summary>
@@ -290,6 +290,25 @@ namespace Reconnect.Client.Rooms
                 }
             }
             return angles.Distinct().ToList();
+        }
+
+        /// <summary>The colour zones of the item in hand (empty for items that can't be coloured).</summary>
+        public IReadOnlyList<ColourZone> SelectionZones => Selection == null ? Array.Empty<ColourZone>() : ItemColours.ZonesFor(Selection.ItemId);
+
+        /// <summary>The swatch every zone of the item in hand has now.</summary>
+        public IReadOnlyList<string> SelectionSwatches => Selection == null ? Array.Empty<string>() : ItemColours.Resolve(Selection.ItemId, Selection.Colours);
+
+        /// <summary>Colours zone <paramref name="zone"/> of the item in hand with <paramref name="swatch"/> (like in The Sims).</summary>
+        public void SetSelectionColour(int zone, string swatch)
+        {
+            if (Selection == null || zone < 0 || zone >= SelectionZones.Count)
+            {
+                return;
+            }
+            var swatches = SelectionSwatches.ToArray();
+            swatches[zone] = swatch;
+            Selection = Selection with { Colours = ItemColours.Join(Selection.ItemId, swatches) };
+            SelectionChanged?.Invoke();
         }
 
         /// <summary>Signed smallest difference a − b in degrees (−180 … 180).</summary>

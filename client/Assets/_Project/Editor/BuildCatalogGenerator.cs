@@ -72,6 +72,16 @@ namespace Reconnect.Client.Editor
             "steel_frame_shelves", "custom-benchdesk", "custom-buffet",
         };
 
+        /// <summary>Poly Haven pieces of another era (carved, Victorian, farmhouse): catalog shelf "Klassisch".</summary>
+        private static readonly HashSet<string> Classic = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "ph-gallinera_chair", "ph-gallinera_table", "ph-ArmChair_01", "ph-GreenChair_01", "ph-Sofa_01", "ph-sofa_02", "ph-sofa_03",
+            "ph-round_wooden_table_01", "ph-round_wooden_table_02", "ph-side_table_tall_01", "ph-dining_table", "ph-CoffeeTable_01",
+            "ph-WoodenTable_01", "ph-painted_wooden_bench", "ph-metal_stool_01", "ph-metal_stool_03", "ph-wooden_bookshelf_worn",
+            "ph-metal_office_desk", "ph-bar_chair_round_01", "ph-Chandelier_01", "ph-Chandelier_02", "ph-vintage_grandfather_clock_01",
+            "ph-mantel_clock_01", "ph-Shelf_01", "ph-WoodenChair_01", "ph-outdoor_table_chair_set_01", "ph-antique_ceramic_vase_01",
+        };
+
         /// <summary>Items whose top is much wider than what stands on the floor (parasol: only the pole).</summary>
         private static readonly Dictionary<string, (int, int)> Footprints = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -185,6 +195,7 @@ namespace Reconnect.Client.Editor
                     .Where(e => e.model != null && !Excluded.Any(x => e.itemId.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
                     .Select(e => e.itemId));
                 ids.AddRange(CustomItems.Ids);
+                ids.AddRange(FurnitureFamilies.Ids);   // our own modern furniture
                 ids.Add("game-tictactoe");
                 ids.Add("game-quiz");
                 ids.AddRange(CustomItems.GameStations.Keys);
@@ -580,8 +591,10 @@ namespace Reconnect.Client.Editor
             var surface = 0f;
             var surfaceWidth = 0f;
             var surfaceDepth = 0f;
-            var isSurface = kind == ItemKind.Floor && !RoomSeats.IsSeat(id) && !id.StartsWith("chair", StringComparison.OrdinalIgnoreCase)
-                && (SurfaceOverrides.ContainsKey(id) || SurfaceWords.Any(w => id.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0));
+            var isSurface = FurnitureFamilies.Find(id) is { } family
+                ? family.Surface
+                : kind == ItemKind.Floor && !RoomSeats.IsSeat(id) && !id.StartsWith("chair", StringComparison.OrdinalIgnoreCase)
+                  && (SurfaceOverrides.ContainsKey(id) || SurfaceWords.Any(w => id.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0));
             if (isSurface && MeasureSurface(pivot, bounds, out var top, out surfaceWidth, out surfaceDepth))
             {
                 surface = SurfaceOverrides.TryGetValue(id, out var counter) ? counter : Mathf.Round(top * 100f) / 100f;
@@ -599,6 +612,10 @@ namespace Reconnect.Client.Editor
 
         private static ItemKind KindOf(string id)
         {
+            if (FurnitureFamilies.Find(id) is { } family)
+            {
+                return family.Kind;
+            }
             if (Rugs.Contains(id) || id.StartsWith("rug", StringComparison.OrdinalIgnoreCase))
             {
                 return ItemKind.Rug;
@@ -617,9 +634,22 @@ namespace Reconnect.Client.Editor
         private static string CategoryOf(string id, ItemKind kind)
         {
             bool Has(params string[] words) => words.Any(w => id.IndexOf(w, StringComparison.OrdinalIgnoreCase) >= 0);
+            if (FurnitureFamilies.Find(id) is { } family)
+            {
+                return family.Category;
+            }
             if (kind == ItemKind.Rug)
             {
-                return "Teppiche";
+                return FurnitureFamilies.Floors;
+            }
+            // Old-world pieces and the comic-style kit have their own shelves, so the modern range stays clean.
+            if (Classic.Contains(id))
+            {
+                return "Klassisch";
+            }
+            if (!id.StartsWith("ph-") && !id.StartsWith("custom-") && !id.StartsWith("game-") && kind != ItemKind.Wall)
+            {
+                return "Retro";
             }
             if (kind == ItemKind.Wall)
             {
@@ -631,28 +661,29 @@ namespace Reconnect.Client.Editor
             }
             if (id.StartsWith("custom-"))
             {
-                return Has("lounger", "officechair") ? "Sitzen"
-                    : Has("pendant", "lightstring", "ledstrip") ? "Licht"
-                    : Has("planter", "greenwall") ? "Pflanzen"
-                    : Has("benchdesk") ? "Tische"
+                return Has("lounger") ? FurnitureFamilies.Seating
+                    : Has("officechair") ? FurnitureFamilies.Chairs
+                    : Has("pendant", "lightstring", "ledstrip") ? FurnitureFamilies.Lights
+                    : Has("planter", "greenwall") ? FurnitureFamilies.Plants
+                    : Has("benchdesk", "phonebooth") ? FurnitureFamilies.Work
                     : Has("buffet") ? "Küche & Bar"
                     : "Spezial";
             }
             if (RoomSeats.IsSeat(id) || Has("chair", "stool", "sofa", "bench", "ottoman", "lounge"))
             {
-                return "Sitzen";
+                return Has("sofa", "lounge", "arm_chair", "ArmChair", "Ottoman") ? FurnitureFamilies.Seating : FurnitureFamilies.Chairs;
             }
             if (Has("lamp", "light", "chandelier", "lantern", "candle", "ceilingFan"))
             {
-                return "Licht";
+                return FurnitureFamilies.Lights;
             }
-            if (Has("plant", "pachira", "planter", "flower"))
+            if (Has("plant", "pachira", "planter", "flower", "fern", "anthurium", "calathea"))
             {
-                return "Pflanzen";
+                return FurnitureFamilies.Plants;
             }
             if (Has("table", "desk") && !Has("CoffeeMachine"))
             {
-                return "Tische";
+                return FurnitureFamilies.Tables;
             }
             if (Has("kitchen", "fridge", "toaster", "CoffeeMachine", "CoffeeCart", "hood", "stove", "sink", "microwave", "blender", "tea_set"))
             {
@@ -667,6 +698,10 @@ namespace Reconnect.Client.Editor
 
         private static string NameOf(string id)
         {
+            if (FurnitureFamilies.Find(id) is { } family)
+            {
+                return family.Name;
+            }
             if (Names.TryGetValue(id, out var name))
             {
                 return name;

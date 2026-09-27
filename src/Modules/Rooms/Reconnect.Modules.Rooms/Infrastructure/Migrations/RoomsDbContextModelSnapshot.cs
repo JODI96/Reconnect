@@ -146,6 +146,9 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Migrations
                             b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd();
 
+                            b1.Property<string>("Colours")
+                                .HasMaxLength(64);
+
                             b1.Property<string>("ItemId")
                                 .IsRequired();
 
