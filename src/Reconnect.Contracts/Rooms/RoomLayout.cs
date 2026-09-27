@@ -31,15 +31,97 @@ namespace Reconnect.Contracts.Rooms
             MinX < other.MaxX - margin && other.MinX < MaxX - margin && MinZ < other.MaxZ - margin && other.MinZ < MaxZ - margin;
     }
 
-    /// <summary>A room as the build rules see it: size in walking tiles, walls, cells kept free (entrance, lift landing).</summary>
+    /// <summary>
+    /// A room as the build rules see it: size in walking tiles, walls, cells kept free (entrance, lift landing) and – for
+    /// rooms that are not rectangles (tower floors) – the outline of the floor.
+    /// </summary>
     public sealed class RoomLayoutContext
     {
-        public RoomLayoutContext(int width, int depth, WallSides walls, IReadOnlyList<CellRect> reserved = null)
+        /// <summary>People keep this distance from the facade (they would stand in the glass otherwise).</summary>
+        public const float FacadeClearance = 0.3f;
+
+        private bool[,] _cellMask;
+
+        public RoomLayoutContext(int width, int depth, WallSides walls, IReadOnlyList<CellRect> reserved = null,
+            IReadOnlyList<RoomPointDto> outline = null)
         {
             Width = width;
             Depth = depth;
             Walls = walls;
             Reserved = reserved ?? Array.Empty<CellRect>();
+            Outline = outline != null && outline.Count >= 3 ? outline : null;
+        }
+
+        /// <summary>Floor outline in metres; null = the whole Width × Depth rectangle.</summary>
+        public IReadOnlyList<RoomPointDto> Outline { get; }
+
+        /// <summary>Whether a rectangle of build cells lies fully on the floor (inside the room and its outline).</summary>
+        public bool IsInside(CellRect cells)
+        {
+            if (!Cells.Contains(cells))
+            {
+                return false;
+            }
+            if (Outline == null)
+            {
+                return true;
+            }
+            var mask = CellMask;
+            for (var x = cells.X; x < cells.XMax; x++)
+            {
+                for (var z = cells.Z; z < cells.ZMax; z++)
+                {
+                    if (!mask[x, z])
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>A build cell lies fully inside the outline.</summary>
+        public bool CellInside(int x, int z) => Cells.Contains(x, z) && (Outline == null || CellMask[x, z]);
+
+        /// <summary>People can stand on this walking tile (inside the outline, not in the facade).</summary>
+        public bool TileWalkable(int x, int z)
+        {
+            if (x < 0 || z < 0 || x >= Width || z >= Depth)
+            {
+                return false;
+            }
+            if (Outline == null)
+            {
+                return true;
+            }
+            var cx = x + 0.5f;
+            var cz = z + 0.5f;
+            return RoomOutline.Contains(Outline, cx, cz) && RoomOutline.DistanceToEdge(Outline, cx, cz) >= FacadeClearance;
+        }
+
+        private bool[,] CellMask
+        {
+            get
+            {
+                if (_cellMask != null)
+                {
+                    return _cellMask;
+                }
+                var cells = Cells;
+                var mask = new bool[cells.Width, cells.Depth];
+                const float inset = 0.01f;
+                var size = BuildGrid.CellSize;
+                for (var x = 0; x < cells.Width; x++)
+                {
+                    for (var z = 0; z < cells.Depth; z++)
+                    {
+                        float x0 = x * size + inset, x1 = (x + 1) * size - inset, z0 = z * size + inset, z1 = (z + 1) * size - inset;
+                        mask[x, z] = RoomOutline.Contains(Outline, x0, z0) && RoomOutline.Contains(Outline, x1, z0)
+                                     && RoomOutline.Contains(Outline, x0, z1) && RoomOutline.Contains(Outline, x1, z1);
+                    }
+                }
+                return _cellMask = mask;
+            }
         }
 
         /// <summary>Walking tiles (metres).</summary>
@@ -161,7 +243,7 @@ namespace Reconnect.Contracts.Rooms
                     problems.Add(new LayoutProblem(i, $"„{definition.Name}“ steht nicht auf dem Raster."));
                     continue;
                 }
-                if (!room.Cells.Contains(cells))
+                if (!room.IsInside(cells))
                 {
                     problems.Add(new LayoutProblem(i, $"„{definition.Name}“ ragt aus dem Raum."));
                     continue;
@@ -212,6 +294,7 @@ namespace Reconnect.Contracts.Rooms
             if (problems.Count == 0)
             {
                 var blocked = BlockedTiles(items);
+                blocked.UnionWith(OutsideTiles(room));
                 var reachable = Reachable(room, blocked);
                 foreach (var (index, definition, cells) in placed.Where(p => p.Definition.Seats > 0))
                 {
@@ -297,6 +380,27 @@ namespace Reconnect.Contracts.Rooms
                 }
             }
             return blocked;
+        }
+
+        /// <summary>Walking tiles outside the floor outline (and right at the facade): nobody stands there.</summary>
+        public static HashSet<(int X, int Z)> OutsideTiles(RoomLayoutContext room)
+        {
+            var outside = new HashSet<(int, int)>();
+            if (room.Outline == null)
+            {
+                return outside;
+            }
+            for (var x = 0; x < room.Width; x++)
+            {
+                for (var z = 0; z < room.Depth; z++)
+                {
+                    if (!room.TileWalkable(x, z))
+                    {
+                        outside.Add((x, z));
+                    }
+                }
+            }
+            return outside;
         }
 
         /// <summary>Walking tiles in the water of pools.</summary>

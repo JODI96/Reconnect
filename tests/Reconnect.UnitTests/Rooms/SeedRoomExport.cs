@@ -26,12 +26,13 @@ public sealed class SeedRoomExport
         File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(dump));
     }
 
-    internal static List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout)> SeedRooms()
+    internal static List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout, IReadOnlyList<RoomPointDto>? Outline)> SeedRooms()
     {
-        var rooms = new List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout)>();
-        rooms.AddRange(ShowcaseRooms.Definitions().Select(r => (r.Name, r.Theme, r.Width, r.Depth, r.Layout)));
-        rooms.AddRange(PrimeTowerFloors.Floors().Select(f => (f.Name, f.Theme, f.Width, f.Depth, f.Layout)));
-        rooms.Add(("Starter", RoomThemes.Coworking, RoomProvisioning.OfficeWidth, RoomProvisioning.OfficeDepth, StarterOffice.Layout()));
+        var rooms = new List<(string Name, string Theme, int Width, int Depth, List<RoomItem> Layout, IReadOnlyList<RoomPointDto>? Outline)>();
+        rooms.AddRange(ShowcaseRooms.Definitions().Select(r => (r.Name, r.Theme, r.Width, r.Depth, r.Layout, (IReadOnlyList<RoomPointDto>?)null)));
+        rooms.AddRange(PrimeTowerFloors.Floors().Select(f => (f.Name, f.Theme, f.Width, f.Depth, f.Layout, (IReadOnlyList<RoomPointDto>?)f.Plan.Outline)));
+        var plan = TowerFurnishing.PrimeTower;
+        rooms.Add(("Starter", RoomThemes.Coworking, plan.Width, plan.Depth, StarterOffice.Layout(plan), plan.Outline));
         return rooms;
     }
 
@@ -50,12 +51,12 @@ public sealed class SeedRoomExport
             ? null
             : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, List<RoomItemDto>>>(File.ReadAllText(from));
 
-        foreach (var (name, theme, width, depth, layout) in SeedRooms())
+        foreach (var (name, theme, width, depth, layout, outline) in SeedRooms())
         {
             var items = dumped?[name] ?? layout.Select(i => i.ToDto()).ToList();
             var log = new List<string>();
-            var fixedItems = RoomLayoutFixer.Legalize(theme, width, depth, items, log);
-            var problems = RoomLayout.Validate(RoomZones.ContextFor(theme, width, depth, fixedItems), fixedItems);
+            var fixedItems = RoomLayoutFixer.Legalize(theme, width, depth, items, log, outline);
+            var problems = RoomLayout.Validate(RoomZones.ContextFor(theme, width, depth, fixedItems, outline), fixedItems);
 
             var code = new StringBuilder();
             foreach (var item in fixedItems)
@@ -73,7 +74,7 @@ public sealed class SeedRoomExport
                     $"        Cell(\"{item.ItemId}\", {cells.X}, {cells.Z}, {item.Rotation:0}),   // {definition.Name}");
             }
             var file = string.Concat(name.Where(char.IsLetterOrDigit));
-            File.WriteAllText(Path.Combine(folder, file + ".map.txt"), Map(RoomZones.ContextFor(theme, width, depth, fixedItems), fixedItems));
+            File.WriteAllText(Path.Combine(folder, file + ".map.txt"), Map(RoomZones.ContextFor(theme, width, depth, fixedItems, outline), fixedItems));
             File.WriteAllText(Path.Combine(folder, file + ".cs.txt"), code.ToString());
             File.WriteAllLines(Path.Combine(folder, file + ".log"),
                 log.Concat(problems.Select(p => $"PROBLEM #{p.Index}: {p.Message}"))
@@ -89,7 +90,7 @@ public sealed class SeedRoomExport
         for (var z = 0; z < room.Cells.Depth; z++)
         for (var x = 0; x < room.Cells.Width; x++)
         {
-            grid[z, x] = room.Reserved.Any(r => r.Contains(x, z)) ? '#' : '.';
+            grid[z, x] = !room.CellInside(x, z) ? ' ' : room.Reserved.Any(r => r.Contains(x, z)) ? '#' : '.';
         }
         var legend = new StringBuilder();
         for (var i = 0; i < items.Count; i++)

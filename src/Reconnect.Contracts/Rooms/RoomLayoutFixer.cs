@@ -16,7 +16,7 @@ namespace Reconnect.Contracts.Rooms
         public const int MaxShift = 12;
 
         public static List<RoomItemDto> Legalize(string theme, int width, int depth, IReadOnlyList<RoomItemDto> items,
-            ICollection<string> log = null)
+            ICollection<string> log = null, IReadOnlyList<RoomPointDto> outline = null)
         {
             var result = new RoomItemDto[items.Count];
             var placed = new List<(ItemDefinition Definition, CellRect Cells)>();
@@ -25,15 +25,15 @@ namespace Reconnect.Contracts.Rooms
             // Lifts first (the space in front of their doors stays free), then big things (in layout order), then
             // what stands on them.
             var order = Enumerable.Range(0, items.Count)
-                .OrderBy(i => items[i].ItemId == RoomZones.ElevatorItem ? 0 : ItemDefinitions.Find(items[i].ItemId)?.Kind == ItemKind.Decor ? 2 : 1)
+                .OrderBy(i => RoomZones.IsLift(items[i].ItemId) ? 0 : ItemDefinitions.Find(items[i].ItemId)?.Kind == ItemKind.Decor ? 2 : 1)
                 .ToList();
-            var room = RoomZones.ContextFor(theme, width, depth, new RoomItemDto[0]);
+            var room = RoomZones.ContextFor(theme, width, depth, new RoomItemDto[0], outline);
             var liftsPlaced = false;
             foreach (var index in order)
             {
-                if (!liftsPlaced && items[index].ItemId != RoomZones.ElevatorItem)
+                if (!liftsPlaced && !RoomZones.IsLift(items[index].ItemId))
                 {
-                    room = RoomZones.ContextFor(theme, width, depth, result.Where(r => r != null).ToList());
+                    room = RoomZones.ContextFor(theme, width, depth, result.Where(r => r != null).ToList(), outline);
                     liftsPlaced = true;
                 }
                 var item = items[index];
@@ -130,7 +130,7 @@ namespace Reconnect.Contracts.Rooms
                     : new CellRect(chair.X + fx * gap, side, chair.Width, chair.Depth);
                 foreach (var candidate in new[] { Moved(lateral), Moved(Lo(chair)) })
                 {
-                    if (room.Cells.Contains(candidate) && !room.Reserved.Any(r => r.Overlaps(candidate)) && !others.Any(o => o.Cells.Overlaps(candidate)))
+                    if (room.IsInside(candidate) && !room.Reserved.Any(r => r.Overlaps(candidate)) && !others.Any(o => o.Cells.Overlaps(candidate)))
                     {
                         var (x, z) = RoomLayout.Centre(candidate);
                         items[i] = new RoomItemDto(item.ItemId, new Vector3Dto(x, 0f, z), item.Rotation);
@@ -150,7 +150,7 @@ namespace Reconnect.Contracts.Rooms
             }
             foreach (var cells in Around(wanted, MaxShift))
             {
-                if (!room.Cells.Contains(cells))
+                if (!room.IsInside(cells))
                 {
                     continue;
                 }

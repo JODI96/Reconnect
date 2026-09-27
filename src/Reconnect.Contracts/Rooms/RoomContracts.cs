@@ -33,7 +33,9 @@ namespace Reconnect.Contracts.Rooms
         int Width,
         int Depth,
         int? Floor = null,
-        int Capacity = RoomGrid.MaxPlayers);
+        int Capacity = RoomGrid.MaxPlayers,
+        IReadOnlyList<RoomPointDto>? Outline = null,
+        GeoAnchorDto? Anchor = null);
 
     /// <param name="Theme">Optional: cozy (default), rooftop, cafe, atelier, opera, library, skylounge, lobby, coworking, conference.</param>
     public sealed record CreateRoomRequest(Guid BuildingId, string Name, bool IsPublic, string? Theme = null);

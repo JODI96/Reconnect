@@ -37,3 +37,10 @@ internal sealed class Position3
     public float Y { get; init; }
     public float Z { get; init; }
 }
+
+/// <summary>A corner of a room's floor outline (metres).</summary>
+internal sealed class FloorPoint
+{
+    public float X { get; init; }
+    public float Z { get; init; }
+}

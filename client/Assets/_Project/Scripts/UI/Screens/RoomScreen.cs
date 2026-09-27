@@ -225,7 +225,16 @@ namespace Reconnect.Client.UI.Screens
             {
                 _city.ShowAsBackdrop();
                 var tower = snapshot.Room.Floor != null ? await _city.GetTowerAsync(snapshot.Room.BuildingId) : null;
-                if (tower != null)
+                if (tower != null && snapshot.Room.Anchor is { } geo)
+                {
+                    // The storey has the real outline: its corner (0, 0) sits exactly where the map puts it.
+                    var corner = _city.ToUnityAtOrigin(geo.Latitude, geo.Longitude);
+                    corner.y = tower.FloorAnchor(snapshot.Room.Floor.Value).y;
+                    yaw = geo.Yaw;
+                    anchor = corner + Quaternion.Euler(0f, yaw, 0f) * new Vector3(snapshot.Width / 2f, 0f, snapshot.Depth / 2f);
+                    _city.ShowTowerCutaway(tower, snapshot.Room.Floor.Value);
+                }
+                else if (tower != null)
                 {
                     anchor = tower.RoomAnchor(snapshot.Room.Floor.Value, snapshot.Width, snapshot.Depth);
                     yaw = tower.Yaw;

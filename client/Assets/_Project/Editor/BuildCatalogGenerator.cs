@@ -115,7 +115,7 @@ namespace Reconnect.Client.Editor
             ["ph-bronze_ray_statue"] = "Bronzeskulptur", ["ph-desk_lamp_arm_01"] = "Schreibtischlampe", ["ph-throw_pillows_01"] = "Kissen",
             ["ph-standing_picture_frame_01"] = "Bilderrahmen", ["ph-hanging_picture_frame_01"] = "Gemälde hoch",
             ["ph-hanging_picture_frame_02"] = "Gemälde quer", ["ph-hanging_picture_frame_03"] = "Kleines Bild",
-            ["custom-skybar"] = "Bar", ["custom-backbar"] = "Rückbuffet", ["custom-reception"] = "Empfang", ["custom-elevator"] = "Lift",
+            ["custom-skybar"] = "Bar", ["custom-backbar"] = "Rückbuffet", ["custom-reception"] = "Empfang", ["custom-elevator"] = "Lift", ["custom-core"] = "Gebäudekern",
             ["custom-turnstiles"] = "Drehkreuze", ["custom-queuelane"] = "Absperrung", ["custom-screenwall"] = "Videowand",
             ["custom-hologram"] = "Hologramm", ["custom-djbooth"] = "DJ-Pult", ["custom-telescope"] = "Fernrohr",
             ["custom-divider"] = "Raumteiler", ["custom-pendant"] = "Hängeleuchten", ["custom-ledstrip"] = "LED-Band",

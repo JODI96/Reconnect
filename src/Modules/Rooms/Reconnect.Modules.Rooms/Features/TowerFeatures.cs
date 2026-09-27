@@ -1,3 +1,5 @@
+using Reconnect.Modules.Rooms.Infrastructure.Seeding;
+using Reconnect.Modules.City.Public;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -45,17 +47,20 @@ internal static class TowerEndpoints
     }
 }
 
-internal sealed class RoomProvisioning(RoomsDbContext db) : IRoomProvisioning
+internal sealed class RoomProvisioning(RoomsDbContext db, ICityDirectory city) : IRoomProvisioning
 {
-    public const int OfficeWidth = 14;
-    public const int OfficeDepth = 10;
+    /// <summary>People in a whole office storey at once.</summary>
+    public const int OfficeCapacity = 60;
 
+    /// <summary>A bought office is a whole storey with the real floor plan of the building.</summary>
     public async Task<Guid> CreateOfficeAsync(Guid ownerId, Guid buildingId, int floor, string name, int capacity, CancellationToken ct)
     {
+        var footprint = await city.GetFootprintAsync(buildingId, ct);
+        var plan = footprint is { Count: >= 3 } ? TowerFloorPlan.FromFootprint(footprint) : TowerFurnishing.PrimeTower;
         var room = Room.Create(ownerId, buildingId, name, isPublic: false, RoomThemes.Coworking);
         room.PlaceOnFloor(floor, capacity);
-        room.Resize(OfficeWidth, OfficeDepth);
-        room.ReplaceLayout(StarterOffice.Layout());
+        room.ShapeAs(plan);
+        room.ReplaceLayout(StarterOffice.Layout(plan));
         db.Rooms.Add(room);
         await db.SaveChangesAsync(ct);
         return room.Id;

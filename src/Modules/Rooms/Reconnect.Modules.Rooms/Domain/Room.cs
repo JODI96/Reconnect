@@ -7,7 +7,7 @@ internal sealed class Room : IAuditable
     public const int NameMaxLength = 80;
     public const int MaxItems = 800;
     public const int MinSize = 6;
-    public const int MaxSize = 40;
+    public const int MaxSize = 80;
     public const int DefaultSize = 10;
     public const int MinCapacity = 1;
     public const int MaxCapacity = 200;
@@ -35,6 +35,16 @@ internal sealed class Room : IAuditable
 
     /// <summary>Furniture layout, stored as jsonb.</summary>
     public List<RoomItem> Layout { get; private set; } = [];
+
+    /// <summary>Floor outline in room metres for rooms that are not rectangles (tower floors); empty = Width × Depth.</summary>
+    public List<FloorPoint> Outline { get; private set; } = [];
+
+    /// <summary>Where corner (0, 0) lies on the globe and how the room is turned (tower floors); null = free-standing room.</summary>
+    public double? AnchorLatitude { get; private set; }
+    public double? AnchorLongitude { get; private set; }
+    public float? AnchorYaw { get; private set; }
+
+    public bool HasOutline => Outline.Count >= 3;
 
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
@@ -80,6 +90,16 @@ internal sealed class Room : IAuditable
         }
         Width = width;
         Depth = depth;
+    }
+
+    /// <summary>Gives the room the shape of a real tower storey (outline, size, position on the globe).</summary>
+    public void ShapeAs(TowerFloorPlan plan)
+    {
+        Resize(plan.Width, plan.Depth);
+        Outline = plan.Outline.Select(p => new FloorPoint { X = p.X, Z = p.Z }).ToList();
+        AnchorLatitude = plan.Anchor.Latitude;
+        AnchorLongitude = plan.Anchor.Longitude;
+        AnchorYaw = plan.Anchor.Yaw;
     }
 
     /// <summary>A room is visible to its owner, and to everyone else only if it is public.</summary>

@@ -36,7 +36,16 @@ internal static class RoomMappings
     public static RoomDto ToDto(this Room room, string ownerDisplayName) =>
         new(room.Id, room.Name, room.BuildingId, room.OwnerId, ownerDisplayName, room.IsPublic,
             room.Layout.Select(ToDto).ToList(), room.CreatedAt, room.UpdatedAt, room.Theme, room.Width, room.Depth,
-            room.Floor, room.Capacity);
+            room.Floor, room.Capacity, room.OutlineDto(),
+            room.AnchorLatitude is { } lat && room.AnchorLongitude is { } lon ? new GeoAnchorDto(lat, lon, room.AnchorYaw ?? 0f) : null);
+
+    /// <summary>The floor outline for the build rules and the client (null for rectangular rooms).</summary>
+    public static IReadOnlyList<RoomPointDto>? OutlineDto(this Room room) =>
+        room.HasOutline ? room.Outline.Select(p => new RoomPointDto(p.X, p.Z)).ToList() : null;
+
+    /// <summary>The build rules of this room with the given layout.</summary>
+    public static RoomLayoutContext BuildContext(this Room room, IReadOnlyList<RoomItemDto> items) =>
+        RoomZones.ContextFor(room.Theme, room.Width, room.Depth, items, room.OutlineDto());
 
     public static RoomItemDto ToDto(this RoomItem item) =>
         new(item.ItemId, new Vector3Dto(item.Position.X, item.Position.Y, item.Position.Z), item.Rotation);

@@ -29,6 +29,10 @@ internal sealed class RoomsDbContext(DbContextOptions<RoomsDbContext> options) :
                 item.OwnsOne(i => i.Position);
             });
 
+            // Outline of tower floors as jsonb: [{ X, Z }, ...]
+            room.OwnsMany(r => r.Outline, point => point.ToJson());
+            room.Ignore(r => r.HasOutline);
+
             // OwnerId / BuildingId point into other modules: no foreign keys across module boundaries.
             room.HasIndex(r => r.OwnerId);
             room.HasIndex(r => new { r.BuildingId, r.IsPublic });

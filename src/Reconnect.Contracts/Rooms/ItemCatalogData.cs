@@ -152,6 +152,7 @@ namespace Reconnect.Contracts.Rooms
             new ItemDefinition("custom-reception", "Empfang", "Spezial", ItemKind.Floor, 17, 5, 1.22f, 1.15f, 0f, 4.3f, 1.12f, 4.3f, 0.98f),
             new ItemDefinition("custom-telescope", "Fernrohr", "Spezial", ItemKind.Floor, 2, 2, 1.41f, 0f, 0f, 0.45f, 0.6f, 0f, 0f),
             new ItemDefinition("custom-firepit", "Feuerstelle", "Spezial", ItemKind.Floor, 5, 5, 0.9f, 0f, 0f, 1.3f, 1.3f, 0f, 0f),
+            new ItemDefinition("custom-core", "Gebäudekern", "Spezial", ItemKind.Floor, 48, 25, 3.51f, 0f, 0f, 11.86f, 6.24f, 0f, 0f),
             new ItemDefinition("custom-hologram", "Hologramm", "Spezial", ItemKind.Floor, 4, 4, 2.58f, 0f, 0f, 0.93f, 0.93f, 0f, 0f),
             new ItemDefinition("custom-elevator", "Lift", "Spezial", ItemKind.Floor, 20, 11, 3.51f, 0f, 0f, 4.86f, 2.65f, 0f, 0f),
             new ItemDefinition("custom-openkitchen", "Offene Küche", "Spezial", ItemKind.Floor, 16, 4, 2.78f, 0.93f, 0f, 4f, 1.02f, 0.25f, 0.7f),

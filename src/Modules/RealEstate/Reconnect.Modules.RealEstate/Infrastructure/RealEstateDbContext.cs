@@ -39,7 +39,13 @@ internal static class OfficeSeeder
     {
         var db = services.GetRequiredService<RealEstateDbContext>();
         var existing = await db.Offices.Where(o => o.BuildingId == ZurichBuildings.PrimeTowerId).ToDictionaryAsync(o => o.Id, ct);
-        foreach (var (id, floor, name, price, area) in PrimeTowerOffices.Offer())
+        var offer = PrimeTowerOffices.Offer().ToList();
+        // Units that are no longer offered (half storeys of earlier versions) go away unless someone owns them.
+        foreach (var gone in existing.Values.Where(u => u.IsAvailable && offer.All(o => o.Id != u.Id)))
+        {
+            db.Offices.Remove(gone);
+        }
+        foreach (var (id, floor, name, price, area) in offer)
         {
             if (existing.TryGetValue(id, out var unit))
             {

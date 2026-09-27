@@ -399,6 +399,8 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: f0628ef71e787a74d9c9919eeb108bd0, type: 3}
   - itemId: custom-elevator
     icon: {fileID: 2800000, guid: 542800317606afc40910dce39c6197a0, type: 3}
+  - itemId: custom-core
+    icon: {fileID: 2800000, guid: b1092124310632a4dbd32c0eb2f53fc7, type: 3}
   - itemId: custom-turnstiles
     icon: {fileID: 2800000, guid: ee84082dca3983149aea3cb77eea3808, type: 3}
   - itemId: custom-reception

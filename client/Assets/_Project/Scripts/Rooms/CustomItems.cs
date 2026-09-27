@@ -16,6 +16,11 @@ namespace Reconnect.Client.Rooms
         /// <summary>Depth of the lift core; the doors are on its front (-Z) side.</summary>
         public const float ElevatorDepth = 2.4f;
 
+        /// <summary>The concrete core of a tower floor (lift doors on both long sides).</summary>
+        public const string CoreItem = "custom-core";
+        public const float CoreWidth = 11.8f;
+        public const float CoreDepth = 5.8f;
+
         /// <summary>Pools are sunk into the floor: basin depth and the water surface (room coordinates, floor = 0).</summary>
         public const float PoolDepth = 2f;
         public const float WaterLevel = -0.18f;
@@ -46,7 +51,7 @@ namespace Reconnect.Client.Rooms
         {
             "custom-lounger", "custom-parasol", "custom-firepit", "custom-planter", "custom-column", "custom-easel",
             "custom-lightstring", "custom-skybar", "custom-backbar", "custom-openkitchen", "custom-hologram", "custom-djbooth",
-            "custom-telescope", "custom-divider", "custom-pendant", "custom-ledstrip", ElevatorItem, "custom-turnstiles",
+            "custom-telescope", "custom-divider", "custom-pendant", "custom-ledstrip", ElevatorItem, CoreItem, "custom-turnstiles",
             "custom-reception", "custom-screenwall", "custom-queuelane", "custom-rug", "custom-ruground",
         };
 
@@ -93,6 +98,7 @@ namespace Reconnect.Client.Rooms
                 case "custom-pendant": Pendant(pivot); blocksTiles = false; return true;
                 case "custom-ledstrip": LedStrip(pivot); blocksTiles = false; return true;
                 case ElevatorItem: Elevator(pivot); return true;
+                case CoreItem: Core(pivot); return true;
                 case "custom-turnstiles": Turnstiles(pivot); blocksTiles = false; return true;
                 case "custom-reception": Reception(pivot); return true;
                 case "custom-screenwall": ScreenWall(pivot); return true;
@@ -469,40 +475,78 @@ namespace Reconnect.Client.Rooms
         private void Elevator(Transform pivot)
         {
             const float width = 4.8f, depth = ElevatorDepth, height = 3.4f;
-            const float doorWidth = 1.1f, doorHeight = 2.3f, front = -depth / 2f;
             var stone = Lit(Color.Lerp(_theme.Wall, new Color(0.08f, 0.1f, 0.09f), 0.55f), 0.7f);
+            var darkSteel = Lit(new Color(0.22f, 0.23f, 0.25f), 0.75f);
+            Box(pivot, stone, new Vector3(0f, height / 2f, 0f), new Vector3(width, height, depth));
+            Box(pivot, darkSteel, new Vector3(0f, height + 0.03f, 0f), new Vector3(width + 0.06f, 0.06f, depth + 0.06f));   // top edge
+            LiftDoors(pivot, width, depth, new[] { -1.2f, 1.2f });
+        }
+
+        /// <summary>
+        /// Concrete core of a tower floor (lifts, stairs, shafts): board-marked concrete, lift doors on both long sides,
+        /// a brass band and the floor number. Part of the building – the build editor can't move it.
+        /// </summary>
+        private void Core(Transform pivot)
+        {
+            const float width = CoreWidth, depth = CoreDepth, height = 3.4f;
+            var concrete = Lit(new Color(0.62f, 0.61f, 0.58f), 0.18f);
+            var darkSteel = Lit(new Color(0.22f, 0.23f, 0.25f), 0.75f);
+            var brass = Lit(new Color(0.78f, 0.62f, 0.34f), 0.8f);
+            Box(pivot, concrete, new Vector3(0f, height / 2f, 0f), new Vector3(width, height, depth));
+            Box(pivot, darkSteel, new Vector3(0f, height + 0.03f, 0f), new Vector3(width + 0.06f, 0.06f, depth + 0.06f));
+            // Board marks of the formwork: slightly darker bands every 60 cm.
+            var band = Lit(new Color(0.55f, 0.54f, 0.51f), 0.12f);
+            for (var y = 0.6f; y < height - 0.1f; y += 0.6f)
+            {
+                Box(pivot, band, new Vector3(0f, y, 0f), new Vector3(width + 0.01f, 0.02f, depth + 0.01f));
+            }
+            Box(pivot, brass, new Vector3(0f, 2.95f, 0f), new Vector3(width + 0.02f, 0.05f, depth + 0.02f));
+            foreach (var side in new[] { 0f, 180f })
+            {
+                var face = new GameObject("Side").transform;
+                face.SetParent(pivot, false);
+                face.localRotation = Quaternion.Euler(0f, side, 0f);
+                LiftDoors(face, width, depth, new[] { -2.6f, -1.1f, 1.1f, 2.6f });
+            }
+        }
+
+        /// <summary>Steel lift portals with door leaves, floor indicator and call buttons on the item's front (-Z) face.</summary>
+        private void LiftDoors(Transform face, float width, float depth, float[] doorCentres)
+        {
+            const float doorWidth = 1.1f, doorHeight = 2.3f;
+            var front = -depth / 2f;
             var steel = Lit(new Color(0.74f, 0.76f, 0.8f), 0.85f);
             var darkSteel = Lit(new Color(0.22f, 0.23f, 0.25f), 0.75f);
             var seam = Lit(new Color(0.08f, 0.08f, 0.09f), 0.4f);
+            var indicator = Lit(new Color(0.02f, 0.02f, 0.03f), 0.95f);
+            var arrow = Glow(_theme.WallTrim, 2.2f);
+            var digits = Glow(new Color(1f, 0.95f, 0.85f), 1.6f);
 
-            Box(pivot, stone, new Vector3(0f, height / 2f, 0f), new Vector3(width, height, depth));
-            Box(pivot, darkSteel, new Vector3(0f, height + 0.03f, 0f), new Vector3(width + 0.06f, 0.06f, depth + 0.06f));   // top edge
-            Box(pivot, darkSteel, new Vector3(0f, 0.05f, front - 0.01f), new Vector3(width, 0.1f, 0.02f));                  // skirting
-
-            foreach (var x in new[] { -1.2f, 1.2f })
+            Box(face, darkSteel, new Vector3(0f, 0.05f, front - 0.01f), new Vector3(width, 0.1f, 0.02f));   // skirting
+            foreach (var x in doorCentres)
             {
-                // Portal: steel frame around the doors, set slightly in front of the stone.
-                Box(pivot, steel, new Vector3(x - doorWidth / 2f - 0.06f, doorHeight / 2f, front - 0.03f), new Vector3(0.1f, doorHeight + 0.1f, 0.06f));
-                Box(pivot, steel, new Vector3(x + doorWidth / 2f + 0.06f, doorHeight / 2f, front - 0.03f), new Vector3(0.1f, doorHeight + 0.1f, 0.06f));
-                Box(pivot, steel, new Vector3(x, doorHeight + 0.06f, front - 0.03f), new Vector3(doorWidth + 0.22f, 0.12f, 0.06f));
-                Box(pivot, darkSteel, new Vector3(x, 0.01f, front - 0.12f), new Vector3(doorWidth + 0.2f, 0.02f, 0.2f));    // sill
+                // Portal: steel frame around the doors, set slightly in front of the wall.
+                Box(face, steel, new Vector3(x - doorWidth / 2f - 0.06f, doorHeight / 2f, front - 0.03f), new Vector3(0.1f, doorHeight + 0.1f, 0.06f));
+                Box(face, steel, new Vector3(x + doorWidth / 2f + 0.06f, doorHeight / 2f, front - 0.03f), new Vector3(0.1f, doorHeight + 0.1f, 0.06f));
+                Box(face, steel, new Vector3(x, doorHeight + 0.06f, front - 0.03f), new Vector3(doorWidth + 0.22f, 0.12f, 0.06f));
+                Box(face, darkSteel, new Vector3(x, 0.01f, front - 0.12f), new Vector3(doorWidth + 0.2f, 0.02f, 0.2f));    // sill
 
                 // Two door leaves with the seam in the middle.
-                Box(pivot, steel, new Vector3(x - doorWidth / 4f, doorHeight / 2f, front - 0.015f), new Vector3(doorWidth / 2f - 0.01f, doorHeight, 0.03f));
-                Box(pivot, steel, new Vector3(x + doorWidth / 4f, doorHeight / 2f, front - 0.015f), new Vector3(doorWidth / 2f - 0.01f, doorHeight, 0.03f));
-                Box(pivot, seam, new Vector3(x, doorHeight / 2f, front - 0.032f), new Vector3(0.012f, doorHeight, 0.005f));
+                Box(face, steel, new Vector3(x - doorWidth / 4f, doorHeight / 2f, front - 0.015f), new Vector3(doorWidth / 2f - 0.01f, doorHeight, 0.03f));
+                Box(face, steel, new Vector3(x + doorWidth / 4f, doorHeight / 2f, front - 0.015f), new Vector3(doorWidth / 2f - 0.01f, doorHeight, 0.03f));
+                Box(face, seam, new Vector3(x, doorHeight / 2f, front - 0.032f), new Vector3(0.012f, doorHeight, 0.005f));
 
                 // Floor indicator above the door: black glass with a glowing arrow and digits.
-                Box(pivot, Lit(new Color(0.02f, 0.02f, 0.03f), 0.95f), new Vector3(x, doorHeight + 0.38f, front - 0.02f), new Vector3(0.62f, 0.22f, 0.02f));
-                Box(pivot, Glow(_theme.WallTrim, 2.2f), new Vector3(x - 0.16f, doorHeight + 0.38f, front - 0.032f), new Vector3(0.08f, 0.1f, 0.005f));
-                Box(pivot, Glow(new Color(1f, 0.95f, 0.85f), 1.6f), new Vector3(x + 0.08f, doorHeight + 0.38f, front - 0.032f), new Vector3(0.26f, 0.09f, 0.005f));
+                Box(face, indicator, new Vector3(x, doorHeight + 0.38f, front - 0.02f), new Vector3(0.62f, 0.22f, 0.02f));
+                Box(face, arrow, new Vector3(x - 0.16f, doorHeight + 0.38f, front - 0.032f), new Vector3(0.08f, 0.1f, 0.005f));
+                Box(face, digits, new Vector3(x + 0.08f, doorHeight + 0.38f, front - 0.032f), new Vector3(0.26f, 0.09f, 0.005f));
             }
 
-            // Call buttons between the doors.
-            Box(pivot, steel, new Vector3(0f, 1.15f, front - 0.02f), new Vector3(0.16f, 0.36f, 0.02f));
-            Sphere(pivot, Glow(_theme.WallTrim, 2.5f), new Vector3(0f, 1.23f, front - 0.035f), new Vector3(0.05f, 0.05f, 0.02f));
-            Sphere(pivot, Glow(new Color(1f, 0.95f, 0.85f), 1.5f), new Vector3(0f, 1.07f, front - 0.035f), new Vector3(0.05f, 0.05f, 0.02f));
-            AddLight(pivot, new Vector3(0f, 2.9f, front - 0.8f), new Color(1f, 0.93f, 0.82f), 1.1f, 3.5f);
+            // Call buttons between the middle doors.
+            Box(face, steel, new Vector3(0f, 1.15f, front - 0.02f), new Vector3(0.16f, 0.36f, 0.02f));
+            Sphere(face, Glow(_theme.WallTrim, 2.5f), new Vector3(0f, 1.23f, front - 0.035f), new Vector3(0.05f, 0.05f, 0.02f));
+            Sphere(face, Glow(new Color(1f, 0.95f, 0.85f), 1.5f), new Vector3(0f, 1.07f, front - 0.035f), new Vector3(0.05f, 0.05f, 0.02f));
+            AddLight(face, new Vector3(0f, 2.9f, front - 0.8f), new Color(1f, 0.93f, 0.82f), 1.1f, 3.5f);
         }
 
         /// <summary>

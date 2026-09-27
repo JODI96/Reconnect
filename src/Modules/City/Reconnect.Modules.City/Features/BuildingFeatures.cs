@@ -66,4 +66,10 @@ internal sealed class CityDirectory(CityDbContext db) : ICityDirectory
 {
     public Task<bool> BuildingExistsAsync(Guid buildingId, CancellationToken ct) =>
         db.Buildings.AnyAsync(b => b.Id == buildingId, ct);
+
+    public async Task<IReadOnlyList<(double Latitude, double Longitude)>?> GetFootprintAsync(Guid buildingId, CancellationToken ct)
+    {
+        var footprint = await db.Buildings.Where(b => b.Id == buildingId).Select(b => b.Footprint).SingleOrDefaultAsync(ct);
+        return footprint?.ExteriorRing.Coordinates.SkipLast(1).Select(c => (c.Y, c.X)).ToList();
+    }
 }

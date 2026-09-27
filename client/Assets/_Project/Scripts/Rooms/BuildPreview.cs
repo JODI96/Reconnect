@@ -11,7 +11,8 @@ namespace Reconnect.Client.Rooms
     /// </summary>
     public sealed class BuildPreview
     {
-        private const int PixelsPerCell = 8;
+        private const int MaxPixelsPerCell = 8;
+        private const int MaxTextureSize = 1600;
 
         private readonly RoomView _room;
         private readonly Material _grid;
@@ -36,7 +37,9 @@ namespace Reconnect.Client.Rooms
         {
             Hide();
             var cells = context.Cells;
-            var texture = new Texture2D(cells.Width * PixelsPerCell, cells.Depth * PixelsPerCell, TextureFormat.RGBA32, false)
+            // Big tower storeys: fewer pixels per cell so the texture stays small on phones.
+            var pixelsPerCell = Mathf.Clamp(MaxTextureSize / Mathf.Max(cells.Width, cells.Depth), 3, MaxPixelsPerCell);
+            var texture = new Texture2D(cells.Width * pixelsPerCell, cells.Depth * pixelsPerCell, TextureFormat.RGBA32, false)
             {
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp,
@@ -52,16 +55,21 @@ namespace Reconnect.Client.Rooms
             {
                 for (var x = 0; x < texture.width; x++)
                 {
-                    var cellX = x / PixelsPerCell;
-                    var cellZ = y / PixelsPerCell;
-                    var edgeX = x % PixelsPerCell == 0 || x == texture.width - 1;
-                    var edgeZ = y % PixelsPerCell == 0 || y == texture.height - 1;
+                    var cellX = x / pixelsPerCell;
+                    var cellZ = y / pixelsPerCell;
+                    var edgeX = x % pixelsPerCell == 0 || x == texture.width - 1;
+                    var edgeZ = y % pixelsPerCell == 0 || y == texture.height - 1;
                     // Metre lines two pixels wide.
-                    var boldX = (x + 1) % (PixelsPerCell * BuildGrid.CellsPerTile) == 0;
-                    var boldZ = (y + 1) % (PixelsPerCell * BuildGrid.CellsPerTile) == 0;
+                    var boldX = (x + 1) % (pixelsPerCell * BuildGrid.CellsPerTile) == 0;
+                    var boldZ = (y + 1) % (pixelsPerCell * BuildGrid.CellsPerTile) == 0;
                     var tileEdge = (edgeX && cellX % BuildGrid.CellsPerTile == 0) || (edgeZ && cellZ % BuildGrid.CellsPerTile == 0);
                     var halfEdge = (edgeX && cellX % (BuildGrid.CellsPerTile / 2) == 0) || (edgeZ && cellZ % (BuildGrid.CellsPerTile / 2) == 0);
                     Color32 colour = default;
+                    if (!context.CellInside(cellX, cellZ))
+                    {
+                        pixels[y * texture.width + x] = default;   // outside the outline: no grid
+                        continue;
+                    }
                     foreach (var zone in context.Reserved)
                     {
                         if (zone.Contains(cellX, cellZ))

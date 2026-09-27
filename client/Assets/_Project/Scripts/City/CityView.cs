@@ -286,6 +286,9 @@ namespace Reconnect.Client.City
         }
 
         /// <summary>WGS84 → Unity world position (metres, X east, Y up, Z north at the origin).</summary>
+        /// <summary>A place on the globe at the height of the city origin (e.g. a room's corner; its height comes from elsewhere).</summary>
+        public Vector3 ToUnityAtOrigin(double latitude, double longitude) => ToUnity(latitude, longitude, _settings.originHeight);
+
         public Vector3 ToUnity(double latitude, double longitude, double ellipsoidHeight)
         {
             var ecef = georeference.ellipsoid.LongitudeLatitudeHeightToCenteredFixed(new double3(longitude, latitude, ellipsoidHeight));

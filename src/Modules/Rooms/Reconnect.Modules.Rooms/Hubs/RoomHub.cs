@@ -225,6 +225,7 @@ internal sealed class RoomHub(
         var others = (await presence.GetPlayersAsync(room.Id)).Where(p => p.UserId != userId).ToList();
         var displayName = await profiles.GetDisplayNameAsync(userId, ct) ?? throw new HubException("Profile not found.");
         var blocked = RoomLayout.BlockedTiles(room.Layout);
+        blocked.UnionWith(RoomLayout.OutsideTiles(RoomZones.ContextFor(room.Theme, room.Width, room.Depth, room.Layout, room.Outline)));
         var (x, z) = FindFreeTile(others, blocked, room.Width, room.Depth, byElevator ? ElevatorLanding(room) : null);
         var me = new PresenceEntry(room.Id, userId, connectionId, displayName, x, z, room.Width, room.Depth);
 
@@ -341,8 +342,13 @@ internal sealed class RoomHub(
     /// <summary>Tile in front of the lift bank (where the doors open), if the room has one.</summary>
     private static (int X, int Z)? ElevatorLanding(RoomDto room)
     {
-        var lift = room.Layout.FirstOrDefault(i => i.ItemId == RoomZones.ElevatorItem);
-        return lift is null ? null : RoomZones.ElevatorLanding(lift);
+        var lift = room.Layout.FirstOrDefault(i => RoomZones.IsLift(i.ItemId));
+        if (lift is null)
+        {
+            return null;
+        }
+        var (x, z, _, _) = RoomZones.Landings(lift).First();
+        return (x, z);
     }
 
     private const string TicTacToeId = "tictactoe";

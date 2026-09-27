@@ -74,7 +74,7 @@ namespace Reconnect.Client.UI.Screens
         public void Open(string theme)
         {
             _original = _room.Layout;
-            _editor = new BuildEditor(theme, _room.Width, _room.Depth, _room.Layout);
+            _editor = new BuildEditor(theme, _room.Width, _room.Depth, _room.Layout, _room.Outline);
             _editor.LayoutChanged += () =>
             {
                 _room.ApplyLayout(_editor.Items);
@@ -230,7 +230,7 @@ namespace Reconnect.Client.UI.Screens
             }
             _items.Clear();
             var definitions = ItemDefinitions.All
-                .Where(d => d.Category == category && (_isAdmin || d.Id != RoomZones.ElevatorItem))
+                .Where(d => d.Category == category && !RoomZones.IsFixed(d.Id) && (_isAdmin || d.Id != RoomZones.ElevatorItem))
                 .OrderBy(d => d.Name, StringComparer.CurrentCulture);
             foreach (var definition in definitions)
             {

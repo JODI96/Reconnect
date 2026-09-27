@@ -16,22 +16,25 @@ namespace Reconnect.Client.Rooms
         private readonly string _theme;
         private readonly int _width;
         private readonly int _depth;
+        private readonly IReadOnlyList<RoomPointDto> _outline;
         private readonly Stack<List<RoomItemDto>> _undo = new();
         private List<RoomItemDto> _items;
         private List<RoomItemDto> _beforeSelection;
         private readonly List<(float Dx, float Dz, RoomItemDto Item)> _carried = new();
         private bool _selectionIsNew;
 
-        public BuildEditor(string theme, int width, int depth, IReadOnlyList<RoomItemDto> layout)
+        /// <param name="outline">Floor outline of tower storeys (null = rectangle).</param>
+        public BuildEditor(string theme, int width, int depth, IReadOnlyList<RoomItemDto> layout, IReadOnlyList<RoomPointDto> outline = null)
         {
             _theme = theme;
             _width = width;
             _depth = depth;
+            _outline = outline;
             _items = (layout ?? Array.Empty<RoomItemDto>()).ToList();
             if (RoomLayout.Validate(Context(_items), _items).Count > 0)
             {
                 // Saved before the build grid existed: move everything to the nearest legal place.
-                _items = RoomLayoutFixer.Legalize(theme, width, depth, _items);
+                _items = RoomLayoutFixer.Legalize(theme, width, depth, _items, outline: outline);
                 Notice = "Der Raum wurde aufs Bauraster gesetzt – „Speichern“ übernimmt es.";
                 IsDirty = true;
             }
@@ -78,7 +81,7 @@ namespace Reconnect.Client.Rooms
         /// <summary>The item in hand moved, turned, appeared or went away.</summary>
         public event Action SelectionChanged;
 
-        public RoomLayoutContext Context(IReadOnlyList<RoomItemDto> items) => RoomZones.ContextFor(_theme, _width, _depth, items);
+        public RoomLayoutContext Context(IReadOnlyList<RoomItemDto> items) => RoomZones.ContextFor(_theme, _width, _depth, items, _outline);
 
         /// <summary>Takes a new item from the catalog, standing at (x, z) metres, facing the camera.</summary>
         public void Pick(string itemId, float x, float z)
@@ -105,7 +108,7 @@ namespace Reconnect.Client.Rooms
             var cellZ = (int)Math.Floor(z / BuildGrid.CellSize);
             var hit = _items
                 .Select((item, index) => (Item: item, Index: index, Definition: ItemDefinitions.Find(item.ItemId)))
-                .Where(i => i.Definition != null && (i.Definition.Kind == ItemKind.Decor
+                .Where(i => i.Definition != null && !RoomZones.IsFixed(i.Item.ItemId) && (i.Definition.Kind == ItemKind.Decor
                     ? Grown(RoomLayout.DecorArea(i.Item, i.Definition), 0.15f).Contains(x, z)
                     : RoomLayout.Footprint(i.Item, i.Definition).Contains(cellX, cellZ)))
                 .OrderBy(i => Priority(i.Definition.Kind))

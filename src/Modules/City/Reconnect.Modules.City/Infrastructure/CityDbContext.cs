@@ -40,8 +40,8 @@ internal sealed class CityDbContext(DbContextOptions<CityDbContext> options) : D
 
     private static NetTopologySuite.Geometries.Polygon PrimeTowerFootprint()
     {
-        var ring = Footprints.PrimeTower.Append(Footprints.PrimeTower[0])
-            .Select(p => new NetTopologySuite.Geometries.Coordinate(p.Lon, p.Lat))
+        var ring = ZurichBuildings.PrimeTowerFootprint.Append(ZurichBuildings.PrimeTowerFootprint[0])
+            .Select(p => new NetTopologySuite.Geometries.Coordinate(p.Longitude, p.Latitude))
             .ToArray();
         return new NetTopologySuite.Geometries.Polygon(new NetTopologySuite.Geometries.LinearRing(ring)) { SRID = Building.Srid };
     }
@@ -57,18 +57,6 @@ internal sealed class CityDbContext(DbContextOptions<CityDbContext> options) : D
         Building.Create(ZurichBuildings.LandesmuseumId, "Landesmuseum", "Museumstrasse 2, 8001 Zürich", 47.37926, 8.54063),
         Building.Create(ZurichBuildings.KunsthausId, "Kunsthaus Zürich", "Heimplatz 1, 8001 Zürich", 47.37036, 8.54826),
         Building.Create(ZurichBuildings.SeebadUtoquaiId, "Seebad Utoquai", "Utoquai 49, 8008 Zürich", 47.36271, 8.54895),
-    ];
-}
-
-/// <summary>Footprints of towers (OpenStreetMap way 47122541, © OpenStreetMap contributors, ODbL).</summary>
-internal static class Footprints
-{
-    public static readonly (double Lat, double Lon)[] PrimeTower =
-    [
-        (47.3858168, 8.5172916), (47.3858427, 8.5173161), (47.3859997, 8.5174734), (47.3860325, 8.5174691),
-        (47.3861503, 8.5174531), (47.3862611, 8.5174915), (47.3862929, 8.5175038), (47.3864032, 8.5172469),
-        (47.3863787, 8.5172227), (47.3862219, 8.5170682), (47.3861908, 8.5170710), (47.3860271, 8.5170859),
-        (47.3859049, 8.5170304), (47.3858759, 8.5170173),
     ];
 }
 

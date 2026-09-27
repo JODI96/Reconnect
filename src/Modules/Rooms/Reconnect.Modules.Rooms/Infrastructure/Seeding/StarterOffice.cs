@@ -1,9 +1,14 @@
-namespace Reconnect.Modules.Rooms.Domain;
+using Reconnect.Modules.Rooms.Domain;
 
-/// <summary>Furniture of a freshly bought office (14 × 10 m) – the owner rearranges it later in the build editor.</summary>
+namespace Reconnect.Modules.Rooms.Infrastructure.Seeding;
+
+/// <summary>Furniture of a freshly bought office storey – the owner rearranges it later in the build editor.</summary>
 internal static class StarterOffice
 {
-    public static List<RoomItem> Layout() =>
+    /// <summary>The core of the storey plus a small lounge and a plant or two, fitted to the floor plan.</summary>
+    public static List<RoomItem> Layout(TowerFloorPlan plan) => TowerFurnishing.Fit(plan, RoomThemes.Coworking, Furniture(), 20f, 12f);
+
+    private static List<RoomItem> Furniture() =>
     [
         Cell("custom-elevator", 18, 29, 0),   // Lift
         Cell("ph-sofa_02", 8, 30, 180),   // Chesterfield-Sofa

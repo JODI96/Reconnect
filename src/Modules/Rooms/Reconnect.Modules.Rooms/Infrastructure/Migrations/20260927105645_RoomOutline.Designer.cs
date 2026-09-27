@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Reconnect.Modules.Rooms.Infrastructure;
@@ -11,9 +12,11 @@ using Reconnect.Modules.Rooms.Infrastructure;
 namespace Reconnect.Modules.Rooms.Infrastructure.Migrations
 {
     [DbContext(typeof(RoomsDbContext))]
-    partial class RoomsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260927105645_RoomOutline")]
+    partial class RoomOutline
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

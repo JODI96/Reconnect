@@ -17,16 +17,24 @@ namespace Reconnect.Modules.Rooms.Infrastructure.Seeding;
 /// </summary>
 internal static class PrimeTowerFloors
 {
-    internal sealed record Floor(int Storey, string Name, string Theme, int Width, int Depth, int Capacity, List<RoomItem> Layout);
+    internal sealed record Floor(int Storey, string Name, string Theme, int Width, int Depth, int Capacity, List<RoomItem> Layout,
+        TowerFloorPlan Plan);
 
-    internal static IEnumerable<Floor> Floors() =>
-    [
-        new(0, "Lobby", RoomThemes.Lobby, 30, 20, 80, Lobby()),
-        new(12, "Coworking", RoomThemes.Coworking, 22, 16, 20, Coworking()),
-        new(24, "Sky Office", RoomThemes.Coworking, 22, 16, 20, SkyOffice()),
-        new(34, "Konferenzzentrum", RoomThemes.Conference, 24, 16, 25, Conference()),
-        new(35, "Sky Lounge", RoomThemes.SkyLounge, 22, 16, 30, SkyLounge()),
-    ];
+    /// <summary>Every public storey has the real outline of the tower (about 63 × 35 m) with the core in the middle.</summary>
+    internal static IEnumerable<Floor> Floors()
+    {
+        var plan = TowerFurnishing.PrimeTower;
+        Floor Storey(int storey, string name, string theme, int capacity, List<RoomItem> layout) =>
+            new(storey, name, theme, plan.Width, plan.Depth, capacity, TowerFurnishing.Fit(plan, theme, layout, 3f, 9f), plan);
+        return
+        [
+            Storey(0, "Lobby", RoomThemes.Lobby, 150, Lobby()),
+            Storey(12, "Coworking", RoomThemes.Coworking, 100, Coworking()),
+            Storey(24, "Sky Office", RoomThemes.Coworking, 80, SkyOffice()),
+            Storey(34, "Konferenzzentrum", RoomThemes.Conference, 140, Conference()),
+            Storey(35, "Sky Lounge", RoomThemes.SkyLounge, 120, SkyLounge()),
+        ];
+    }
 
     public static async Task SeedAsync(IServiceProvider services, CancellationToken ct)
     {
@@ -43,9 +51,20 @@ internal static class PrimeTowerFloors
             }
             room.Rename(floor.Name);
             room.ChangeTheme(floor.Theme);
-            room.Resize(floor.Width, floor.Depth);
+            room.ShapeAs(floor.Plan);
             room.PlaceOnFloor(floor.Storey, floor.Capacity);
             room.ReplaceLayout(floor.Layout);
+        }
+
+        // Offices bought before storeys had the real floor plan get it now (with the starter furniture).
+        var oldOffices = await db.Rooms
+            .Where(r => r.BuildingId == building && r.Floor != null && r.OwnerId != owner)
+            .ToListAsync(ct);
+        foreach (var office in oldOffices.Where(r => !r.HasOutline))
+        {
+            office.ShapeAs(TowerFurnishing.PrimeTower);
+            office.PlaceOnFloor(office.Floor, Features.RoomProvisioning.OfficeCapacity);
+            office.ReplaceLayout(StarterOffice.Layout(TowerFurnishing.PrimeTower));
         }
         await db.SaveChangesAsync(ct);
     }

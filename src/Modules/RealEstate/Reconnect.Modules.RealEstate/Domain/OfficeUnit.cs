@@ -54,13 +54,16 @@ internal sealed class OfficeUnit
 }
 
 /// <summary>
-/// Offices for sale in the Prime Tower: two per office storey (2nd–33rd, except the public floors 12 and 24).
-/// Higher = more expensive; the south side (lake view) costs a bit more. With the starting capital of
-/// CHF 10'000 most of them are affordable, the top ones need savings (economy system).
+/// Offices for sale in the Prime Tower: one whole storey each (2nd–33rd, except the public floors 12 and 24), with the
+/// real floor plan of about 1'580 m². Higher = more expensive. With the starting capital of CHF 10'000 the lower ones
+/// are affordable, the top ones need savings (economy system).
 /// </summary>
 internal static class PrimeTowerOffices
 {
     public static readonly int[] PublicFloors = [0, 12, 24, 34, 35];
+
+    /// <summary>Usable area of a storey (real outline of the tower).</summary>
+    public const int FloorArea = 1580;
 
     public static IEnumerable<(Guid Id, int Floor, string Name, long PriceRappen, int Area)> Offer()
     {
@@ -70,9 +73,8 @@ internal static class PrimeTowerOffices
             {
                 continue;
             }
-            var basePrice = 2_500m + floor * 250m;
-            yield return (StableId(floor, 1), floor, $"Büro {floor}.1 · Nord", (long)(basePrice * 100m), 160);
-            yield return (StableId(floor, 2), floor, $"Büro {floor}.2 · Süd, Seesicht", (long)((basePrice + 750m) * 100m), 190);
+            var price = 5_000m + floor * 500m;
+            yield return (StableId(floor, 1), floor, $"Büroetage {floor}. OG", (long)(price * 100m), FloorArea);
         }
     }
 

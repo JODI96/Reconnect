@@ -75,7 +75,8 @@ namespace Reconnect.Client.Rooms
         private float _yaw;          // current view direction around the room (0 = looking north-east)
         private float _targetYaw;    // turns smoothly towards this
         private float _lastTwistAngle = float.NaN;
-        private readonly List<(GameObject Part, WallSides Side)> _wallParts = new();
+        private readonly List<(GameObject Part, Vector2 Normal)> _wallParts = new();   // walls/facade by outward direction
+        private IReadOnlyList<RoomPointDto> _outline;   // floor outline of tower storeys (null = rectangle)
         private float _viewWidth;
         private bool _follow = true;
 
@@ -114,7 +115,10 @@ namespace Reconnect.Client.Rooms
         public int Depth => _depth;
 
         /// <summary>Build rules of this room: walls, entrance and lift zones (<see cref="RoomZones"/>).</summary>
-        public RoomLayoutContext BuildContext(IReadOnlyList<RoomItemDto> layout) => RoomZones.ContextFor(_themeId, _width, _depth, layout);
+        public RoomLayoutContext BuildContext(IReadOnlyList<RoomItemDto> layout) => RoomZones.ContextFor(_themeId, _width, _depth, layout, _outline);
+
+        /// <summary>Floor outline of the room (tower storeys) in metres; null = the Width × Depth rectangle.</summary>
+        public IReadOnlyList<RoomPointDto> Outline => _outline;
 
         /// <summary>Local room point → point in world space (e.g. to put build helpers onto the floor).</summary>
         public Transform Content => _content;
@@ -152,6 +156,7 @@ namespace Reconnect.Client.Rooms
             _width = snapshot.Width;
             _depth = snapshot.Depth;
             _themeId = snapshot.Room.Theme;
+            _outline = snapshot.Room.Outline is { Count: >= 3 } outline ? outline : null;
             _theme = RoomTheme.For(snapshot.Room.Theme);
             _custom = new CustomItems(wallMaterial, waterMaterial, glassMaterial, _theme);
             _lampLights = 0;
@@ -166,14 +171,21 @@ namespace Reconnect.Client.Rooms
             _content.SetParent(transform, false);
 
             var before = _content.childCount;
-            switch (_theme.Enclosure)
+            if (_outline != null)
             {
-                case Enclosure.Railing: BuildRailing(); break;
-                case Enclosure.GlassFacade: BuildGlassFacade(); break;
-                case Enclosure.StoneHall: BuildStoneHall(); break;
-                default: BuildWalls(); break;
+                BuildOutlineFacade();   // tower storey: glass along the real outline
             }
-            RememberWalls(before);
+            else
+            {
+                switch (_theme.Enclosure)
+                {
+                    case Enclosure.Railing: BuildRailing(); break;
+                    case Enclosure.GlassFacade: BuildGlassFacade(); break;
+                    case Enclosure.StoneHall: BuildStoneHall(); break;
+                    default: BuildWalls(); break;
+                }
+                RememberWalls(before);
+            }
             BuildLighting();
             BuildLayout(snapshot.Room.Layout);
             if (groundAnchor.HasValue && Mathf.Abs(yaw) > 0.01f)
@@ -238,6 +250,10 @@ namespace Reconnect.Client.Rooms
             {
                 _blocked.Add(new Vector2Int(x, z));
             }
+            foreach (var (x, z) in RoomLayout.OutsideTiles(BuildContext(_layout)))
+            {
+                _blocked.Add(new Vector2Int(x, z));   // outside the outline or right at the glass
+            }
             Pathfinder = new RoomPathfinder(_width, _depth, _blocked);
             foreach (var seat in _seats.Values)
             {
@@ -296,11 +312,11 @@ namespace Reconnect.Client.Rooms
                 }
                 if (p.z >= _depth - 0.3f)
                 {
-                    _wallParts.Add((part.gameObject, WallSides.North));
+                    _wallParts.Add((part.gameObject, Vector2.up));      // north
                 }
                 else if (p.x >= _width - 0.3f)
                 {
-                    _wallParts.Add((part.gameObject, WallSides.East));
+                    _wallParts.Add((part.gameObject, Vector2.right));   // east
                 }
             }
         }
@@ -745,6 +761,12 @@ namespace Reconnect.Client.Rooms
             });
             material.mainTextureScale = new Vector2(_width / FloorTextures.MetersPerTexture, _depth / FloorTextures.MetersPerTexture);
 
+            if (_outline != null)
+            {
+                BuildOutlineFloor(material);
+                return;
+            }
+
             // One piece normally; around pools several, each with its part of the texture so the pattern runs on.
             foreach (var piece in WithoutPools(new Rect(0f, 0f, _width, _depth)))
             {
@@ -781,6 +803,76 @@ namespace Reconnect.Client.Rooms
                 below.transform.localPosition = new Vector3(pool.center.x, -CustomItems.PoolDepth - 0.1f - rest / 2f, pool.center.y);
                 below.transform.localScale = new Vector3(pool.width, Mathf.Max(0.05f, rest), pool.height);
             }
+        }
+
+        /// <summary>Tower storey: floor and the building's floor slab in the shape of the outline.</summary>
+        private void BuildOutlineFloor(Material material)
+        {
+            var points = _outline.Select(p => new Vector2(p.X, p.Z)).ToList();
+            material.mainTextureScale = Vector2.one;   // the mesh carries metre UVs
+            var floor = new GameObject("Floor", typeof(MeshFilter), typeof(MeshRenderer));
+            floor.transform.SetParent(_floorRoot, false);
+            floor.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(points, 0f, 0.1f, FloorTextures.MetersPerTexture);
+            floor.GetComponent<MeshRenderer>().sharedMaterial = material;
+
+            var slab = new GameObject("Floor Base", typeof(MeshFilter), typeof(MeshRenderer));
+            slab.transform.SetParent(_floorRoot, false);
+            slab.GetComponent<MeshFilter>().sharedMesh = PolygonMesh.Slab(points, -0.1f, 0.3f, 4f);
+            slab.GetComponent<MeshRenderer>().sharedMaterial = Tinted(wallMaterial, new Color(0.55f, 0.56f, 0.58f));
+        }
+
+        /// <summary>
+        /// Floor-to-ceiling glass along every edge of the outline (slanted ones too): slim mullions, sill, head, an LED
+        /// line along the floor. Each edge fades out while the camera looks at it from outside.
+        /// </summary>
+        private void BuildOutlineFacade()
+        {
+            var glass = Tinted(glassMaterial, new Color(0.62f, 0.86f, 0.82f, 0.14f));
+            var frame = Tinted(wallMaterial, new Color(0.1f, 0.11f, 0.13f));
+            var led = Glowing(_theme.WallTrim);
+            var points = PolygonMesh.CounterClockwise(_outline.Select(p => new Vector2(p.X, p.Z)).ToList());
+            for (var i = 0; i < points.Count; i++)
+            {
+                var a = points[i];
+                var b = points[(i + 1) % points.Count];
+                var length = Vector2.Distance(a, b);
+                if (length < 0.05f)
+                {
+                    continue;
+                }
+                var edge = new GameObject("Facade Edge " + i).transform;
+                edge.SetParent(_content, false);
+                var from = new Vector3(a.x, 0f, a.y);
+                var to = new Vector3(b.x, 0f, b.y);
+                var direction = (to - from).normalized;
+                // Unity is left-handed: up × direction points to the right of the edge, which is outside for a
+                // counter-clockwise outline.
+                var outside = Vector3.Cross(Vector3.up, direction);
+                var inward = -outside;
+                var outward = new Vector2(outside.x, outside.z);
+                var rotation = Quaternion.LookRotation(inward);
+                var middle = (from + to) / 2f;
+                const float height = FacadeHeight;
+
+                Part(edge, "Facade Glass", glass, middle + Vector3.up * height / 2f, rotation, new Vector3(length, height, 0.03f));
+                Part(edge, "Facade Sill", frame, middle + Vector3.up * 0.05f, rotation, new Vector3(length + 0.05f, 0.1f, 0.14f));
+                Part(edge, "Facade Head", frame, middle + Vector3.up * height, rotation, new Vector3(length + 0.05f, 0.08f, 0.14f));
+                Part(edge, "Facade LED", led, middle + Vector3.up * 0.012f + inward * 0.12f, rotation, new Vector3(length, 0.02f, 0.03f));
+                var count = Mathf.Max(1, Mathf.RoundToInt(length / 1.5f));
+                for (var k = 0; k <= count; k++)
+                {
+                    Part(edge, "Mullion", frame, from + direction * (length * k / count) + Vector3.up * height / 2f, rotation, new Vector3(0.05f, height, 0.05f));
+                }
+                _wallParts.Add((edge.gameObject, outward));
+            }
+        }
+
+        private void Part(Transform parent, string name, Material material, Vector3 position, Quaternion rotation, Vector3 size)
+        {
+            var part = Primitive(PrimitiveType.Cube, name, material, parent);
+            part.transform.localPosition = position;
+            part.transform.localRotation = rotation;
+            part.transform.localScale = size;
         }
 
         /// <summary>North and east walls from Kenney pieces: windows, a door in the middle of the north wall.</summary>
@@ -1028,7 +1120,7 @@ namespace Reconnect.Client.Rooms
                     BuildStation(pivot, "quiz", "cabinetTelevision", top => Stack(top, "televisionModern"));
                     continue;
                 }
-                if (item.ItemId == CustomItems.ElevatorItem && _custom.TryBuild(item.ItemId, pivot, out _))
+                if (RoomZones.IsLift(item.ItemId) && _custom.TryBuild(item.ItemId, pivot, out _))
                 {
                     BuildElevatorStation(pivot, item);
                     continue;
@@ -1280,6 +1372,10 @@ namespace Reconnect.Client.Rooms
             for (var ix = 0; ix < countX; ix++)
             for (var iz = 0; iz < countZ; iz++)
             {
+                if (_outline != null && !RoomOutline.Contains(_outline, (ix + 0.5f) * _width / countX, (iz + 0.5f) * _depth / countZ))
+                {
+                    continue;
+                }
                 var light = new GameObject("Room Light").AddComponent<Light>();
                 light.transform.SetParent(_content, false);
                 light.transform.localPosition = new Vector3((ix + 0.5f) * _width / countX,
@@ -1397,9 +1493,10 @@ namespace Reconnect.Client.Rooms
 
             // Walls between the camera and the room are hidden (Habbo style: you always look into the room).
             var look = local * Vector3.forward;
-            foreach (var (part, side) in _wallParts)
+            var lookFlat = new Vector2(look.x, look.z).normalized;
+            foreach (var (part, normal) in _wallParts)
             {
-                var show = side == WallSides.North ? look.z > -0.2f : look.x > -0.2f;
+                var show = Vector2.Dot(normal, lookFlat) > -0.2f;   // hidden when it faces the camera
                 if (part.activeSelf != show)
                 {
                     part.SetActive(show);

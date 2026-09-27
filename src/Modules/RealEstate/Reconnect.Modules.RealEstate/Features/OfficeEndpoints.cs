@@ -18,7 +18,8 @@ namespace Reconnect.Modules.RealEstate.Features;
 
 internal static class OfficeEndpoints
 {
-    public const int OfficeCapacity = 12;
+    /// <summary>People in a whole office storey at once.</summary>
+    public const int OfficeCapacity = 60;
 
     public static void Map(IEndpointRouteBuilder api)
     {
