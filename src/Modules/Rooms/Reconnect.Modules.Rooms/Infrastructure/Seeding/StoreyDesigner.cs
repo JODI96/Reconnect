@@ -372,7 +372,10 @@ internal sealed class StoreyDesigner
     /// </summary>
     public StoreyDesigner GlassRoom(float x0, float z0, float x1, float z1, string door)
     {
-        void Wall(float ax, float az, float bx, float bz, bool hasDoor)
+        // A glass wall stands on the outer edge of its one-cell footprint, facing out (see the client's GlassWall): each
+        // wall lies one half cell inside the room and turns outwards, so all four glass lines are the room's edges.
+        const float half = BuildGrid.CellSize / 2f;
+        void Wall(float ax, float az, float bx, float bz, float rotation, bool hasDoor)
         {
             var horizontal = Math.Abs(bz - az) < 0.01f;
             var length = horizontal ? bx - ax : bz - az;
@@ -385,21 +388,13 @@ internal sealed class StoreyDesigner
                     continue;
                 }
                 var t = (i + 0.5f) * length / pieces;
-                if (horizontal)
-                {
-                    Put("custom-glasswall", ax + t, az);
-                }
-                else
-                {
-                    // Side walls meet the front and back walls in the corner (partitions may share corner cells).
-                    Put("custom-glasswall", ax, az + t, 90f);
-                }
+                Put("custom-glasswall", horizontal ? ax + t : ax, horizontal ? az : az + t, rotation);
             }
         }
-        Wall(x0, z0, x1, z0, door == "south");
-        Wall(x0, z1, x1, z1, door == "north");
-        Wall(x0, z0, x0, z1, door == "west");
-        Wall(x1, z0, x1, z1, door == "east");
+        Wall(x0, z0 + half, x1, z0 + half, 0f, door == "south");
+        Wall(x0, z1 - half, x1, z1 - half, 180f, door == "north");
+        Wall(x0 + half, z0, x0 + half, z1, 90f, door == "west");
+        Wall(x1 - half, z0, x1 - half, z1, 270f, door == "east");
         return this;
     }
 
@@ -416,7 +411,7 @@ internal sealed class StoreyDesigner
             d.Put("custom-officechair", dx, -1.3f, 180f);
             // Screens face the person at the desk: north row sits north of its desk (looks −Z), south row the other way.
             d.Decor(i % 2 == 0 ? "laptop" : "ph-classic_laptop", dx - 0.15f, 0.5f, 180f);
-            d.Decor("computerScreen", dx - 0.2f, -0.6f, 180f);   // the monitor model faces +Z at 0°, the laptops −Z
+            d.Decor("computerScreen", dx - 0.2f, -0.6f, 0f);   // monitor and laptop models face −Z at 0°
             if (i % 2 == 1)
             {
                 d.Decor("custom-tablelamp-mushroom", dx + 0.45f, 0.55f, 0f, "sage/black");

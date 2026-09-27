@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Reconnect.Contracts.Rooms;
 using UnityEngine;
 
 namespace Reconnect.Client.Rooms
@@ -550,16 +551,23 @@ namespace Reconnect.Client.Rooms
         /// Glass partition for meeting rooms in open-plan offices: 2 m of clear glass in a slim black frame with a frosted
         /// band at eye level (so nobody walks into it). Rows of them make rooms; leave a gap as the door.
         /// </summary>
+        /// <summary>
+        /// Glass partition (2 m). The glass stands on the outer edge of its one-cell footprint (local −Z, the side it
+        /// faces), not in the middle: cells are 25 cm, so centred glass would sit 12.5 cm off the cell lines and never
+        /// meet a perpendicular wall. On the edge, walls around a room all stand on the room's edges and close the corners.
+        /// </summary>
         private void GlassWall(Transform pivot)
         {
-            const float length = 1.98f, height = 2.6f;
+            const float length = 2f, height = 2.6f, frameDepth = 0.06f;
+            var z = -BuildGrid.CellSize / 2f + frameDepth / 2f;   // frame flush with the footprint's outer edge
             var frame = Lit(new Color(0.08f, 0.08f, 0.09f), 0.6f);
-            Box(pivot, Tinted(_glass, new Color(0.86f, 0.94f, 0.95f, 0.22f)), new Vector3(0f, height / 2f, 0f), new Vector3(length, height, 0.02f));
-            Box(pivot, Tinted(_glass, new Color(1f, 1f, 1f, 0.55f)), new Vector3(0f, 1.15f, 0f), new Vector3(length, 0.3f, 0.025f));
-            Box(pivot, frame, new Vector3(0f, 0.03f, 0f), new Vector3(length, 0.06f, 0.06f));
-            Box(pivot, frame, new Vector3(0f, height, 0f), new Vector3(length, 0.05f, 0.06f));
-            Box(pivot, frame, new Vector3(-length / 2f, height / 2f, 0f), new Vector3(0.03f, height, 0.05f));
-            Box(pivot, frame, new Vector3(length / 2f, height / 2f, 0f), new Vector3(0.03f, height, 0.05f));
+            Box(pivot, Tinted(_glass, new Color(0.86f, 0.94f, 0.95f, 0.22f)), new Vector3(0f, height / 2f, z), new Vector3(length - 0.04f, height, 0.02f));
+            Box(pivot, Tinted(_glass, new Color(1f, 1f, 1f, 0.55f)), new Vector3(0f, 1.15f, z), new Vector3(length - 0.04f, 0.3f, 0.025f));
+            Box(pivot, frame, new Vector3(0f, 0.03f, z), new Vector3(length, 0.06f, frameDepth));
+            Box(pivot, frame, new Vector3(0f, height, z), new Vector3(length, 0.05f, frameDepth));
+            // Posts at both ends, flush with the ends: in a corner the two walls' posts overlap into one.
+            Box(pivot, frame, new Vector3(-length / 2f + frameDepth / 2f, height / 2f, z), new Vector3(frameDepth, height, frameDepth));
+            Box(pivot, frame, new Vector3(length / 2f - frameDepth / 2f, height / 2f, z), new Vector3(frameDepth, height, frameDepth));
         }
 
         /// <summary>Acoustic phone booth: walnut shell, glass door, green felt inside, a small shelf and a pendant light.</summary>
