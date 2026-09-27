@@ -38,11 +38,15 @@ namespace Reconnect.Client.Editor
             "pillowLong", "ph-tea_set_01", "ph-ceramic_vase_01", "ph-ceramic_vase_03", "ph-antique_ceramic_vase_01", "ph-throw_pillows_01",
             "ph-marble_bust_01", "ph-desk_lamp_arm_01", "ph-chess_set", "ph-book_encyclopedia_set_01", "ph-mantel_clock_01",
             "ph-brass_candleholders", "ph-standing_picture_frame_01", "ph-bronze_ray_statue", "ph-potted_plant_04",
+            "ph-anthurium_botany_01", "ph-calathea_orbifolia_01", "ph-fern_02", "ph-wine_bottles_01", "ph-brass_goblets",
+            "ph-brass_vase_01", "ph-brass_vase_02", "ph-ceramic_vase_02", "ph-bronze_shark_statue", "ph-stationery_supplies",
+            "ph-classic_laptop",
         };
 
         private static readonly Dictionary<string, float> Wall = new(StringComparer.OrdinalIgnoreCase)
         {
-            ["lampWall"] = 1.8f, ["coatRack"] = 1.5f, ["bathroomMirror"] = 1.2f, ["hoodLarge"] = 1.6f, ["hoodModern"] = 1.6f,
+            ["lampWall"] = 1.8f, ["coatRack"] = 1.5f, ["ph-wall_clock"] = 2f, ["ph-fancy_picture_frame_01"] = 1.2f,
+            ["ph-fancy_picture_frame_02"] = 1.2f, ["bathroomMirror"] = 1.2f, ["hoodLarge"] = 1.6f, ["hoodModern"] = 1.6f,
             ["kitchenCabinetUpper"] = 1.55f, ["kitchenCabinetUpperCorner"] = 1.55f, ["kitchenCabinetUpperDouble"] = 1.55f,
             ["kitchenCabinetUpperLow"] = 1.55f,
             ["ph-hanging_picture_frame_01"] = 1.2f, ["ph-hanging_picture_frame_02"] = 1.3f, ["ph-hanging_picture_frame_03"] = 1.3f,
@@ -51,7 +55,7 @@ namespace Reconnect.Client.Editor
         private static readonly HashSet<string> Ceiling = new(StringComparer.OrdinalIgnoreCase)
         {
             "lampSquareCeiling", "ceilingFan", "ph-Chandelier_01", "ph-modern_ceiling_lamp_01", "custom-pendant", "custom-lightstring",
-            "custom-ledstrip",
+            "custom-ledstrip", "ph-caged_hanging_light", "ph-hanging_industrial_lamp", "ph-Chandelier_02",
         };
 
         private static readonly HashSet<string> Rugs = new(StringComparer.OrdinalIgnoreCase)
@@ -65,6 +69,7 @@ namespace Reconnect.Client.Editor
             "table", "desk", "kitchenBar", "kitchenCabinet", "kitchenSink", "sideTable", "cabinetTelevision", "bookcaseOpenLow",
             "bookcaseClosed", "cabinetBedDrawer", "bathroomCabinetDrawer", "washer", "Shelf_01", "display_shelves", "modern_wooden_cabinet",
             "CoffeeCart", "custom-skybar", "custom-backbar", "custom-reception", "custom-openkitchen", "outdoor_table_chair_set",
+            "steel_frame_shelves", "custom-benchdesk", "custom-buffet",
         };
 
         /// <summary>Items whose top is much wider than what stands on the floor (parasol: only the pole).</summary>
@@ -124,6 +129,19 @@ namespace Reconnect.Client.Editor
             ["custom-easel"] = "Staffelei", ["custom-openkitchen"] = "Offene Küche", ["custom-rug"] = "Teppich",
             ["custom-ruground"] = "Runder Teppich", ["game-tictactoe"] = "Tic-Tac-Toe-Tisch", ["game-quiz"] = "Quiz-TV",
             ["custom-pool-6x3"] = "Pool klein", ["custom-pool-12x6"] = "Pool gross",
+            ["custom-glasswall"] = "Glastrennwand", ["custom-phonebooth"] = "Telefonkabine", ["custom-officechair"] = "Bürostuhl modern",
+            ["custom-benchdesk"] = "Arbeitstisch modern", ["custom-stage"] = "Bühne", ["custom-buffet"] = "Buffet",
+            ["custom-greenwall"] = "Pflanzenwand",
+            ["ph-anthurium_botany_01"] = "Anthurie", ["ph-calathea_orbifolia_01"] = "Calathea", ["ph-fern_02"] = "Farn",
+            ["ph-planter_pot_clay"] = "Tontopf", ["ph-steel_frame_shelves_01"] = "Stahlregal", ["ph-steel_frame_shelves_02"] = "Stahlregal breit",
+            ["ph-caged_hanging_light"] = "Gitter-Pendelleuchte", ["ph-hanging_industrial_lamp"] = "Industrie-Pendelleuchte",
+            ["ph-Chandelier_02"] = "Kronleuchter modern", ["ph-metal_stool_01"] = "Metallhocker hoch", ["ph-metal_stool_03"] = "Metallhocker rund",
+            ["ph-modern_coffee_table_02"] = "Couchtisch Glas", ["ph-industrial_coffee_table"] = "Couchtisch Industrie",
+            ["ph-round_wooden_table_02"] = "Runder Esstisch", ["ph-wine_bottles_01"] = "Weinflasche", ["ph-brass_goblets"] = "Messingkelche",
+            ["ph-brass_vase_01"] = "Messingvase", ["ph-brass_vase_02"] = "Messingvase hoch", ["ph-ceramic_vase_02"] = "Keramikvase",
+            ["ph-bronze_shark_statue"] = "Bronzehai", ["ph-wall_clock"] = "Wanduhr", ["ph-fancy_picture_frame_01"] = "Gemälde Gold",
+            ["ph-fancy_picture_frame_02"] = "Gemälde Gold quer", ["ph-projector_screen"] = "Leinwand", ["ph-stationery_supplies"] = "Schreibzeug",
+            ["ph-classic_laptop"] = "Laptop Alu",
             ["bathroomCabinet"] = "Badschrank", ["bathroomCabinetDrawer"] = "Badkommode", ["bookcaseClosed"] = "Schrank",
             ["bookcaseClosedDoors"] = "Schrank mit Türen", ["cabinetBed"] = "Nachttisch", ["cabinetBedDrawer"] = "Nachttisch mit Schublade",
             ["cabinetBedDrawerTable"] = "Nachttisch klein", ["cabinetTelevision"] = "TV-Möbel", ["cabinetTelevisionDoors"] = "TV-Möbel mit Türen",
@@ -358,8 +376,16 @@ namespace Reconnect.Client.Editor
             var paths = new List<(string Id, string Path)>();
             try
             {
+                // Pictures are rendered once; RECONNECT_RENDER_ICONS=1 renders all again (after changing light or camera).
+                var force = Environment.GetEnvironmentVariable("RECONNECT_RENDER_ICONS") == "1";
                 foreach (var id in ids)
                 {
+                    var existing = $"{IconsDir}/{id}.png";
+                    if (!force && File.Exists(existing))
+                    {
+                        paths.Add((id, existing));
+                        continue;
+                    }
                     var pivot = Spawn(catalog, custom, stage.transform, id);
                     if (id.StartsWith("ph-", StringComparison.Ordinal))
                     {
@@ -504,7 +530,12 @@ namespace Reconnect.Client.Editor
             }
             if (id.StartsWith("custom-") || id.StartsWith("game-"))
             {
-                return Has("lounger") ? "Sitzen" : Has("pendant", "lightstring", "ledstrip") ? "Licht" : Has("planter") ? "Pflanzen" : "Spezial";
+                return Has("lounger", "officechair") ? "Sitzen"
+                    : Has("pendant", "lightstring", "ledstrip") ? "Licht"
+                    : Has("planter", "greenwall") ? "Pflanzen"
+                    : Has("benchdesk") ? "Tische"
+                    : Has("buffet") ? "Küche & Bar"
+                    : "Spezial";
             }
             if (RoomSeats.IsSeat(id) || Has("chair", "stool", "sofa", "bench", "ottoman", "lounge"))
             {

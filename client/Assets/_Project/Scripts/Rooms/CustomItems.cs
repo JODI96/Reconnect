@@ -53,6 +53,8 @@ namespace Reconnect.Client.Rooms
             "custom-lightstring", "custom-skybar", "custom-backbar", "custom-openkitchen", "custom-hologram", "custom-djbooth",
             "custom-telescope", "custom-divider", "custom-pendant", "custom-ledstrip", ElevatorItem, CoreItem, "custom-turnstiles",
             "custom-reception", "custom-screenwall", "custom-queuelane", "custom-rug", "custom-ruground",
+            "custom-glasswall", "custom-phonebooth", "custom-officechair", "custom-benchdesk", "custom-stage", "custom-buffet",
+            "custom-greenwall",
         };
 
         private readonly Material _litBase;
@@ -99,6 +101,13 @@ namespace Reconnect.Client.Rooms
                 case "custom-ledstrip": LedStrip(pivot); blocksTiles = false; return true;
                 case ElevatorItem: Elevator(pivot); return true;
                 case CoreItem: Core(pivot); return true;
+                case "custom-glasswall": GlassWall(pivot); return true;
+                case "custom-phonebooth": PhoneBooth(pivot); return true;
+                case "custom-officechair": OfficeChair(pivot); return true;
+                case "custom-benchdesk": BenchDesk(pivot); return true;
+                case "custom-stage": Stage(pivot); return true;
+                case "custom-buffet": Buffet(pivot); return true;
+                case "custom-greenwall": GreenWall(pivot); return true;
                 case "custom-turnstiles": Turnstiles(pivot); blocksTiles = false; return true;
                 case "custom-reception": Reception(pivot); return true;
                 case "custom-screenwall": ScreenWall(pivot); return true;
@@ -508,6 +517,123 @@ namespace Reconnect.Client.Rooms
                 face.localRotation = Quaternion.Euler(0f, side, 0f);
                 LiftDoors(face, width, depth, new[] { -2.6f, -1.1f, 1.1f, 2.6f });
             }
+        }
+
+        /// <summary>
+        /// Glass partition for meeting rooms in open-plan offices: 2 m of clear glass in a slim black frame with a frosted
+        /// band at eye level (so nobody walks into it). Rows of them make rooms; leave a gap as the door.
+        /// </summary>
+        private void GlassWall(Transform pivot)
+        {
+            const float length = 1.98f, height = 2.6f;
+            var frame = Lit(new Color(0.08f, 0.08f, 0.09f), 0.6f);
+            Box(pivot, Tinted(_glass, new Color(0.86f, 0.94f, 0.95f, 0.22f)), new Vector3(0f, height / 2f, 0f), new Vector3(length, height, 0.02f));
+            Box(pivot, Tinted(_glass, new Color(1f, 1f, 1f, 0.55f)), new Vector3(0f, 1.15f, 0f), new Vector3(length, 0.3f, 0.025f));
+            Box(pivot, frame, new Vector3(0f, 0.03f, 0f), new Vector3(length, 0.06f, 0.06f));
+            Box(pivot, frame, new Vector3(0f, height, 0f), new Vector3(length, 0.05f, 0.06f));
+            Box(pivot, frame, new Vector3(-length / 2f, height / 2f, 0f), new Vector3(0.03f, height, 0.05f));
+            Box(pivot, frame, new Vector3(length / 2f, height / 2f, 0f), new Vector3(0.03f, height, 0.05f));
+        }
+
+        /// <summary>Acoustic phone booth: walnut shell, glass door, green felt inside, a small shelf and a pendant light.</summary>
+        private void PhoneBooth(Transform pivot)
+        {
+            const float width = 1.05f, depth = 1.05f, height = 2.2f;
+            var walnut = Lit(new Color(0.35f, 0.22f, 0.14f), 0.45f);
+            var felt = Lit(new Color(0.18f, 0.32f, 0.27f), 0.05f);
+            Box(pivot, walnut, new Vector3(0f, height - 0.05f, 0f), new Vector3(width, 0.1f, depth));               // roof
+            Box(pivot, walnut, new Vector3(0f, 0.04f, 0f), new Vector3(width, 0.08f, depth));                       // floor
+            Box(pivot, walnut, new Vector3(0f, height / 2f, depth / 2f - 0.04f), new Vector3(width, height, 0.08f)); // back
+            Box(pivot, walnut, new Vector3(-width / 2f + 0.04f, height / 2f, 0f), new Vector3(0.08f, height, depth));
+            Box(pivot, walnut, new Vector3(width / 2f - 0.04f, height / 2f, 0f), new Vector3(0.08f, height, depth));
+            Box(pivot, felt, new Vector3(0f, height / 2f, depth / 2f - 0.09f), new Vector3(width - 0.18f, height - 0.2f, 0.02f));
+            Box(pivot, Tinted(_glass, new Color(0.85f, 0.93f, 0.93f, 0.25f)), new Vector3(0f, height / 2f, -depth / 2f + 0.02f),
+                new Vector3(width - 0.1f, height - 0.2f, 0.02f));                                                   // glass door
+            Box(pivot, Lit(new Color(0.75f, 0.75f, 0.72f), 0.8f), new Vector3(0.36f, 1.1f, -depth / 2f + 0.01f), new Vector3(0.02f, 0.4f, 0.03f));
+            Box(pivot, walnut, new Vector3(0f, 1.05f, depth / 2f - 0.25f), new Vector3(0.7f, 0.04f, 0.3f));        // shelf
+            Box(pivot, Glow(new Color(1f, 0.92f, 0.78f), 1.4f), new Vector3(0f, height - 0.12f, 0f), new Vector3(0.5f, 0.02f, 0.5f));
+        }
+
+        /// <summary>Ergonomic office chair: mesh back, padded seat, five-star base on castors.</summary>
+        private void OfficeChair(Transform pivot)
+        {
+            var black = Lit(new Color(0.07f, 0.07f, 0.08f), 0.35f);
+            var mesh = Lit(new Color(0.15f, 0.15f, 0.17f), 0.2f);
+            var chrome = Lit(new Color(0.7f, 0.72f, 0.75f), 0.9f);
+            for (var i = 0; i < 5; i++)
+            {
+                var angle = i * 72f * Mathf.Deg2Rad;
+                var dir = new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+                var leg = Box(pivot, chrome, dir * 0.15f + Vector3.up * 0.08f, new Vector3(0.04f, 0.03f, 0.3f));
+                leg.transform.localRotation = Quaternion.LookRotation(dir);
+                Sphere(pivot, black, dir * 0.29f + Vector3.up * 0.03f, new Vector3(0.06f, 0.06f, 0.06f));      // castor
+            }
+            Cylinder(pivot, chrome, new Vector3(0f, 0.27f, 0f), new Vector3(0.05f, 0.18f, 0.05f));             // gas lift
+            Box(pivot, black, new Vector3(0f, 0.47f, 0f), new Vector3(0.5f, 0.08f, 0.48f));                    // seat
+            Box(pivot, black, new Vector3(0f, 0.53f, 0.02f), new Vector3(0.46f, 0.04f, 0.42f));                // cushion
+            Box(pivot, chrome, new Vector3(0f, 0.72f, 0.26f), new Vector3(0.05f, 0.4f, 0.04f));                // spine
+            Box(pivot, mesh, new Vector3(0f, 0.92f, 0.27f), new Vector3(0.46f, 0.55f, 0.04f));                 // mesh back
+            Box(pivot, black, new Vector3(0f, 1.2f, 0.27f), new Vector3(0.46f, 0.04f, 0.05f));
+            foreach (var x in new[] { -0.27f, 0.27f })
+            {
+                Box(pivot, black, new Vector3(x, 0.68f, 0.02f), new Vector3(0.05f, 0.03f, 0.3f));              // armrests
+                Box(pivot, black, new Vector3(x, 0.6f, 0.08f), new Vector3(0.03f, 0.14f, 0.03f));
+            }
+        }
+
+        /// <summary>Modern desk: white top, black steel frame, cable tray – rows of them make open-plan workplaces.</summary>
+        private void BenchDesk(Transform pivot)
+        {
+            const float width = 1.6f, depth = 0.8f, height = 0.74f;
+            var white = Lit(new Color(0.93f, 0.93f, 0.91f), 0.35f);
+            var steel = Lit(new Color(0.09f, 0.09f, 0.1f), 0.55f);
+            Box(pivot, white, new Vector3(0f, height - 0.015f, 0f), new Vector3(width, 0.03f, depth));
+            foreach (var x in new[] { -width / 2f + 0.06f, width / 2f - 0.06f })
+            {
+                Box(pivot, steel, new Vector3(x, height / 2f, 0f), new Vector3(0.05f, height - 0.03f, 0.05f));   // leg
+                Box(pivot, steel, new Vector3(x, 0.02f, 0f), new Vector3(0.06f, 0.04f, depth - 0.1f));            // foot
+                Box(pivot, steel, new Vector3(x, height - 0.06f, 0f), new Vector3(0.05f, 0.05f, depth - 0.1f));   // top rail
+            }
+            Box(pivot, steel, new Vector3(0f, height - 0.18f, 0.2f), new Vector3(width - 0.3f, 0.08f, 0.12f));     // cable tray
+        }
+
+        /// <summary>Conference stage: dark oak platform with a glowing edge and two steps at the front.</summary>
+        private void Stage(Transform pivot)
+        {
+            const float width = 6f, depth = 3f, height = 0.4f;
+            var oak = Lit(new Color(0.24f, 0.17f, 0.12f), 0.5f);
+            var black = Lit(new Color(0.06f, 0.06f, 0.07f), 0.3f);
+            Box(pivot, black, new Vector3(0f, height / 2f - 0.02f, 0f), new Vector3(width, height - 0.04f, depth));
+            Box(pivot, oak, new Vector3(0f, height - 0.02f, 0f), new Vector3(width + 0.04f, 0.04f, depth + 0.04f));
+            Box(pivot, Glow(_theme.WallTrim, 2f), new Vector3(0f, 0.06f, -depth / 2f - 0.01f), new Vector3(width, 0.03f, 0.02f));
+            Box(pivot, oak, new Vector3(0f, height / 2f - 0.07f, -depth / 2f - 0.2f), new Vector3(1.4f, height / 2f, 0.4f));
+        }
+
+        /// <summary>Catering buffet: table with a white cloth down to the floor and a dark top runner.</summary>
+        private void Buffet(Transform pivot)
+        {
+            const float width = 2.4f, depth = 0.8f, height = 0.9f;
+            Box(pivot, Lit(new Color(0.96f, 0.96f, 0.95f), 0.15f), new Vector3(0f, height / 2f, 0f), new Vector3(width, height, depth));
+            Box(pivot, Lit(new Color(0.16f, 0.22f, 0.2f), 0.2f), new Vector3(0f, height + 0.005f, 0f), new Vector3(width - 0.2f, 0.01f, 0.3f));
+        }
+
+        /// <summary>Vertical garden: a panel of moss and ferns in a slim oak frame, lit from above.</summary>
+        private void GreenWall(Transform pivot)
+        {
+            const float width = 3f, height = 2.5f;
+            var oak = Lit(new Color(0.55f, 0.4f, 0.26f), 0.4f);
+            Box(pivot, oak, new Vector3(0f, height / 2f, 0.05f), new Vector3(width + 0.1f, height + 0.1f, 0.12f));
+            Box(pivot, Lit(new Color(0.22f, 0.36f, 0.18f), 0.05f), new Vector3(0f, height / 2f, -0.02f), new Vector3(width, height, 0.04f));
+            var greens = new[] { new Color(0.27f, 0.5f, 0.24f), new Color(0.36f, 0.6f, 0.3f), new Color(0.2f, 0.42f, 0.22f), new Color(0.45f, 0.62f, 0.32f) };
+            var random = new System.Random(7);
+            for (var i = 0; i < 36; i++)
+            {
+                var x = -width / 2f + 0.15f + (float)random.NextDouble() * (width - 0.3f);
+                var y = 0.2f + (float)random.NextDouble() * (height - 0.35f);
+                var size = 0.18f + (float)random.NextDouble() * 0.22f;
+                Sphere(pivot, Lit(greens[i % greens.Length], 0.1f), new Vector3(x, y, -0.06f), new Vector3(size, size * 0.85f, size * 0.5f));
+            }
+            Box(pivot, Glow(new Color(1f, 0.93f, 0.8f), 1.2f), new Vector3(0f, height + 0.06f, -0.08f), new Vector3(width, 0.02f, 0.04f));
         }
 
         /// <summary>Steel lift portals with door leaves, floor indicator and call buttons on the item's front (-Z) face.</summary>

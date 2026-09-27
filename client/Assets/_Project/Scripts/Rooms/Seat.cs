@@ -31,10 +31,20 @@ namespace Reconnect.Client.Rooms
         public bool HasBackrest { get; private set; } = true;
 
         /// <summary>
+        /// The backrest measured on the model is not where the model's front says (a wing chair's wings, high armrests):
+        /// the known front wins; tests list these models.
+        /// </summary>
+        public bool MeasuredBackDisagrees { get; private set; }
+
+        /// <summary>
         /// Measures the places of the model under <paramref name="pivot"/> (world bounds <paramref name="bounds"/>,
         /// room built axis-aligned) and adds colliders so the seat can be tapped.
         /// </summary>
-        public static Seat Build(Transform pivot, Transform room, Bounds bounds, int item, int places)
+        /// <param name="front">
+        /// The way the item faces in world space (known from the catalog: Kenney models face -Z, Poly Haven +Z). People sit
+        /// looking this way; null = guess from the model (backrest = highest side).
+        /// </param>
+        public static Seat Build(Transform pivot, Transform room, Bounds bounds, int item, int places, Vector3? front = null)
         {
             var colliders = new List<Collider>();
             foreach (var filter in pivot.GetComponentsInChildren<MeshFilter>())
@@ -79,18 +89,25 @@ namespace Reconnect.Client.Rooms
                 if (highest - lowest < 0.12f)
                 {
                     seat.HasBackrest = false;
-                    back = -pivot.forward;   // stool: no backrest, face the way the item is turned
+                    back = -(front ?? pivot.forward);   // stool: no backrest, face the way the item is turned (turns to a counter later)
                     back.y = 0f;
                     back.Normalize();
                 }
+                else if (front is { } known)
+                {
+                    // Chairs, armchairs, sofas: sit looking the way the item faces.
+                    var knownBack = -new Vector3(known.x, 0f, known.z).normalized;
+                    seat.MeasuredBackDisagrees |= Vector3.Dot(back, knownBack) < 0.5f;
+                    back = knownBack;
+                }
 
-                var front = -back;
-                var reach = Mathf.Abs(Vector3.Dot(bounds.extents, front));
-                var point = centre + front * reach * 0.15f;
+                var facing = -back;
+                var reach = Mathf.Abs(Vector3.Dot(bounds.extents, facing));
+                var point = centre + facing * reach * 0.15f;
                 point.y = HeightAt(colliders, point, bounds);
                 seat._points.Add(room.InverseTransformPoint(point));
-                seat._facings.Add(Quaternion.LookRotation(room.InverseTransformDirection(front)).eulerAngles.y);
-                seat._standing.Add(room.InverseTransformPoint(centre + front * (reach + 0.55f)));
+                seat._facings.Add(Quaternion.LookRotation(room.InverseTransformDirection(facing)).eulerAngles.y);
+                seat._standing.Add(room.InverseTransformPoint(centre + facing * (reach + 0.55f)));
             }
             return seat;
         }

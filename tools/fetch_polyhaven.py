@@ -29,6 +29,13 @@ MODELS = [
     "bronze_ray_statue", "potted_plant_01", "ceramic_vase_03",
     # Lake bath (Seebad): outdoor furniture, planters, deck lights
     "outdoor_table_chair_set_01", "planter_box_01", "planter_box_02", "street_lamp_02",
+    # Prime Tower storeys: indoor plants, modern shelves, bar lights and stools, bar/office/lounge decoration
+    "anthurium_botany_01", "calathea_orbifolia_01", "fern_02", "planter_pot_clay",
+    "steel_frame_shelves_01", "steel_frame_shelves_02", "caged_hanging_light", "hanging_industrial_lamp", "Chandelier_02",
+    "metal_stool_01", "metal_stool_03", "modern_coffee_table_02", "industrial_coffee_table", "round_wooden_table_02",
+    "wine_bottles_01", "brass_goblets", "brass_vase_01", "brass_vase_02", "ceramic_vase_02", "bronze_shark_statue",
+    "wall_clock", "fancy_picture_frame_01", "fancy_picture_frame_02", "projector_screen", "stationery_supplies",
+    "classic_laptop",
 ]
 RESOLUTION = "1k"
 ROOT = os.path.join(os.path.dirname(__file__), "..", "client", "Assets", "ThirdParty", "PolyHaven")
@@ -49,7 +56,10 @@ def save(url, path):
 
 
 # Some Poly Haven files hold several variants side by side; keep one (node-name suffix) and move it to the origin.
-VARIANTS = {"pachira_aquatica_01": "_d", "brass_candleholders": "_02"}
+VARIANTS = {
+    "pachira_aquatica_01": "_d", "brass_candleholders": "_02", "anthurium_botany_01": "01_a", "calathea_orbifolia_01": "01_a",
+    "fern_02": "02_b", "wine_bottles_01": "_bordeaux",
+}
 
 
 def keep_variant(path, suffix):

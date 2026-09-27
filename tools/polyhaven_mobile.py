@@ -9,8 +9,12 @@ place, keeping the original texture files. Run after tools/fetch_polyhaven.py; i
 """
 import glob
 import os
+import sys
 
 import bpy
+
+sys.path.insert(0, os.path.dirname(__file__))
+from fetch_polyhaven import VARIANTS  # noqa: E402 – files with several variants side by side: keep one
 
 MAX_TRIANGLES = 3000         # per mesh
 MAX_MODEL_TRIANGLES = 12000  # per model (chess sets and book rows are many small meshes)
@@ -32,6 +36,18 @@ def decimate(obj, ratio):
 for path in sorted(glob.glob(os.path.join(ROOT, "*", "*.gltf"))):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=path)
+    model = os.path.splitext(os.path.basename(path))[0]
+    removed = False
+    if model in VARIANTS:
+        # Keep the chosen variant (its root objects end with the suffix), move it to the origin.
+        for obj in [o for o in bpy.data.objects if o.parent is None]:
+            if obj.name.split(".")[0].endswith(VARIANTS[model]):
+                obj.location.x = 0.0
+                obj.location.y = 0.0
+            else:
+                for child in list(obj.children_recursive) + [obj]:
+                    bpy.data.objects.remove(child, do_unlink=True)
+                removed = True
     meshes = [o for o in bpy.data.objects if o.type == "MESH"]
     before = sum(triangles(o) for o in meshes)
     # Some models are modelled in cm with a node scale of 0.01; the room sets the root scale when placing the model,
@@ -51,7 +67,7 @@ for path in sorted(glob.glob(os.path.join(ROOT, "*", "*.gltf"))):
         for obj in meshes:
             decimate(obj, MAX_MODEL_TRIANGLES / total)
     after = sum(triangles(o) for o in meshes)
-    if after < before or scaled:
+    if after < before or scaled or removed:
         bpy.ops.export_scene.gltf(filepath=path, export_format="GLTF_SEPARATE", export_keep_originals=True,
                                   export_yup=True, export_apply=True)
     print(f"POLYHAVEN {os.path.basename(path)}: {before} -> {after} triangles")

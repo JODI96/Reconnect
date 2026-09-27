@@ -150,9 +150,10 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
 - **Sitzen:** Kein Emote-Knopf – Stuhl/Sofa/Liege antippen (auch knapp daneben, `RoomView.SeatAt`), die Figur läuft hin und
   setzt sich. Welche Möbel Sitze sind und wie viele Plätze sie haben, steht in `RoomSeats` (Contracts, Server und Client).
   Der Server merkt sich den Platz pro Person (`Sit(item, place)` → false wenn besetzt, `StandUp`, `MoveTo` steht auf;
-  `PlayerSeated`, Snapshot enthält `Seat`), adressiert über den Index im Layout. Der Client misst Sitzhöhe und Richtung
-  am Modell selbst (`Seat`: Lehne = höchste Seite, Sitzfläche per Strahl von oben), Hocker drehen sich zur Theke – oder
-  mit dem Rücken dazu, wenn kein Beinraum ist. `AvatarView.SitOn` schiebt die Figur nach der Animation so, dass die Hüfte
+  `PlayerSeated`, Snapshot enthält `Seat`), adressiert über den Index im Layout. Der Client misst die Sitzhöhe am Modell
+  (`Seat`, Strahl von oben); die Blickrichtung ist die Vorderseite des Möbels laut Katalog (Kenney −Z, Poly Haven +Z bei
+  Rotation 0). Hocker ohne Lehne drehen sich immer zur Theke/zum Tisch daneben. `SeatDirectionTests` prüft jedes
+  Sitzmöbel in alle vier Richtungen und den Barfall. `AvatarView.SitOn` schiebt die Figur nach der Animation so, dass die Hüfte
   auf der Sitzfläche liegt. Antippen eines Stuhls/Sofas oder „Sitzen“ (nächster freier Platz). `SeatingTests` prüft alle Sitztypen.
 - **Schwimmen:** Pools (`custom-pool` 6×3 m oder `custom-pool-<B>x<T>`) sind in den Boden versenkt (Boden und Sockel
   werden um sie herum aus Stücken gebaut, `CustomItems.PoolDepth`/`WaterLevel`); ihre Felder sind begehbares Wasser

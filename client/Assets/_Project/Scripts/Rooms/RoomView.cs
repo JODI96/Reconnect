@@ -261,12 +261,11 @@ namespace Reconnect.Client.Rooms
             Pathfinder = new RoomPathfinder(_width, _depth, _blocked);
             foreach (var seat in _seats.Values)
             {
-                if ((!seat.HasBackrest || IsStool(seat.name)) && NearestCounter(seat) is { } counter)
+                // Stools without a backrest turn to the bar or table next to them (people sit at a counter, never with
+                // their back to it); everything with a backrest faces the way the chair is turned.
+                if (!seat.HasBackrest && NearestCounter(seat) is { } counter)
                 {
-                    // Knees under the counter only if there is room; a closed cabinet front gets the back instead.
-                    var point = seat.Points[0];
-                    var gap = Vector2.Distance(new Vector2(counter.x, counter.z), new Vector2(point.x, point.z));
-                    seat.FaceTowards(gap >= 0.8f ? counter : point + (point - counter));   // legs reach ~0.75 m forward
+                    seat.FaceTowards(counter);
                 }
                 seat.ResolveApproaches(Pathfinder);
             }
@@ -528,7 +527,6 @@ namespace Reconnect.Client.Rooms
         }
 
         /// <summary>Bar stools and chairs: turned towards the bar (their footrests would pass for a backrest).</summary>
-        private static bool IsStool(string itemId) => itemId.Contains("stool") || itemId.Contains("bar_chair");
 
         /// <summary>Closest bar counter / table next to a stool (within 1.2 m).</summary>
         private Vector3? NearestCounter(Seat seat)
@@ -1187,7 +1185,7 @@ namespace Reconnect.Client.Rooms
                     }
                     if (RoomSeats.PlacesFor(item.ItemId) is var loungerPlaces and > 0)
                     {
-                        _seats[index] = Seat.Build(pivot, _content, Bounds(pivot), index, loungerPlaces);
+                        _seats[index] = Seat.Build(pivot, _content, Bounds(pivot), index, loungerPlaces, FrontOf(item));
                     }
                     continue;
                 }
@@ -1196,7 +1194,7 @@ namespace Reconnect.Client.Rooms
                 MountOnWall(pivot, definition, ref bounds, context);
                 if (RoomSeats.PlacesFor(item.ItemId) is var places and > 0)
                 {
-                    _seats[index] = Seat.Build(pivot, _content, bounds, index, places);
+                    _seats[index] = Seat.Build(pivot, _content, bounds, index, places, FrontOf(item));
                 }
                 if (definition?.Kind == ItemKind.Floor)
                 {
@@ -1285,6 +1283,13 @@ namespace Reconnect.Client.Rooms
 
         private RoomItemDto RoomItemAt(Transform pivot) =>
             new(pivot.name, new Vector3Dto(pivot.localPosition.x, 0f, pivot.localPosition.z), pivot.localEulerAngles.y);
+
+        /// <summary>The way an item faces in world space (catalog convention: Kenney -Z, Poly Haven +Z at rotation 0).</summary>
+        private Vector3 FrontOf(RoomItemDto item)
+        {
+            var (x, z) = RoomLayout.Front(item.ItemId, item.Rotation);
+            return transform.TransformDirection(new Vector3(x, 0f, z));
+        }
 
         private static bool IsLamp(string itemId) => itemId.StartsWith("lamp") || itemId.Contains("_lamp");
 

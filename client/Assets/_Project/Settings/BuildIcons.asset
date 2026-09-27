@@ -253,6 +253,8 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: a4ab7a28949bb0148b1c51d9e5f55fcb, type: 3}
   - itemId: washerDryerStacked
     icon: {fileID: 2800000, guid: 2b43412abba9f0245ad06fda396795aa, type: 3}
+  - itemId: ph-anthurium_botany_01
+    icon: {fileID: 2800000, guid: 64166d1b3163c78489c46cce6eba64bb, type: 3}
   - itemId: ph-antique_ceramic_vase_01
     icon: {fileID: 2800000, guid: 1c0940a1f7b12fe4d87e25da04cc0c36, type: 3}
   - itemId: ph-ArmChair_01
@@ -263,16 +265,34 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: fdf05e2b8aa2d304b98ee785dd75db05, type: 3}
   - itemId: ph-brass_candleholders
     icon: {fileID: 2800000, guid: 7406eccc950750441932cb836634a98c, type: 3}
+  - itemId: ph-brass_goblets
+    icon: {fileID: 2800000, guid: 53e30b8b244cc4e4d96b797c0b41048e, type: 3}
+  - itemId: ph-brass_vase_01
+    icon: {fileID: 2800000, guid: 5b1acca604ebe41468709d6a75173d16, type: 3}
+  - itemId: ph-brass_vase_02
+    icon: {fileID: 2800000, guid: 20c3f79c039c2334696a72fa9b1b91bf, type: 3}
   - itemId: ph-bronze_ray_statue
     icon: {fileID: 2800000, guid: a3c5e24893b4cf942aa86c4fd3810556, type: 3}
+  - itemId: ph-bronze_shark_statue
+    icon: {fileID: 2800000, guid: 709d02cdc94165e49b2b49d112272001, type: 3}
+  - itemId: ph-caged_hanging_light
+    icon: {fileID: 2800000, guid: 06f991e9a20147a45b78458cd521cdaf, type: 3}
+  - itemId: ph-calathea_orbifolia_01
+    icon: {fileID: 2800000, guid: 6c6cecf17b6965443bebaf5372904a17, type: 3}
   - itemId: ph-ceramic_vase_01
     icon: {fileID: 2800000, guid: 5d5655206151e4047a3bb34ee51784c3, type: 3}
+  - itemId: ph-ceramic_vase_02
+    icon: {fileID: 2800000, guid: a809b3c3caae8f14594ac7121eb61cee, type: 3}
   - itemId: ph-ceramic_vase_03
     icon: {fileID: 2800000, guid: d4124effb8849da4d879d9fcd43c451f, type: 3}
   - itemId: ph-Chandelier_01
     icon: {fileID: 2800000, guid: 377d1850c6007854599074d4478ce5aa, type: 3}
+  - itemId: ph-Chandelier_02
+    icon: {fileID: 2800000, guid: 42c0166f51ea82941a6d1696efa19d73, type: 3}
   - itemId: ph-chess_set
     icon: {fileID: 2800000, guid: 295c8949d4a97044fb5e4f0c7f272f59, type: 3}
+  - itemId: ph-classic_laptop
+    icon: {fileID: 2800000, guid: 9b499977461e21f4987b7bf7f402021b, type: 3}
   - itemId: ph-coffee_table_round_01
     icon: {fileID: 2800000, guid: ab3c9e401a9584b48b577826ab11db01, type: 3}
   - itemId: ph-CoffeeCart_01
@@ -285,26 +305,40 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: cbd325c12b8d545479c05a1fcafb3872, type: 3}
   - itemId: ph-dining_table
     icon: {fileID: 2800000, guid: 93a82445bf3ac5b4fa0f7b15bbc2a345, type: 3}
+  - itemId: ph-fancy_picture_frame_01
+    icon: {fileID: 2800000, guid: 51011e80599893947acfb8d0488bf91b, type: 3}
+  - itemId: ph-fancy_picture_frame_02
+    icon: {fileID: 2800000, guid: f00cbaccd254b0a4dbf0ffb2a41266f2, type: 3}
+  - itemId: ph-fern_02
+    icon: {fileID: 2800000, guid: ced5b353c4097f04381748a1a227ae4e, type: 3}
   - itemId: ph-gallinera_chair
     icon: {fileID: 2800000, guid: ec0a41767f79aeb4da14ef608773ddef, type: 3}
   - itemId: ph-gallinera_table
     icon: {fileID: 2800000, guid: de3c6148b4317fd43af86b181c58220b, type: 3}
   - itemId: ph-GreenChair_01
     icon: {fileID: 2800000, guid: 2b6e59f26e61e37468ca419ee91e026e, type: 3}
+  - itemId: ph-hanging_industrial_lamp
+    icon: {fileID: 2800000, guid: 56dad10dae6e12b48acedaf56769da5f, type: 3}
   - itemId: ph-hanging_picture_frame_01
     icon: {fileID: 2800000, guid: d3d91743f007a2d47a9d67709244c68a, type: 3}
   - itemId: ph-hanging_picture_frame_02
     icon: {fileID: 2800000, guid: 0335c8694523d1847bf0a0f807130e2f, type: 3}
   - itemId: ph-hanging_picture_frame_03
     icon: {fileID: 2800000, guid: d9fa6d26f63a6c34d909f93b10f24f8a, type: 3}
+  - itemId: ph-industrial_coffee_table
+    icon: {fileID: 2800000, guid: b7bde7d3742f24346991440fd14a5bb5, type: 3}
   - itemId: ph-mantel_clock_01
     icon: {fileID: 2800000, guid: 97aefa86c347cfb49b6e862aea086027, type: 3}
   - itemId: ph-marble_bust_01
     icon: {fileID: 2800000, guid: 2e8f5bdba11816b4c988b287aadd5a9e, type: 3}
   - itemId: ph-metal_office_desk
     icon: {fileID: 2800000, guid: 5a3177713b2396b46aea1e03642f969d, type: 3}
+  - itemId: ph-metal_stool_01
+    icon: {fileID: 2800000, guid: 795a742d64c56704b98d5402dfe02768, type: 3}
   - itemId: ph-metal_stool_02
     icon: {fileID: 2800000, guid: f88f25b011e3e7c48a2324fe78018640, type: 3}
+  - itemId: ph-metal_stool_03
+    icon: {fileID: 2800000, guid: 526a66c6bb6fc6543b005cddd330a1be, type: 3}
   - itemId: ph-mid_century_lounge_chair
     icon: {fileID: 2800000, guid: 458a6874141183443af795d9a2a52fdd, type: 3}
   - itemId: ph-modern_arm_chair_01
@@ -313,6 +347,8 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: feb062e74dc8c0d44be173c83933fd1d, type: 3}
   - itemId: ph-modern_coffee_table_01
     icon: {fileID: 2800000, guid: ffbf5f9b92f72ab48be6d892530e495c, type: 3}
+  - itemId: ph-modern_coffee_table_02
+    icon: {fileID: 2800000, guid: 8c368da093a2870468b3b8d24ef42fd9, type: 3}
   - itemId: ph-modern_wooden_cabinet
     icon: {fileID: 2800000, guid: 71d6182012e820b47a194bb9b2e5893b, type: 3}
   - itemId: ph-Ottoman_01
@@ -327,14 +363,20 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: c4b0237edb721854c924a1d59b1f901a, type: 3}
   - itemId: ph-planter_box_02
     icon: {fileID: 2800000, guid: 5549d80de8747a9478ac1c3b8638f14b, type: 3}
+  - itemId: ph-planter_pot_clay
+    icon: {fileID: 2800000, guid: 58a2d52b21ceea5429bcca2b2949a2a6, type: 3}
   - itemId: ph-potted_plant_01
     icon: {fileID: 2800000, guid: f88e14f3089fd8a4dac30f9b6af1f0a8, type: 3}
   - itemId: ph-potted_plant_02
     icon: {fileID: 2800000, guid: f0d7128413ffaa64ab497fe49cb37799, type: 3}
   - itemId: ph-potted_plant_04
     icon: {fileID: 2800000, guid: e034b67cadbb90540969fcd7a2a0388c, type: 3}
+  - itemId: ph-projector_screen
+    icon: {fileID: 2800000, guid: 8ad4f892bf5ef3244a60cb61aca1a9c7, type: 3}
   - itemId: ph-round_wooden_table_01
     icon: {fileID: 2800000, guid: 949bc2dbfa6f7634f9488f9a5c730c63, type: 3}
+  - itemId: ph-round_wooden_table_02
+    icon: {fileID: 2800000, guid: 3c75a3719c7b7e44eb13e01be5105cdd, type: 3}
   - itemId: ph-Shelf_01
     icon: {fileID: 2800000, guid: 2b61712bcf9723b4496e3bdc434e5018, type: 3}
   - itemId: ph-side_table_01
@@ -351,6 +393,12 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: c48d4bb5753176c4e8f12628f0fad56e, type: 3}
   - itemId: ph-standing_picture_frame_01
     icon: {fileID: 2800000, guid: 27d1bf8ac6cff2e4aa780945ea4c483b, type: 3}
+  - itemId: ph-stationery_supplies
+    icon: {fileID: 2800000, guid: 8c31145891fd2cb43941aa642fa42226, type: 3}
+  - itemId: ph-steel_frame_shelves_01
+    icon: {fileID: 2800000, guid: e691e4ff35dc98b4dada2d5e7e95556d, type: 3}
+  - itemId: ph-steel_frame_shelves_02
+    icon: {fileID: 2800000, guid: 4517b534489ca7f49bac73d1c74ebcad, type: 3}
   - itemId: ph-street_lamp_02
     icon: {fileID: 2800000, guid: 32420c0fe81ce964caf7b9947977542c, type: 3}
   - itemId: ph-tea_set_01
@@ -359,6 +407,10 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: 39ae0421de843e2419e35a374bda0594, type: 3}
   - itemId: ph-vintage_grandfather_clock_01
     icon: {fileID: 2800000, guid: 369cf0eff5c359347af48a4c3e69ebf6, type: 3}
+  - itemId: ph-wall_clock
+    icon: {fileID: 2800000, guid: 7b8914da9379b3744b024f1806758d52, type: 3}
+  - itemId: ph-wine_bottles_01
+    icon: {fileID: 2800000, guid: a00e581616d1f2942b380d430681825c, type: 3}
   - itemId: ph-wooden_bookshelf_worn
     icon: {fileID: 2800000, guid: 6d18b36275eaf5b4287f190b3df6e030, type: 3}
   - itemId: ph-wooden_display_shelves_01
@@ -413,6 +465,20 @@ MonoBehaviour:
     icon: {fileID: 2800000, guid: 1002e65b22293914da450bc4eb2f6ca1, type: 3}
   - itemId: custom-ruground
     icon: {fileID: 2800000, guid: 4af4138c7737d99408f7e0680ca8a69d, type: 3}
+  - itemId: custom-glasswall
+    icon: {fileID: 2800000, guid: b111c3b986caa0644a928eb941431ec1, type: 3}
+  - itemId: custom-phonebooth
+    icon: {fileID: 2800000, guid: 4e7b5bbf6bcca2e48a6206756ee9c66d, type: 3}
+  - itemId: custom-officechair
+    icon: {fileID: 2800000, guid: ad446e341fe79d147a4bbcd5e0f574ec, type: 3}
+  - itemId: custom-benchdesk
+    icon: {fileID: 2800000, guid: ff93a5b9659499f4c82c3c8ee8db8968, type: 3}
+  - itemId: custom-stage
+    icon: {fileID: 2800000, guid: 7cb1d7bc3a74a7e4cb5896f1ca5f22e2, type: 3}
+  - itemId: custom-buffet
+    icon: {fileID: 2800000, guid: ffe4e3015558f074ebc92630fd700915, type: 3}
+  - itemId: custom-greenwall
+    icon: {fileID: 2800000, guid: 819daad6259389b458cd6a0dd154a710, type: 3}
   - itemId: game-tictactoe
     icon: {fileID: 2800000, guid: 5efb0b99374abb44898b94051ffedca1, type: 3}
   - itemId: game-quiz

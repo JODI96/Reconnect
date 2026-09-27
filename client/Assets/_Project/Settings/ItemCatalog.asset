@@ -434,6 +434,9 @@ MonoBehaviour:
   - itemId: washerDryerStacked
     model: {fileID: 919132149155446097, guid: 6ced3d5ec148e8b48bc9626a69514596, type: 3}
     scale: 0
+  - itemId: ph-anthurium_botany_01
+    model: {fileID: 397808925945280615, guid: 3dfffc6d00a7b3840b925862b7053766, type: 3}
+    scale: 1
   - itemId: ph-antique_ceramic_vase_01
     model: {fileID: 4909507225377626169, guid: 02cc1165cf349ea4dab4ca783fe69ca8, type: 3}
     scale: 1
@@ -449,11 +452,32 @@ MonoBehaviour:
   - itemId: ph-brass_candleholders
     model: {fileID: -1769072821072317196, guid: 9c959a871d241c0458c5bb071268b1b1, type: 3}
     scale: 1
+  - itemId: ph-brass_goblets
+    model: {fileID: 8771091787928289351, guid: 6fef0ec8c6660b14f9bc86d1c66355d6, type: 3}
+    scale: 1
+  - itemId: ph-brass_vase_01
+    model: {fileID: 8302372674251921910, guid: 99e36084f7830c344880e02d408de296, type: 3}
+    scale: 1
+  - itemId: ph-brass_vase_02
+    model: {fileID: 7262722914347162404, guid: 4af56d5a48bc25443acaca55a54fdd08, type: 3}
+    scale: 1
   - itemId: ph-bronze_ray_statue
     model: {fileID: -6368511876999098823, guid: 735fb1d4957a4514cba61da1a27500dd, type: 3}
     scale: 1
+  - itemId: ph-bronze_shark_statue
+    model: {fileID: 1083615613840563720, guid: 590d8d3d1f8010a409be4bf32a5a2c0f, type: 3}
+    scale: 1
+  - itemId: ph-caged_hanging_light
+    model: {fileID: -8822729316304786465, guid: 06276137d1a90994c87ccf9de3da7401, type: 3}
+    scale: 1
+  - itemId: ph-calathea_orbifolia_01
+    model: {fileID: -2587948105245274271, guid: 686d6a62a911330479c26b12be1f9dda, type: 3}
+    scale: 1
   - itemId: ph-ceramic_vase_01
     model: {fileID: 3846568447194651512, guid: 7293f1a1cc7f64948b1b244530bfba3e, type: 3}
+    scale: 1
+  - itemId: ph-ceramic_vase_02
+    model: {fileID: 2471152939554360715, guid: 196acad79d840844cb56127deffdd045, type: 3}
     scale: 1
   - itemId: ph-ceramic_vase_03
     model: {fileID: 1972470712560988797, guid: 826e5e43adab88a4ab89b7358657d037, type: 3}
@@ -461,8 +485,14 @@ MonoBehaviour:
   - itemId: ph-Chandelier_01
     model: {fileID: -1708029181904057896, guid: 027ca270d835e954692ae3f4fd17943a, type: 3}
     scale: 1
+  - itemId: ph-Chandelier_02
+    model: {fileID: -5479673970905319996, guid: f6b0f1861fbb0294e8e71f978b207bf6, type: 3}
+    scale: 1
   - itemId: ph-chess_set
     model: {fileID: 8771091787928289351, guid: 27bf3dc2febd2fa4ba1fb31335d1766a, type: 3}
+    scale: 1
+  - itemId: ph-classic_laptop
+    model: {fileID: 8771091787928289351, guid: c1342170e4b0c7a47885ca02ee4e6ac4, type: 3}
     scale: 1
   - itemId: ph-coffee_table_round_01
     model: {fileID: -6831534129546790398, guid: 74cd990480edbec4dbeb2970de4c96cd, type: 3}
@@ -482,6 +512,15 @@ MonoBehaviour:
   - itemId: ph-dining_table
     model: {fileID: 8771091787928289351, guid: 3bc15b23d28df8a4aada9192f79733fa, type: 3}
     scale: 1
+  - itemId: ph-fancy_picture_frame_01
+    model: {fileID: 8771091787928289351, guid: 584007876020d9945b22052f04cf3035, type: 3}
+    scale: 1
+  - itemId: ph-fancy_picture_frame_02
+    model: {fileID: 8771091787928289351, guid: 90fa91548e35214499afc7e1c54a3874, type: 3}
+    scale: 1
+  - itemId: ph-fern_02
+    model: {fileID: -6373294288085594673, guid: 3ec16b5127f43a142911f1d978c17d01, type: 3}
+    scale: 1
   - itemId: ph-gallinera_chair
     model: {fileID: 2415781453043230024, guid: 6aace37cd47f1534cb29272d3366fc86, type: 3}
     scale: 1
@@ -490,6 +529,9 @@ MonoBehaviour:
     scale: 1
   - itemId: ph-GreenChair_01
     model: {fileID: -8483069254667367646, guid: 6685f9ab07a19b649800f41dfb918a7b, type: 3}
+    scale: 1
+  - itemId: ph-hanging_industrial_lamp
+    model: {fileID: -574085362015915843, guid: 7f0f13804926bbf42abfde3c34dd59d1, type: 3}
     scale: 1
   - itemId: ph-hanging_picture_frame_01
     model: {fileID: 5244186178270762001, guid: 8f15c3c1e462b7c4daf8625638caf650, type: 3}
@@ -500,6 +542,9 @@ MonoBehaviour:
   - itemId: ph-hanging_picture_frame_03
     model: {fileID: 8771091787928289351, guid: 68c920642840b734c9253ad3e38816b3, type: 3}
     scale: 1
+  - itemId: ph-industrial_coffee_table
+    model: {fileID: 8710097167143290990, guid: 4deb52fd725a1ae408dcac01c26551ca, type: 3}
+    scale: 1
   - itemId: ph-mantel_clock_01
     model: {fileID: 8771091787928289351, guid: a026deab9bd388d459164f2c2ea3d379, type: 3}
     scale: 1
@@ -509,8 +554,14 @@ MonoBehaviour:
   - itemId: ph-metal_office_desk
     model: {fileID: 8771091787928289351, guid: 71f341803609c894fb52c8e93991771c, type: 3}
     scale: 1
+  - itemId: ph-metal_stool_01
+    model: {fileID: -4281118476547302574, guid: 482dd435e8d7657409549e2a6d60158e, type: 3}
+    scale: 1
   - itemId: ph-metal_stool_02
     model: {fileID: 7271152144596589238, guid: 431273547599d1c438dc5151a68f9a06, type: 3}
+    scale: 1
+  - itemId: ph-metal_stool_03
+    model: {fileID: 3911118488951879871, guid: 01213757d4f7ae148adf9631edf6d8e3, type: 3}
     scale: 1
   - itemId: ph-mid_century_lounge_chair
     model: {fileID: 7216191201510177953, guid: eeffa4a2f2f8d944fb4762247daaef70, type: 3}
@@ -523,6 +574,9 @@ MonoBehaviour:
     scale: 1
   - itemId: ph-modern_coffee_table_01
     model: {fileID: -8971402639452374730, guid: 3537c85f435a6034f855465cdc646c72, type: 3}
+    scale: 1
+  - itemId: ph-modern_coffee_table_02
+    model: {fileID: -8336173724211163898, guid: bb33e54277385e749ac7c1b651850968, type: 3}
     scale: 1
   - itemId: ph-modern_wooden_cabinet
     model: {fileID: 8771091787928289351, guid: acf55a25626315f48b5a60245aada04e, type: 3}
@@ -545,6 +599,9 @@ MonoBehaviour:
   - itemId: ph-planter_box_02
     model: {fileID: -4986704037255078313, guid: d39970aae081fb14f9c6f8590054fa9b, type: 3}
     scale: 1
+  - itemId: ph-planter_pot_clay
+    model: {fileID: -6375022808265410148, guid: 50aa65a35166edc45ad13eae52f7dc8c, type: 3}
+    scale: 1
   - itemId: ph-potted_plant_01
     model: {fileID: 8771091787928289351, guid: b051a0a70a6d719418beff8878a59272, type: 3}
     scale: 1
@@ -554,8 +611,14 @@ MonoBehaviour:
   - itemId: ph-potted_plant_04
     model: {fileID: 8771091787928289351, guid: d5ced7d90f0976a468f0f612f615ae9b, type: 3}
     scale: 1
+  - itemId: ph-projector_screen
+    model: {fileID: 8771091787928289351, guid: 47c4656298f376b4492087cff82bb4ac, type: 3}
+    scale: 1
   - itemId: ph-round_wooden_table_01
     model: {fileID: 8771091787928289351, guid: 4e42c1287b2f9d642ba3fc266e127409, type: 3}
+    scale: 1
+  - itemId: ph-round_wooden_table_02
+    model: {fileID: 4866280223864357273, guid: 8108f4831dc287c41b458da2fff1575f, type: 3}
     scale: 1
   - itemId: ph-Shelf_01
     model: {fileID: 6545657021925134051, guid: bb0979cb2563797449cb4b85ff76cff1, type: 3}
@@ -581,6 +644,15 @@ MonoBehaviour:
   - itemId: ph-standing_picture_frame_01
     model: {fileID: 1899500659328150936, guid: ce73c38c4e375874dbe54a4189cb9bb6, type: 3}
     scale: 1
+  - itemId: ph-stationery_supplies
+    model: {fileID: 8771091787928289351, guid: 1c760ba03e186f14dbe7a459da514745, type: 3}
+    scale: 1
+  - itemId: ph-steel_frame_shelves_01
+    model: {fileID: -3492864601849917174, guid: 92dc1fc8a05547742ae79e796d8fdafe, type: 3}
+    scale: 1
+  - itemId: ph-steel_frame_shelves_02
+    model: {fileID: -7192362939705380017, guid: dad87d54bbc33af469198761c8a5f785, type: 3}
+    scale: 1
   - itemId: ph-street_lamp_02
     model: {fileID: -3106656717098273974, guid: d70770596dfc2354ab928932a9e6e03f, type: 3}
     scale: 1
@@ -592,6 +664,12 @@ MonoBehaviour:
     scale: 1
   - itemId: ph-vintage_grandfather_clock_01
     model: {fileID: 8771091787928289351, guid: 210b21abe286fa447b1d04f493a82792, type: 3}
+    scale: 1
+  - itemId: ph-wall_clock
+    model: {fileID: 8771091787928289351, guid: 3b7738c12d9a63b42bd82f7c1836eb75, type: 3}
+    scale: 1
+  - itemId: ph-wine_bottles_01
+    model: {fileID: 3179154831007250671, guid: c373a64c31df152469bfefdae4ffee72, type: 3}
     scale: 1
   - itemId: ph-wooden_bookshelf_worn
     model: {fileID: -8083066977755564604, guid: cdb327fb1d912fc4cb4d9dd76164566b, type: 3}
