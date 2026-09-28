@@ -28,6 +28,7 @@ from bl_ext.blender_org.mpfb.entities.clothes.mhclo import Mhclo
 
 sys.path.insert(0, os.path.dirname(__file__))
 from build_avatars import to_t_pose, decimate, triangles, woman, man, MIXED  # noqa: E402
+import morphs  # noqa: E402
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(REPO, "client", "Assets", "ThirdParty", "MakeHuman", "Resources", "Wardrobe")   # loaded on demand
@@ -43,12 +44,15 @@ LOD1 = 0.2   # the room view: a fifth of the triangles
 # (hair cards are all open edges – keeping them would keep everything); at a few pixels nobody sees frayed hems.
 LOD2 = {"hair": 160, "beard": 50, "brows": 20, "hat": 60, "top": 120, "bottom": 110, "dress": 160, "outfit": 240, "shoes": 50}
 LOD2_BODY = 360
+# The body: MakeHuman's detailed proxy (~13.8k quads) so faces can be shaped, trimmed for close-ups; the room view and
+# crowds get far fewer.
+BODY_TRIS = (16000, 2600)
 TEXTURE = {"skin": 1024, "outfit": 1024, "dress": 1024, "hair": 512}   # others 512, eyes 128
 
 # "rig" names the armature like the ready-made figure whose humanoid avatar the body shares (Unity binds bones by path).
 BODIES = {
-    "female": dict(phenotype=woman(MIXED), proxy="female1605/female1605.proxy", rig="lena"),
-    "male": dict(phenotype=man(MIXED), proxy="male1591/male1591.proxy", rig="luca"),
+    "female": dict(phenotype=woman(MIXED), proxy="female_generic/female_generic.proxy", rig="lena"),
+    "male": dict(phenotype=man(MIXED), proxy="male_generic/male_generic.proxy", rig="luca"),
 }
 
 F, M, U = ("female",), ("male",), ("female", "male")
@@ -255,7 +259,7 @@ def export(rig, meshes, path):
     bpy.context.view_layer.objects.active = rig
     bpy.ops.export_scene.fbx(filepath=path, use_selection=True, object_types={"ARMATURE", "MESH"},
                              apply_scale_options="FBX_SCALE_ALL", axis_forward="-Z", axis_up="Y", add_leaf_bones=False,
-                             bake_anim=False, use_mesh_modifiers=True, mesh_smooth_type="FACE", path_mode="STRIP")
+                             bake_anim=False, use_mesh_modifiers=False, mesh_smooth_type="FACE", path_mode="STRIP")   # keeps the shape keys
 
 
 def decimate_keeping_edges(obj, ratio):
@@ -328,6 +332,7 @@ def build_body(body):
     proxy = next(o for o in body_meshes if spec["proxy"].split("/")[0] in o.name)
 
     parts = []   # (id, kind, mesh object, variants[(name, mhmat)], hides)
+    fits = {}    # mesh name -> its .mhclo (how it hangs on the base mesh: the morphs move it with the body)
     for folder, kind, bodies in CLOTHES:
         if body not in bodies:
             continue
@@ -335,14 +340,16 @@ def build_body(body):
         obj = HumanService.add_mhclo_asset(path, basemesh, asset_type="Clothes", subdiv_levels=0, material_type="MAKESKIN")
         garment = Mhclo()
         garment.load(path)
+        fits[obj.name] = garment
         hides = hidden_proxy_vertices(proxy_mhclo, garment.delverts) if garment.delete else []
         parts.append((folder, kind, obj, variants_of("clothes", folder), hides))
-    for folder in HAIR:
-        obj = HumanService.add_mhclo_asset(asset_path("hair", folder), basemesh, asset_type="Hair", subdiv_levels=0, material_type="MAKESKIN")
-        parts.append((folder, "hair", obj, variants_of("hair", folder), []))
-    for folder in BROWS:
-        obj = HumanService.add_mhclo_asset(asset_path("eyebrows", folder), basemesh, asset_type="Eyebrows", subdiv_levels=0, material_type="MAKESKIN")
-        parts.append((folder, "brows", obj, variants_of("eyebrows", folder), []))
+    for folder, kind, asset_type in [(h, "hair", "Hair") for h in HAIR] + [(b, "brows", "Eyebrows") for b in BROWS]:
+        library = "hair" if kind == "hair" else "eyebrows"
+        path = asset_path(library, folder)
+        obj = HumanService.add_mhclo_asset(path, basemesh, asset_type=asset_type, subdiv_levels=0, material_type="MAKESKIN")
+        fits[obj.name] = Mhclo()
+        fits[obj.name].load(path)
+        parts.append((folder, kind, obj, variants_of(library, folder), []))
 
     # Every loaded garment put a mask on the body (MPFB): the whole body is exported, the game hides what the worn
     # parts cover.
@@ -354,21 +361,38 @@ def build_body(body):
     uv = proxy.data.uv_layers.new(name="VertexIndex")
     for loop in proxy.data.loops:
         uv.data[loop.index].uv = (float(loop.vertex_index), 0.0)
-    for obj in body_meshes:
+    all_meshes = body_meshes + [p[2] for p in parts]
+    for obj in all_meshes:
         if obj.data.shape_keys:
             bpy.context.view_layer.objects.active = obj
             bpy.ops.object.shape_key_remove(all=True, apply_mix=True)
 
-    all_meshes = body_meshes + [p[2] for p in parts]
-    bpy.data.objects.remove(basemesh, do_unlink=True)
-    to_t_pose(rig, all_meshes)
-
-    manifest = {"body": body, "proxyVertices": len(proxy.data.vertices), "skins": [], "eyes": [], "parts": []}
-    assert len(proxy.data.vertices) == len(proxy_mhclo.verts), "the body is complete (no masks applied)"
-
-    # Body: proxy + eyes + eyelashes, two LODs of the proxy.
+    # Morphs (weight, face ...): how each base-mesh vertex moves, then every fitted mesh along with it.
     eyes = next(o for o in body_meshes if "low-poly" in o.name)
     lashes = next(o for o in body_meshes if "eyelashes" in o.name)
+    fits[proxy.name] = proxy_mhclo
+    for obj, library, folder in ((eyes, "eyes", "low-poly"), (lashes, "eyelashes", "eyelashes01")):
+        fits[obj.name] = Mhclo()
+        fits[obj.name].load(asset_path(library, folder))
+    base = morphs.base_deltas(basemesh, body)
+    rest = {name: morphs.asset_deltas(bpy.data.objects[name], mhclo, basemesh, base) for name, mhclo in fits.items()}
+    posed = {}
+    bpy.data.objects.remove(basemesh, do_unlink=True)
+    to_t_pose(rig, all_meshes, before_bake=lambda: posed.update(morphs.posed(all_meshes, rest)))
+    shapes = {obj.name: (morphs.snapshot(obj), posed.get(obj.name, {})) for obj in all_meshes}
+
+    manifest = {"body": body, "proxyVertices": len(proxy.data.vertices), "skins": [], "eyes": [], "parts": [],
+                "morphs": sorted(morphs.keys_for(body))}
+    assert len(proxy.data.vertices) == len(proxy_mhclo.verts), "the body is complete (no masks applied)"
+    # Coverage is measured on the whole body (the exported one is trimmed; its vertex numbers point back to this).
+    coverage = proxy.copy()
+    coverage.data = proxy.data.copy()
+    bpy.context.scene.collection.objects.link(coverage)
+    coverage.hide_set(True)
+
+    # Body: proxy + eyes + eyelashes, three LODs of the proxy.
+    proxy_source = shapes[proxy.name]
+    eyes_source, lashes_source = shapes[eyes.name], shapes[lashes.name]
     proxy.name = proxy.data.name = "Body_LOD0"
     eyes.name = eyes.data.name = "Eyes"
     lashes.name = lashes.data.name = "Lashes"
@@ -376,12 +400,18 @@ def build_body(body):
     body_lod.data = proxy.data.copy()
     body_lod.name = body_lod.data.name = "Body_LOD1"
     bpy.context.scene.collection.objects.link(body_lod)
-    decimate(body_lod, 0.5)
+    decimate(body_lod, BODY_TRIS[1] / max(1, triangles(body_lod)))
     body_far = proxy.copy()
     body_far.data = proxy.data.copy()
     body_far.name = body_far.data.name = "Body_LOD2"
     bpy.context.scene.collection.objects.link(body_far)
     decimate(body_far, LOD2_BODY / max(1, triangles(body_far)))
+    decimate(proxy, BODY_TRIS[0] / max(1, triangles(proxy)))
+    for mesh in (proxy, body_lod, body_far):
+        count = morphs.transfer(*proxy_source, mesh, vertex_index_layer="VertexIndex")
+        print(f"BODY {body}/{mesh.name}: {triangles(mesh)} triangles, {count} shape keys")
+    morphs.transfer(*eyes_source, eyes)
+    morphs.transfer(*lashes_source, lashes)
     for p in parts:
         p[2].hide_set(True)
     export(rig, [proxy, body_lod, body_far, eyes, lashes], os.path.join(out, "body.fbx"))
@@ -401,10 +431,13 @@ def build_body(body):
         if kind in COVERING:
             # Delete group (where the author set one) plus everything the cloth lies on; "under" also keeps the ring
             # along the garment's edge, which the game pulls in a little so it never shows through when moving.
-            inside, lying_under = covered_by_geometry(proxy, obj)
+            inside, lying_under = covered_by_geometry(coverage, obj)
             under = sorted(set(hides) | set(lying_under))
             hides = sorted(set(hides) | set(inside))
+        source = shapes[obj.name]
         meshes = with_lod(obj, BUDGET[kind], folder, kind)
+        for mesh in meshes:
+            morphs.transfer(*source, mesh)
         export(rig, meshes, os.path.join(out, folder + ".fbx"))
         size = TEXTURE.get(kind, 512)
         cutout = kind in ("hair", "brows", "beard")
@@ -459,6 +492,13 @@ def write_csharp(manifests):
     for manifest in manifests:
         skins = ", ".join(f'"{s["id"]}"' for s in manifest["skins"])
         lines.append(f'            ["{manifest["body"]}"] = new[] {{ {skins} }},')
+    lines += ["        };", ""]
+    lines.append("        /// <summary>Body and face shapes (id, group, both directions or only up, bodies) – see tools/avatars/morphs.py.</summary>")
+    lines.append("        public static readonly (string Id, string Group, bool TwoSided, string[] Bodies)[] Morphs =")
+    lines.append("        {")
+    for morph_id, group, bodies, minus, _plus in morphs.MORPHS:
+        names = ", ".join(f'"{b}"' for b in bodies)
+        lines.append(f'            ("{morph_id}", "{group}", {"true" if minus is not None else "false"}, new[] {{ {names} }}),')
     lines += ["        };", ""]
     eyes = ", ".join(f'"{e}"' for e in EYES)
     lines.append(f"        public static readonly string[] Eyes = {{ {eyes} }};")

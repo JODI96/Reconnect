@@ -18,7 +18,7 @@ namespace Reconnect.Client.Editor
         public const string Wardrobe = "Assets/ThirdParty/MakeHuman/Resources/Wardrobe/";
 
         /// <summary>Bump when the rules change, so Unity reimports the avatars.</summary>
-        public override uint GetVersion() => 7;
+        public override uint GetVersion() => 8;
 
 
         private void OnPreprocessModel()
@@ -37,7 +37,8 @@ namespace Reconnect.Client.Editor
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
                 importer.importCameras = false;
                 importer.importLights = false;
-                importer.importBlendShapes = false;
+                importer.importBlendShapes = true;   // body and face shapes (the game bakes them in when assembling)
+                importer.importBlendShapeNormals = ModelImporterNormals.None;
                 importer.useFileScale = true;
                 importer.optimizeGameObjects = false;
                 importer.meshCompression = ModelImporterMeshCompression.Medium;
@@ -70,7 +71,8 @@ namespace Reconnect.Client.Editor
             }
             importer.importCameras = false;
             importer.importLights = false;
-            importer.importBlendShapes = false;
+            importer.importBlendShapes = assetPath.StartsWith(Wardrobe);   // the wardrobe body's shapes
+            importer.importBlendShapeNormals = ModelImporterNormals.None;
             importer.importVisibility = false;
             importer.useFileScale = true;
             // The FBX materials ("opaque", "cutout") only name the submeshes; AvatarSetup puts URP materials there.

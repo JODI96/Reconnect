@@ -187,6 +187,16 @@ namespace Reconnect.Contracts.Avatars
             };
             var (lowest, tallest) = HeightRangeCm(body);
             look = WithHeightCm(look, random.Next(lowest, tallest + 1));
+            // A face and build of its own: a few shapes a little changed, one face shape.
+            foreach (var morph in Morphs.Where(m => m.TwoSided && Array.IndexOf(m.Bodies, body) >= 0))
+            {
+                if (random.Next(3) == 0)
+                {
+                    look = WithShape(look, morph.Id, (float)(random.NextDouble() * 0.9 - 0.45));
+                }
+            }
+            var faces = MorphsOf(body, "shape");
+            look = WithShape(look, faces[random.Next(faces.Count)].Id, (float)(0.3 + random.NextDouble() * 0.5));
             var hairTint = random.Next(3) == 0 ? null : Pick(HairTints);
             look = Wear(look, Of(Hair), tint: hairTint);
             var clothes = body == Female ? random.Next(3) : random.Next(2) + 1;   // women: dress, outfit or separates

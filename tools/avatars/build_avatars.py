@@ -333,8 +333,11 @@ T_POSE = [
 ]
 
 
-def to_t_pose(rig, meshes):
-    """Poses arms and legs straight (T-pose) and makes that the rest pose, meshes included."""
+def to_t_pose(rig, meshes, before_bake=None):
+    """
+    Poses arms and legs straight (T-pose) and makes that the rest pose, meshes included. before_bake() runs while the
+    rig is posed and the meshes are still deformed by it (the wardrobe's morphs are taken through the pose there).
+    """
     from mathutils import Matrix, Vector
 
     bpy.ops.object.select_all(action="DESELECT")
@@ -368,6 +371,8 @@ def to_t_pose(rig, meshes):
             align(f"mixamorig:{side}HandThumb{segment}", (sign * 0.79, -0.41, -0.45))
     bpy.context.view_layer.update()
     bpy.ops.object.mode_set(mode="OBJECT")
+    if before_bake is not None:
+        before_bake()
 
     # Bake the pose into the meshes, make it the rest pose, then skin them again.
     for mesh in meshes:

@@ -11,9 +11,10 @@ namespace Reconnect.Client.UI.Screens
 {
     /// <summary>
     /// The character creator (mirror or washstand in your own room, and the first time you enter a room): a big 3D preview
-    /// on a turntable (drag to turn, body or face, walking), categories with a picture card per hairstyle, garment, skin …,
-    /// colours per part, random look, walk style with preview. Dressing rules come from <see cref="Wardrobe"/> (Contracts),
-    /// the same the server checks.
+    /// on a turntable (drag to turn, pinch or wheel to zoom, walking), the camera glides to what is being changed (face,
+    /// upper body, legs, feet) and "Ganzer Look" shows everything; categories with a grid of picture cards per hairstyle,
+    /// garment, skin …, colours per part, sliders for body and face shape (live), random look, undo, walk style with
+    /// preview. Dressing rules come from <see cref="Wardrobe"/> (Contracts), the same the server checks.
     /// </summary>
     public sealed class CharacterCreatorPanel
     {
@@ -21,35 +22,45 @@ namespace Reconnect.Client.UI.Screens
 
         private sealed class Category
         {
-            public Category(string title, string kind, bool female = true, bool male = true)
+            public Category(string title, string kind, CharacterPreview.Focus focus, bool female = true, bool male = true)
             {
                 Title = title;
                 Kind = kind;
+                Focus = focus;
                 Female = female;
                 Male = male;
             }
 
             public string Title { get; }
             public string Kind { get; }
+            public CharacterPreview.Focus Focus { get; }
             public bool Female { get; }
             public bool Male { get; }
         }
 
         private static readonly Category[] Categories =
         {
-            new("Körper", "body"),
-            new("Haut", "skin"),
-            new("Augen", "eyes"),
-            new("Haare", Wardrobe.Hair),
-            new("Bart", Wardrobe.Beard, female: false),
-            new("Oberteil", Wardrobe.Top),
-            new("Hose & Rock", Wardrobe.Bottom),
-            new("Kleid", Wardrobe.Dress, male: false),
-            new("Outfit", Wardrobe.Outfit),
-            new("Schuhe", Wardrobe.Shoes),
-            new("Hut", Wardrobe.Hat),
-            new("Laufstil", "walk"),
+            new("Körper", "body", CharacterPreview.Focus.Full),
+            new("Haut", "skin", CharacterPreview.Focus.Upper),
+            new("Gesicht", "face", CharacterPreview.Focus.Face),
+            new("Augen", "eyes", CharacterPreview.Focus.Face),
+            new("Nase", "nose", CharacterPreview.Focus.Face),
+            new("Mund", "mouth", CharacterPreview.Focus.Face),
+            new("Ohren", "ears", CharacterPreview.Focus.Face),
+            new("Haare", Wardrobe.Hair, CharacterPreview.Focus.Face),
+            new("Bart", Wardrobe.Beard, CharacterPreview.Focus.Face, female: false),
+            new("Oberteil", Wardrobe.Top, CharacterPreview.Focus.Upper),
+            new("Hose & Rock", Wardrobe.Bottom, CharacterPreview.Focus.Legs),
+            new("Kleid", Wardrobe.Dress, CharacterPreview.Focus.Full, male: false),
+            new("Outfit", Wardrobe.Outfit, CharacterPreview.Focus.Full),
+            new("Schuhe", Wardrobe.Shoes, CharacterPreview.Focus.Feet),
+            new("Hut", Wardrobe.Hat, CharacterPreview.Focus.Face),
+            new("Laufstil", "walk", CharacterPreview.Focus.Full),
         };
+
+        private static Category CategoryOf(string kind) => Array.Find(Categories, c => c.Kind == kind);
+
+        private const int UndoSteps = 50;
 
         /// <summary>Eye colours as swatches (the textures themselves are too small to show).</summary>
         private static readonly Dictionary<string, Color32> EyeColours = new()
@@ -76,16 +87,21 @@ namespace Reconnect.Client.UI.Screens
         private VisualElement _panel;
         private VisualElement _stage;
         private ScrollView _categories;
-        private ScrollView _cards;
+        private ScrollView _content;
+        private VisualElement _cards;
         private VisualElement _extras;
         private Label _status;
-        private Button _faceButton;
+        private Button _fullButton;
         private Button _walkButton;
+        private Button _undoButton;
+        private readonly List<AvatarLookDto> _undo = new();
+        private float _lastSliderChange = -10f;
+        private readonly Dictionary<int, Vector2> _pointers = new();
         private Button _saveButton;
         private CharacterPreview _preview;
         private AvatarLookDto _look;
         private AvatarLookDto _saved;
-        private Category _category = Categories[3];
+        private Category _category = CategoryOf(Wardrobe.Hair);
         private float _lastDragX = float.NaN;
         private bool _saving;
         private bool _dirtyPreview;
@@ -117,13 +133,15 @@ namespace Reconnect.Client.UI.Screens
             _look = look ?? Wardrobe.Default(Wardrobe.Female);
             _lookPerBody.Clear();
             _lookPerBody[_look.Body] = _look;
-            _category = firstTime ? Categories[0] : Categories[3];
+            _category = firstTime ? CategoryOf("body") : CategoryOf(Wardrobe.Hair);
+            _undo.Clear();
             Build(firstTime);
             _preview = new CharacterPreview(_catalog, 720, 960);
             _stage.style.backgroundImage = Background.FromRenderTexture(_preview.Texture);
             _preview.Show(_look);
+            _preview.View = _category.Focus;
             ShowCategory(_category);
-            _panel.schedule.Execute(RebuildPreviewIfNeeded).Every(0);
+            _panel.schedule.Execute(Tick).Every(0);
         }
 
         public void Close()
@@ -151,36 +169,62 @@ namespace Reconnect.Client.UI.Screens
             var title = new Label(firstTime ? "Neuer Look" : "Dein Look");
             title.AddToClassList("creator__title");
             header.Add(title);
+            _undoButton = SmallButton("↶", "creator-undo", Undo);
+            _undoButton.tooltip = "Rückgängig";
+            header.Add(_undoButton);
             header.Add(SmallButton("Zufall", "creator-random", Randomise));
             header.Add(SmallButton("Schliessen", "creator-close", Close));
             _panel.Add(header);
 
             _stage = new VisualElement { name = "creator-stage" };
             _stage.AddToClassList("creator__stage");
+            // One finger turns the figure, two fingers pinch to zoom; the mouse wheel zooms too.
             _stage.RegisterCallback<PointerDownEvent>(e =>
             {
+                _pointers[e.pointerId] = e.position;
                 _lastDragX = e.position.x;
                 _stage.CapturePointer(e.pointerId);
             });
             _stage.RegisterCallback<PointerMoveEvent>(e =>
             {
-                if (float.IsNaN(_lastDragX) || !_stage.HasPointerCapture(e.pointerId))
+                if (!_pointers.ContainsKey(e.pointerId))
                 {
                     return;
                 }
-                _preview?.Turn(-(e.position.x - _lastDragX) * 0.6f);
+                if (_pointers.Count >= 2)
+                {
+                    var others = _pointers.Where(p => p.Key != e.pointerId).Select(p => p.Value).First();
+                    var before = Vector2.Distance(_pointers[e.pointerId], others);
+                    var after = Vector2.Distance(e.position, others);
+                    if (before > 1f && after > 1f)
+                    {
+                        _preview?.Zoom(before / after);
+                    }
+                }
+                else if (!float.IsNaN(_lastDragX))
+                {
+                    _preview?.Turn(-(e.position.x - _lastDragX) * 0.6f);
+                }
+                _pointers[e.pointerId] = e.position;
                 _lastDragX = e.position.x;
             });
             _stage.RegisterCallback<PointerUpEvent>(e =>
             {
-                _lastDragX = float.NaN;
+                _pointers.Remove(e.pointerId);
+                _lastDragX = _pointers.Count == 1 ? _pointers.Values.First().x : float.NaN;
                 _stage.ReleasePointer(e.pointerId);
+            });
+            _stage.RegisterCallback<WheelEvent>(e =>
+            {
+                _preview?.Zoom(e.delta.y > 0 ? 1.1f : 1f / 1.1f);
+                e.StopPropagation();
             });
             var tools = new VisualElement { pickingMode = PickingMode.Ignore };
             tools.AddToClassList("creator__tools");
-            _faceButton = SmallButton("Gesicht", "creator-face", () =>
+            _fullButton = SmallButton("Ganzer Look", "creator-full", () =>
             {
-                _preview.FaceView = !_preview.FaceView;
+                // The whole look – tapped again, back to what is being changed.
+                _preview.View = _preview.View == CharacterPreview.Focus.Full ? _category.Focus : CharacterPreview.Focus.Full;
                 RefreshTools();
             });
             _walkButton = SmallButton("Gehen", "creator-walk", () =>
@@ -188,10 +232,10 @@ namespace Reconnect.Client.UI.Screens
                 _preview.Walking = !_preview.Walking;
                 RefreshTools();
             });
-            tools.Add(_faceButton);
+            tools.Add(_fullButton);
             tools.Add(_walkButton);
             _stage.Add(tools);
-            var hint = new Label("Ziehen zum Drehen") { pickingMode = PickingMode.Ignore };
+            var hint = new Label("Ziehen zum Drehen · zwei Finger zum Zoomen") { pickingMode = PickingMode.Ignore };
             hint.AddToClassList("creator__hint");
             _stage.Add(hint);
             _panel.Add(_stage);
@@ -200,13 +244,16 @@ namespace Reconnect.Client.UI.Screens
             _categories.AddToClassList("creator__categories");
             _panel.Add(_categories);
 
-            _cards = new ScrollView(ScrollViewMode.Horizontal) { name = "creator-cards" };
-            _cards.AddToClassList("creator__cards");
-            _panel.Add(_cards);
-
+            // Colours and sliders on top, then the grid of cards – one scrolling list.
+            _content = new ScrollView(ScrollViewMode.Vertical) { name = "creator-content" };
+            _content.AddToClassList("creator__content");
             _extras = new VisualElement { name = "creator-extras" };
             _extras.AddToClassList("creator__extras");
-            _panel.Add(_extras);
+            _cards = new VisualElement { name = "creator-cards" };
+            _cards.AddToClassList("creator__grid");
+            _content.Add(_extras);
+            _content.Add(_cards);
+            _panel.Add(_content);
 
             var footer = new VisualElement();
             footer.AddToClassList("creator__footer");
@@ -220,7 +267,7 @@ namespace Reconnect.Client.UI.Screens
             footer.Add(_saveButton);
             _panel.Add(footer);
 
-            foreach (var scroll in new[] { _categories, _cards })
+            foreach (var scroll in new[] { _categories, _content })
             {
                 scroll.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
                 scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
@@ -238,9 +285,10 @@ namespace Reconnect.Client.UI.Screens
 
         private void RefreshTools()
         {
-            _faceButton.text = _preview.FaceView ? "Ganzer Körper" : "Gesicht";
+            _fullButton.EnableInClassList("button--active", _preview.View == CharacterPreview.Focus.Full && _category.Focus != CharacterPreview.Focus.Full);
             _walkButton.text = _preview.Walking ? "Stehen" : "Gehen";
             _walkButton.EnableInClassList("button--active", _preview.Walking);
+            _undoButton.SetEnabled(_undo.Count > 0);
         }
 
         private void BuildCategoryChips()
@@ -262,7 +310,7 @@ namespace Reconnect.Client.UI.Screens
         {
             if (_look.Body == Wardrobe.Female ? !category.Female : !category.Male)
             {
-                category = Categories[3];
+                category = CategoryOf(Wardrobe.Hair);
             }
             var changed = category != _category;
             _category = category;
@@ -275,6 +323,18 @@ namespace Reconnect.Client.UI.Screens
                     Card("Frau", Icon(Wardrobe.Female, "body"), _look.Body == Wardrobe.Female, () => SwitchBody(Wardrobe.Female));
                     Card("Mann", Icon(Wardrobe.Male, "body"), _look.Body == Wardrobe.Male, () => SwitchBody(Wardrobe.Male));
                     HeightSlider();
+                    MorphSliders("body");
+                    break;
+                case "face":
+                    FaceShapes();
+                    MorphSliders("face");
+                    break;
+                case "nose":
+                case "mouth":
+                    MorphSliders(category.Kind);
+                    break;
+                case "ears":
+                    MorphSliders("ears");
                     break;
                 case "skin":
                     foreach (var skin in Wardrobe.Skins[_look.Body])
@@ -284,12 +344,14 @@ namespace Reconnect.Client.UI.Screens
                     }
                     break;
                 case "eyes":
+                    Swatches("Augenfarbe", Wardrobe.Eyes.Select(e => (e, (Color)EyeColours[e], Wardrobe.EyeName(e))), _look.Eyes,
+                        eyes => Apply(_look with { Eyes = eyes }), withOriginal: false);
+                    MorphSliders("eyes");
+                    MorphSliders("brows", "Brauen");
                     foreach (var brows in Wardrobe.PartsOf(_look.Body, Wardrobe.Brows))
                     {
                         Card(Wardrobe.PartName(brows), Icon(_look.Body, brows), _look.Brows == brows, () => Apply(_look with { Brows = brows }));
                     }
-                    Swatches("Augenfarbe", Wardrobe.Eyes.Select(e => (e, (Color)EyeColours[e], Wardrobe.EyeName(e))), _look.Eyes,
-                        eyes => Apply(_look with { Eyes = eyes }), withOriginal: false);
                     break;
                 case "walk":
                     foreach (var (style, name) in Wardrobe.WalkStyles)
@@ -312,9 +374,8 @@ namespace Reconnect.Client.UI.Screens
             }
             if (changed)
             {
-                _cards.scrollOffset = Vector2.zero;
-                // Close-ups for the face, the whole figure for everything else.
-                _preview.FaceView = category.Kind is "eyes" or Wardrobe.Hair or Wardrobe.Beard or "skin";
+                _content.scrollOffset = Vector2.zero;
+                _preview.View = category.Focus;   // the camera goes to what is being changed
                 if (category.Kind == "walk")
                 {
                     _preview.Walking = true;
@@ -384,15 +445,110 @@ namespace Reconnect.Client.UI.Screens
             slider.AddToClassList("creator__slider");
             slider.RegisterValueChangedCallback(e =>
             {
-                _look = Wardrobe.WithHeightCm(_look, e.newValue);
+                SliderChange(Wardrobe.WithHeightCm(_look, e.newValue));
                 label.text = $"Grösse {Wardrobe.HeightCm(_look)} cm";
-                _lookPerBody[_look.Body] = _look;
-                _dirtyPreview = true;
-                RefreshState();
+                if (_weightLabel != null)
+                {
+                    _weightLabel.text = MorphLabel("weight");
+                }
             });
             row.Add(label);
             row.Add(slider);
             _extras.Add(row);
+        }
+
+        private Label _weightLabel;
+
+        /// <summary>The face shape: one card per shape (oval, round, square …), the chosen one with its strength.</summary>
+        private void FaceShapes()
+        {
+            var shapes = Wardrobe.MorphsOf(_look.Body, "shape");
+            var chosen = shapes.Select(m => m.Id).FirstOrDefault(id => Wardrobe.ShapeOf(_look, id) > 0f);
+            var neutral = Card("Natürlich", null, chosen == null, () => Apply(ClearShapes(_look, shapes.Select(m => m.Id))));
+            neutral.name = "creator-shape-none";
+            foreach (var (id, _, _, _) in shapes)
+            {
+                var card = Card(Wardrobe.MorphName(id), null, chosen == id, () =>
+                {
+                    var strength = chosen != null ? Wardrobe.ShapeOf(_look, chosen) : 0.6f;
+                    Apply(Wardrobe.WithShape(ClearShapes(_look, shapes.Select(m => m.Id)), id, strength));
+                });
+                card.name = "creator-shape-" + id;
+            }
+            if (chosen != null)
+            {
+                Slider("Gesichtsform: " + Wardrobe.MorphName(chosen), chosen, 0f, 1f);
+            }
+        }
+
+        private static AvatarLookDto ClearShapes(AvatarLookDto look, IEnumerable<string> ids) =>
+            ids.Aggregate(look, (current, id) => Wardrobe.WithShape(current, id, 0f));
+
+        /// <summary>A slider per shape of the group (live: the figure changes while dragging).</summary>
+        private void MorphSliders(string group, string title = null)
+        {
+            var morphs = Wardrobe.MorphsOf(_look.Body, group);
+            if (morphs.Count == 0)
+            {
+                return;
+            }
+            var header = new VisualElement();
+            header.AddToClassList("creator__group");
+            var heading = new Label(title ?? Wardrobe.MorphGroups.First(g => g.Id == group).Title);
+            heading.AddToClassList("creator__label");
+            header.Add(heading);
+            var reset = new Button(() => Apply(ClearShapes(_look, morphs.Select(m => m.Id)))) { text = "Zurücksetzen", name = "creator-reset-" + group };
+            reset.AddToClassList("button--link");
+            reset.AddToClassList("creator__reset");
+            header.Add(reset);
+            _extras.Add(header);
+            foreach (var (id, _, twoSided, _) in morphs)
+            {
+                var label = Slider(MorphLabel(id), id, twoSided ? -1f : 0f, 1f);
+                if (id == "weight")
+                {
+                    _weightLabel = label;
+                }
+            }
+        }
+
+        private string MorphLabel(string id) =>
+            id == "weight" ? $"Gewicht {Wardrobe.WeightKg(_look)} kg" : Wardrobe.MorphName(id);
+
+        private Label Slider(string title, string id, float min, float max)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("creator__morph");
+            var label = new Label(title);
+            label.AddToClassList("creator__morph-label");
+            var slider = new Slider(min, max) { value = Wardrobe.ShapeOf(_look, id), name = "creator-morph-" + id };
+            slider.AddToClassList("creator__morph-slider");
+            slider.RegisterValueChangedCallback(e =>
+            {
+                SliderChange(Wardrobe.WithShape(_look, id, e.newValue));
+                if (id == "weight")
+                {
+                    label.text = MorphLabel(id);
+                }
+            });
+            row.Add(label);
+            row.Add(slider);
+            _extras.Add(row);
+            return label;
+        }
+
+        /// <summary>A slider moved: the figure is rebuilt once per frame; one undo step per drag (a pause starts a new one).</summary>
+        private void SliderChange(AvatarLookDto look)
+        {
+            if (Time.realtimeSinceStartup - _lastSliderChange > 0.6f)
+            {
+                PushUndo();
+            }
+            _lastSliderChange = Time.realtimeSinceStartup;
+            _look = look;
+            _lookPerBody[look.Body] = look;
+            _dirtyPreview = true;
+            RefreshState();
         }
 
         private VisualElement Card(string title, Texture2D icon, bool selected, Action clicked)
@@ -451,14 +607,39 @@ namespace Reconnect.Client.UI.Screens
 
         // ---------- Changes ----------
 
-        private void Apply(AvatarLookDto look)
+        private void Apply(AvatarLookDto look, bool undoable = true)
         {
+            if (undoable)
+            {
+                PushUndo();
+            }
+            _lastSliderChange = -10f;   // the next slider drag is its own step
             _look = look;
             _lookPerBody[look.Body] = look;
             _preview.Show(look);
-            var scroll = _cards.scrollOffset;
+            var scroll = _content.scrollOffset;
             ShowCategory(_category);
-            _cards.scrollOffset = scroll;
+            _content.scrollOffset = scroll;
+        }
+
+        private void PushUndo()
+        {
+            _undo.Add(_look);
+            if (_undo.Count > UndoSteps)
+            {
+                _undo.RemoveAt(0);
+            }
+        }
+
+        private void Undo()
+        {
+            if (_undo.Count == 0)
+            {
+                return;
+            }
+            var previous = _undo[_undo.Count - 1];
+            _undo.RemoveAt(_undo.Count - 1);
+            Apply(previous, undoable: false);
         }
 
         /// <summary>Woman or man: each body remembers its own look while the creator is open.</summary>
@@ -476,14 +657,23 @@ namespace Reconnect.Client.UI.Screens
 
         private void Randomise() => Apply(Wardrobe.Random(_look.Body, _random));
 
-        /// <summary>The height slider changes the look many times a second: the figure is rebuilt once per frame at most.</summary>
-        private void RebuildPreviewIfNeeded()
+        /// <summary>
+        /// Every frame: sliders change the look many times a second – the figure is rebuilt once per frame at most; the
+        /// camera glides.
+        /// </summary>
+        private void Tick()
         {
-            if (_dirtyPreview && _preview != null)
+            if (_preview == null)
+            {
+                return;
+            }
+            if (_dirtyPreview)
             {
                 _dirtyPreview = false;
                 _preview.Show(_look);
             }
+            _preview.Tick(Time.unscaledDeltaTime);
+            _undoButton.SetEnabled(_undo.Count > 0);
         }
 
         private void RefreshState()
@@ -499,7 +689,8 @@ namespace Reconnect.Client.UI.Screens
 
         private static bool Same(AvatarLookDto a, AvatarLookDto b) =>
             a.Body == b.Body && a.Skin == b.Skin && a.Eyes == b.Eyes && a.Brows == b.Brows && a.WalkStyle == b.WalkStyle
-            && Mathf.Approximately(a.Height, b.Height) && a.Parts.SequenceEqual(b.Parts);
+            && Mathf.Approximately(a.Height, b.Height) && a.Parts.SequenceEqual(b.Parts)
+            && (a.Shape ?? new Dictionary<string, float>()).OrderBy(p => p.Key).SequenceEqual((b.Shape ?? new Dictionary<string, float>()).OrderBy(p => p.Key));
 
         private async Task SaveAsync()
         {

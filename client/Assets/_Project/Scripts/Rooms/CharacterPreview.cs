@@ -10,6 +10,16 @@ namespace Reconnect.Client.Rooms
     /// </summary>
     public sealed class CharacterPreview : IDisposable
     {
+        /// <summary>What the camera looks at: the whole look, or the part being changed.</summary>
+        public enum Focus
+        {
+            Full,
+            Face,
+            Upper,
+            Legs,
+            Feet,
+        }
+
         private static readonly Vector3 StagePosition = new(0f, -2000f, 0f);
 
         /// <summary>The stage's own layer: its camera sees only it, its lights light only it.</summary>
@@ -22,9 +32,12 @@ namespace Reconnect.Client.Rooms
         private GameObject _figure;
         private Animator _animator;
         private float _yaw = 180f;
-        private bool _face;
+        private Focus _focus = Focus.Full;
         private bool _walking;
-        private float _height = 1f;
+        private float _zoom = 1f;
+        private Vector3 _cameraPosition;
+        private Vector3 _cameraTarget;
+        private bool _placed;
 
         public CharacterPreview(AvatarCatalog catalog, int width, int height)
         {
@@ -61,7 +74,7 @@ namespace Reconnect.Client.Rooms
             var material = new Material(catalog.wardrobe.opaque) { name = "Preview Floor" };
             material.SetTexture("_BaseMap", null);
             material.SetColor("_BaseColor", new Color(0.07f, 0.07f, 0.09f));
-            material.SetFloat("_Smoothness", 0.6f);
+            material.SetFloat("_Smoothness", 0.15f);
             floor.GetComponent<Renderer>().sharedMaterial = material;
             floor.layer = PreviewLayer;
             Frame();
@@ -75,12 +88,15 @@ namespace Reconnect.Client.Rooms
         public void Show(AvatarLookDto look)
         {
             Look = look;
+            // A rebuilt figure (a slider moved) carries on where the old one was in its walk or idle.
+            var state = _animator != null && _animator.isActiveAndEnabled ? _animator.GetCurrentAnimatorStateInfo(0) : default;
+            var carryOn = _animator != null && state.fullPathHash != 0;
             if (_figure != null)
             {
                 _figure.SetActive(false);
                 UnityEngine.Object.Destroy(_figure);
             }
-            _figure = AvatarAssembler.Build(look, _turntable, _catalog.wardrobe);
+            _figure = AvatarAssembler.Build(look, _turntable, _catalog.wardrobe, levels: 1);
             if (_figure == null)
             {
                 return;
@@ -94,7 +110,10 @@ namespace Reconnect.Client.Rooms
             _animator.runtimeAnimatorController = _catalog.ControllerFor(look.WalkStyle);
             _animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;   // only its own camera sees it
             _animator.SetBool("Walking", _walking);
-            _height = look.Height;
+            if (carryOn)
+            {
+                _animator.Play(state.fullPathHash, 0, state.normalizedTime);
+            }
             Frame();
         }
 
@@ -105,15 +124,40 @@ namespace Reconnect.Client.Rooms
             _turntable.localRotation = Quaternion.Euler(0f, _yaw, 0f);
         }
 
-        public bool FaceView
+        /// <summary>Where the camera goes (it glides there, see <see cref="Tick"/>); a new focus resets the zoom.</summary>
+        public Focus View
         {
-            get => _face;
+            get => _focus;
             set
             {
-                _face = value;
+                if (_focus != value)
+                {
+                    _zoom = 1f;
+                }
+                _focus = value;
                 Frame();
             }
         }
+
+        /// <summary>Closer (&lt; 1) or further away (&gt; 1), within limits: pinch or mouse wheel.</summary>
+        public void Zoom(float factor)
+        {
+            _zoom = Mathf.Clamp(_zoom * factor, 0.45f, 2.2f);
+            Frame();
+        }
+
+        /// <summary>Glides the camera towards the focus (call every frame).</summary>
+        public void Tick(float deltaTime)
+        {
+            var t = 1f - Mathf.Exp(-deltaTime * 7f);
+            var position = Vector3.Lerp(_camera.transform.localPosition, _cameraPosition, t);
+            var target = Vector3.Lerp(_lookAt, _cameraTarget, t);
+            _lookAt = target;
+            _camera.transform.localPosition = position;
+            _camera.transform.LookAt(_stage.transform.TransformPoint(target));
+        }
+
+        private Vector3 _lookAt;
 
         /// <summary>Walks in place with the look's walk style (the clips don't move the figure).</summary>
         public bool Walking
@@ -139,10 +183,24 @@ namespace Reconnect.Client.Rooms
         private void Frame()
         {
             _turntable.localRotation = Quaternion.Euler(0f, _yaw, 0f);
-            var focus = _face ? new Vector3(0f, 1.6f * _height, 0f) : new Vector3(0f, 0.92f * _height, 0f);
-            var distance = _face ? 1.6f : 4.2f;
-            _camera.transform.localPosition = focus + new Vector3(0f, _face ? 0.04f : 0.35f, -distance);
-            _camera.transform.LookAt(_stage.transform.TransformPoint(focus));
+            var tall = Wardrobe.HeightCm(Look ?? Wardrobe.Default(Wardrobe.Female)) / 100f;   // soles to crown
+            var (height, distance, above) = _focus switch
+            {
+                Focus.Face => (0.89f * tall, 1.45f, 0.03f),
+                Focus.Upper => (0.72f * tall, 2.3f, 0.1f),
+                Focus.Legs => (0.3f * tall, 2.6f, 0.25f),
+                Focus.Feet => (0.12f * tall, 2.5f, 0.7f),
+                _ => (0.52f * tall, 4.5f, 0.35f),
+            };
+            _cameraTarget = new Vector3(0f, height, 0f);
+            _cameraPosition = _cameraTarget + new Vector3(0f, above * _zoom, -distance * _zoom);
+            if (!_placed)
+            {
+                _placed = true;
+                _lookAt = _cameraTarget;
+                _camera.transform.localPosition = _cameraPosition;
+                _camera.transform.LookAt(_stage.transform.TransformPoint(_cameraTarget));
+            }
         }
 
         private void Light(Quaternion direction, Color colour, float intensity)

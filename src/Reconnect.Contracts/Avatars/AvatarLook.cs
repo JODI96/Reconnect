@@ -9,12 +9,13 @@ namespace Reconnect.Contracts.Avatars
     public sealed record AvatarPartDto(string Id, string Variant = "default", string Tint = null);
 
     /// <summary>
-    /// What someone looks like (character creator): body, skin, eyes, brows, the worn parts, the way they walk and their
-    /// height (0.94 … 1.06 of the body's). Stored in the profile, sent with every player in a room.
+    /// What someone looks like (character creator): body, skin, eyes, brows, the worn parts, the way they walk, their
+    /// height (0.94 … 1.06 of the body's) and body and face shape (<see cref="Wardrobe.Morphs"/> id → −1 … 1, one-sided
+    /// shapes 0 … 1; missing = 0). Stored in the profile, sent with every player in a room.
     /// </summary>
     public sealed record AvatarLookDto(
         string Body, string Skin, string Eyes, string Brows, IReadOnlyList<AvatarPartDto> Parts,
-        string WalkStyle = "normal", float Height = 1f);
+        string WalkStyle = "normal", float Height = 1f, IReadOnlyDictionary<string, float> Shape = null);
 
     /// <summary>
     /// The wardrobe of the character creator (ids generated from MakeHuman by tools/avatars/build_wardrobe.py, see
@@ -125,6 +126,25 @@ namespace Reconnect.Contracts.Avatars
             if (worn.Count > 8)
             {
                 problems.Add("Zu viele Teile.");
+            }
+            if (look.Shape != null)
+            {
+                if (look.Shape.Count > Morphs.Length)
+                {
+                    problems.Add("Zu viele Formen.");
+                }
+                foreach (var shape in look.Shape)
+                {
+                    var morph = Array.Find(Morphs, m => m.Id == shape.Key);
+                    if (morph.Id == null || Array.IndexOf(morph.Bodies, look.Body) < 0)
+                    {
+                        problems.Add($"Unbekannte Form „{shape.Key}“.");
+                    }
+                    else if (float.IsNaN(shape.Value) || shape.Value > 1f || shape.Value < (morph.TwoSided ? -1f : 0f))
+                    {
+                        problems.Add($"Form „{shape.Key}“ ausserhalb des Bereichs.");
+                    }
+                }
             }
             return problems;
         }

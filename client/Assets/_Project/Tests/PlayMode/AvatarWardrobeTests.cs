@@ -142,6 +142,77 @@ namespace Reconnect.Client.PlayModeTests
         }
 
         [UnityTest]
+        public IEnumerator Shapes_change_body_and_face_and_the_clothes_follow()
+        {
+            var catalog = Object.FindFirstObjectByType<RoomView>().AvatarCatalog;
+            var root = new GameObject("Shapes").transform;
+            root.position = new Vector3(0f, -800f, 0f);
+            var man = Wardrobe.Default(Wardrobe.Male);
+            var woman = Wardrobe.Default(Wardrobe.Female);
+            AvatarLookDto Shaped(AvatarLookDto look, params (string Id, float Value)[] shapes) =>
+                shapes.Aggregate(look, (current, shape) => Wardrobe.WithShape(current, shape.Id, shape.Value));
+
+            // Build: thin, average, heavy (clothes on) – then faces.
+            var bodies = new[]
+            {
+                Shaped(man, ("weight", -1f)), man, Shaped(man, ("weight", 1f), ("muscle", 0.5f)),
+                Shaped(woman, ("weight", -1f)), woman, Shaped(woman, ("weight", 1f), ("bust", 0.8f), ("hips", 0.8f)),
+            };
+            var widths = new List<float>();
+            for (var i = 0; i < bodies.Length; i++)
+            {
+                var holder = new GameObject("Body " + i).transform;
+                holder.SetParent(root, false);
+                holder.localPosition = new Vector3(i * 0.9f, 0f, 0f);
+                holder.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                var figure = AvatarAssembler.Build(bodies[i], holder, catalog.wardrobe, levels: 1);
+                // Girth at the waist (bind pose: T-pose, arms far above), clothes included.
+                var renderer = figure.GetComponentInChildren<SkinnedMeshRenderer>();
+                var baked = new Mesh();
+                renderer.BakeMesh(baked, true);
+                var waist = baked.vertices.Select(v => renderer.transform.TransformPoint(v) - holder.position)
+                    .Where(v => v.y > 0.95f && v.y < 1.1f).ToList();
+                Object.Destroy(baked);
+                widths.Add((waist.Max(v => v.x) - waist.Min(v => v.x)) * (waist.Max(v => v.z) - waist.Min(v => v.z)));
+            }
+
+            var faces = new[]
+            {
+                man,
+                Shaped(man, ("nose-width", 1f), ("nose-bridge", 1f), ("jaw", 1f)),
+                Shaped(man, ("eye-size", 1f), ("eye-distance", -1f), ("eye-tilt", 1f), ("mouth-width", -1f), ("upper-lip", 1f)),
+                Shaped(man, ("head-round", 1f), ("face-fullness", 1f), ("ear-angle", 1f), ("ear-size", 1f)),
+                woman,
+                Shaped(woman, ("head-heart", 1f), ("cheekbones", 1f), ("chin", 1f)),
+                Shaped(woman, ("eye-open", 1f), ("eye-lid", 1f), ("nose-length", -1f), ("nose-tip", 1f), ("lower-lip", 1f)),
+                Shaped(woman, ("face-length", 1f), ("nose-size", 1f), ("brow-height", 1f), ("mouth-corners", 1f)),
+            };
+            for (var i = 0; i < faces.Length; i++)
+            {
+                Assert.IsEmpty(Wardrobe.Problems(faces[i]), $"face {i} valid");
+                var holder = new GameObject("Face " + i).transform;
+                holder.SetParent(root, false);
+                holder.localPosition = new Vector3(i * 0.45f, 0f, 20f);
+                holder.localRotation = Quaternion.Euler(0f, 160f, 0f);
+                AvatarAssembler.Build(faces[i], holder, catalog.wardrobe, levels: 1);
+            }
+            yield return null;
+            var light = new GameObject("Shape Light").AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.transform.rotation = Quaternion.Euler(25f, -20f, 0f);
+            Render(root.position + new Vector3(2.25f, 0.95f, 0f), 6.6f, 1800, 900, "shapes-bodies.png");
+            Render(root.position + new Vector3(1.5f * 0.45f, 1.62f, 20f), 1.9f, 1800, 700, "shapes-faces-men.png");
+            Render(root.position + new Vector3(5.5f * 0.45f, 1.55f, 20f), 1.9f, 1800, 700, "shapes-faces-women.png");
+            Object.Destroy(root.gameObject);
+            Object.Destroy(light.gameObject);
+            Debug.Log($"[Reconnect] Build footprints: {string.Join(", ", widths.Select(w => w.ToString("0.000")))}");
+            Assert.Less(widths[0], widths[1], "thin man is narrower (clothes included)");
+            Assert.Less(widths[1], widths[2], "heavy man is wider (clothes included)");
+            Assert.Less(widths[3], widths[5], "heavy woman is wider");
+
+        }
+
+        [UnityTest]
         public IEnumerator Every_walk_style_stays_upright_while_walking()
         {
             var room = Object.FindFirstObjectByType<RoomView>();

@@ -104,6 +104,32 @@ public sealed class WardrobeTests
     }
 
     [Fact]
+    public void Shapes_are_checked_by_body_range_and_name()
+    {
+        var woman = Wardrobe.Default(Wardrobe.Female);
+        var shaped = Wardrobe.WithShape(Wardrobe.WithShape(woman, "nose-width", -0.6f), "head-heart", 0.5f);
+        Assert.Empty(Wardrobe.Problems(shaped));
+        Assert.Equal(-0.6f, Wardrobe.ShapeOf(shaped, "nose-width"));
+        Assert.Null(Wardrobe.WithShape(shaped with { Shape = null }, "jaw", 0f).Shape);   // 0 is no entry
+
+        Assert.NotEmpty(Wardrobe.Problems(woman with { Shape = new Dictionary<string, float> { ["chest"] = 0.5f } }));   // men only
+        Assert.NotEmpty(Wardrobe.Problems(woman with { Shape = new Dictionary<string, float> { ["head-oval"] = -0.5f } }));   // one-sided
+        Assert.NotEmpty(Wardrobe.Problems(woman with { Shape = new Dictionary<string, float> { ["nose-width"] = 1.5f } }));
+        Assert.NotEmpty(Wardrobe.Problems(woman with { Shape = new Dictionary<string, float> { ["wings"] = 1f } }));
+        Assert.All(Wardrobe.Morphs, m => Assert.NotEqual(m.Id, Wardrobe.MorphName(m.Id)));
+    }
+
+    [Fact]
+    public void Weight_in_kilograms_follows_height_and_the_weight_shape()
+    {
+        var man = Wardrobe.Default(Wardrobe.Male);
+        Assert.InRange(Wardrobe.WeightKg(man), 75, 83);   // 189 cm, BMI 22
+        Assert.True(Wardrobe.WeightKg(Wardrobe.WithShape(man, "weight", 1f)) > 115);
+        Assert.True(Wardrobe.WeightKg(Wardrobe.WithShape(man, "weight", -1f)) < 65);
+        Assert.True(Wardrobe.WeightKg(Wardrobe.WithHeightCm(man, 178)) < Wardrobe.WeightKg(man));
+    }
+
+    [Fact]
     public void Every_part_has_a_german_name()
     {
         foreach (var (id, _) in Wardrobe.Parts.Values.SelectMany(p => p))

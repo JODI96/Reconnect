@@ -87,7 +87,8 @@ namespace Reconnect.Client.Rooms
         }
 
         /// <summary>The figure, a child of <paramref name="parent"/>, with an Animator (humanoid) ready for the controller.</summary>
-        public static GameObject Build(AvatarLookDto look, Transform parent, AvatarMaterials materials)
+        /// <param name="levels">3 = every level of detail; 1 = only the detailed one (the creator's preview, rebuilt while dragging).</param>
+        public static GameObject Build(AvatarLookDto look, Transform parent, AvatarMaterials materials, int levels = 3)
         {
             var manifest = Manifest(look.Body);
             var bodyModel = Resources.Load<GameObject>(Root + look.Body + "/body");
@@ -110,7 +111,7 @@ namespace Reconnect.Client.Rooms
             var under = new HashSet<int>(worn.SelectMany(p => p.Part.under ?? Array.Empty<int>()));
 
             var lods = new List<LOD>();
-            for (var level = 0; level < 3; level++)
+            for (var level = 0; level < levels; level++)
             {
                 var sources = new List<Source>();
                 var body = bodyRenderers.First(r => r.name.StartsWith($"Body_LOD{level}"));
@@ -127,6 +128,10 @@ namespace Reconnect.Client.Rooms
                 foreach (var (partLook, part) in worn)
                 {
                     AddPart(sources, look.Body, part, partLook, level, materials);
+                }
+                foreach (var source in sources)
+                {
+                    source.Shape = look.Shape;
                 }
                 var merged = Merge(sources, skeleton, rootBone, figure.transform, $"Figure_LOD{level}", level == 2 ? materials : null);
                 merged.transform.SetParent(figure.transform, false);
@@ -148,6 +153,10 @@ namespace Reconnect.Client.Rooms
             if (group == null)
             {
                 group = figure.AddComponent<LODGroup>();
+            }
+            if (levels < 3)
+            {
+                lods[lods.Count - 1] = new LOD(0f, lods[lods.Count - 1].renderers);   // never culled
             }
             group.SetLODs(lods.ToArray());
             group.RecalculateBounds();
@@ -200,6 +209,9 @@ namespace Reconnect.Client.Rooms
 
             /// <summary>Body vertices under clothes: pulled in a little, so moving skin never shows through the cloth.</summary>
             public HashSet<int> Under { get; }
+
+            /// <summary>Body and face shapes of the look (blend shape "id+" or "id-" of the mesh, times the value).</summary>
+            public IReadOnlyDictionary<string, float> Shape { get; set; }
         }
 
         /// <summary>How far skin under clothes is pulled in (metres).</summary>
@@ -262,6 +274,7 @@ namespace Reconnect.Client.Rooms
                 var offset = vertices.Count;
                 var meshVertices = mesh.vertices;
                 var meshNormals = mesh.normals;
+                ApplyShapes(mesh, source.Shape, meshVertices);
                 if (source.Under is { Count: > 0 })
                 {
                     var numbers = new List<Vector2>();
@@ -370,6 +383,36 @@ namespace Reconnect.Client.Rooms
             var size = 2.3f / Mathf.Max(0.0001f, rootBone.lossyScale.x / figure.lossyScale.x);
             renderer.localBounds = new Bounds(middle, Vector3.one * size);
             return renderer;
+        }
+
+        private static Vector3[] _shapeDeltas = Array.Empty<Vector3>();
+
+        /// <summary>Bakes the look's body and face shapes into the vertices (the meshes carry them as blend shapes).</summary>
+        private static void ApplyShapes(Mesh mesh, IReadOnlyDictionary<string, float> shape, Vector3[] vertices)
+        {
+            if (shape == null || shape.Count == 0 || mesh.blendShapeCount == 0)
+            {
+                return;
+            }
+            if (_shapeDeltas.Length < vertices.Length)
+            {
+                _shapeDeltas = new Vector3[vertices.Length];
+            }
+            var deltas = _shapeDeltas.Length == vertices.Length ? _shapeDeltas : new Vector3[vertices.Length];
+            foreach (var (id, value) in shape)
+            {
+                var index = mesh.GetBlendShapeIndex(id + (value >= 0f ? "+" : "-"));
+                if (index < 0 || Mathf.Approximately(value, 0f))
+                {
+                    continue;   // this mesh doesn't move with that shape (a shoe with the nose)
+                }
+                mesh.GetBlendShapeFrameVertices(index, mesh.GetBlendShapeFrameCount(index) - 1, deltas, null, null);
+                var amount = Mathf.Abs(value) * Wardrobe.MorphGain(id);
+                for (var v = 0; v < vertices.Length; v++)
+                {
+                    vertices[v] += deltas[v] * amount;
+                }
+            }
         }
 
         // ---------- Atlas of the far level ----------

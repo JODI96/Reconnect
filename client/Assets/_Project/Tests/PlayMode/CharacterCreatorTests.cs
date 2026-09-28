@@ -68,6 +68,25 @@ namespace Reconnect.Client.PlayModeTests
             Tap(root.Query<Button>(className: "creator-card").ToList().First(b => b.tooltip == "Mann"));
             Assert.AreEqual(Wardrobe.Male, creator.Look.Body);
 
+            // Body and face shape with sliders and cards: live in the look, the camera goes to the face.
+            root.Q<Slider>("creator-morph-weight").value = 0.6f;
+            Assert.AreEqual(0.6f, Wardrobe.ShapeOf(creator.Look, "weight"), 0.01f);
+            Tap(root.Q<Button>("creator-category-face"));
+            Assert.AreEqual(CharacterPreview.Focus.Face, creator.Preview.View, "the camera looks at the face");
+            Tap(root.Q<Button>("creator-shape-head-square"));
+            Assert.Greater(Wardrobe.ShapeOf(creator.Look, "head-square"), 0f);
+            Tap(root.Q<Button>("creator-category-nose"));
+            root.Q<Slider>("creator-morph-nose-width").value = 0.9f;
+            root.Q<Slider>("creator-morph-nose-bridge").value = 0.7f;
+            yield return Frames(20);
+            yield return Shot("creator-nose");
+            Tap(root.Q<Button>("creator-full"));
+            Assert.AreEqual(CharacterPreview.Focus.Full, creator.Preview.View, "Ganzer Look");
+            Tap(root.Q<Button>("creator-undo"));
+            Assert.AreEqual(0f, Wardrobe.ShapeOf(creator.Look, "nose-width"), 0.01f, "undo takes back the last change (the nose)");
+            Assert.Greater(Wardrobe.ShapeOf(creator.Look, "head-square"), 0f, "… only that");
+            Assert.IsEmpty(Wardrobe.Problems(creator.Look));
+
             Tap(root.Q<Button>("creator-category-hair"));
             Tap(root.Q<Button>("creator-card-cortu_short_messy_hair"));
             Tap(root.Q<Button>("swatch-espresso"));
@@ -79,10 +98,15 @@ namespace Reconnect.Client.PlayModeTests
             Tap(root.Q<Button>("creator-card-wdg_scruffy_beard"));
             Tap(root.Q<Button>("creator-category-outfit"));
             Tap(root.Q<Button>("creator-card-toigo_suit_with_jacket_and_bowtie"));
+            Assert.AreEqual(CharacterPreview.Focus.Full, creator.Preview.View);
             Assert.IsNull(Wardrobe.Worn(creator.Look, Wardrobe.Top), "the suit replaces the t-shirt");
             yield return Frames(5);
             yield return Shot("creator-outfit");
 
+            Tap(root.Q<Button>("creator-category-shoes"));
+            Assert.AreEqual(CharacterPreview.Focus.Feet, creator.Preview.View, "shoes: the camera goes to the feet");
+            yield return Frames(30);
+            yield return Shot("creator-shoes");
             Tap(root.Q<Button>("creator-category-top"));
             Tap(root.Q<Button>("creator-card-namuhekam_male_polo_shirt"));
             Tap(root.Q<Button>("swatch-navy"));
@@ -144,6 +168,7 @@ namespace Reconnect.Client.PlayModeTests
 
         private static IEnumerator Shot(string name)
         {
+            yield return new WaitForSecondsRealtime(1.2f);   // the camera glides (frames are very fast in batch mode)
             yield return null;
             yield return null;   // the panel has repainted into its texture (WaitForEndOfFrame hangs in batch mode)
             var target = _target;
