@@ -72,6 +72,13 @@ namespace Reconnect.Client.Editor
                 return material;
             }
 
+            Material Blit(string shader, string name)
+            {
+                var material = new Material(Shader.Find(shader));
+                AssetDatabase.CreateAsset(material, $"{MaterialDir}/{name}.mat");
+                return material;
+            }
+
             var recolour = new Material(Shader.Find("Hidden/Reconnect/Recolour"));
             AssetDatabase.CreateAsset(recolour, $"{MaterialDir}/wardrobe_recolour.mat");
             return new AvatarMaterials
@@ -80,6 +87,8 @@ namespace Reconnect.Client.Editor
                 opaqueNormal = Template("wardrobe_opaque_normal", false, true),
                 cutout = Template("wardrobe_cutout", true, false),
                 recolour = recolour,
+                iris = Blit("Hidden/Reconnect/Iris", "wardrobe_iris"),
+                makeup = Blit("Hidden/Reconnect/Makeup", "wardrobe_makeup"),
                 femaleAvatar = FigureAvatar("lena"),
                 maleAvatar = FigureAvatar("luca"),
             };

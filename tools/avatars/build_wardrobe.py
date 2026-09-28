@@ -29,6 +29,7 @@ from bl_ext.blender_org.mpfb.entities.clothes.mhclo import Mhclo
 sys.path.insert(0, os.path.dirname(__file__))
 from build_avatars import to_t_pose, decimate, triangles, woman, man, MIXED  # noqa: E402
 import morphs  # noqa: E402
+import makeup  # noqa: E402
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(REPO, "client", "Assets", "ThirdParty", "MakeHuman", "Resources", "Wardrobe")   # loaded on demand
@@ -47,7 +48,7 @@ LOD2_BODY = 360
 # The body: MakeHuman's detailed proxy (~13.8k quads) so faces can be shaped, trimmed for close-ups; the room view and
 # crowds get far fewer.
 BODY_TRIS = (16000, 2600)
-TEXTURE = {"skin": 1024, "outfit": 1024, "dress": 1024, "hair": 512}   # others 512, eyes 128
+TEXTURE = {"skin": 1024, "outfit": 1024, "dress": 1024, "top": 1024, "bottom": 1024, "hair": 512}   # others 512
 
 # "rig" names the armature like the ready-made figure whose humanoid avatar the body shares (Unity binds bones by path).
 BODIES = {
@@ -318,7 +319,7 @@ def build_body(body):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     info = HumanService._create_default_human_info_dict()
     info.update(dict(name=spec["rig"], phenotype=spec["phenotype"], rig="mixamo_unity", proxy=spec["proxy"],
-                     eyes="low-poly/low-poly.mhclo", eyelashes="eyelashes01/eyelashes01.mhclo",
+                     eyes="high-poly/high-poly.mhclo", eyelashes="eyelashes01/eyelashes01.mhclo",
                      skin_mhmat=os.path.relpath(asset_path("skins", SKINS[body][0], ".mhmat"), os.path.join(DATA, "skins")).replace("\\", "/"),
                      skin_material_type="MAKESKIN", eyes_material_type="MAKESKIN"))
     settings = HumanService.get_default_deserialization_settings()
@@ -368,10 +369,10 @@ def build_body(body):
             bpy.ops.object.shape_key_remove(all=True, apply_mix=True)
 
     # Morphs (weight, face ...): how each base-mesh vertex moves, then every fitted mesh along with it.
-    eyes = next(o for o in body_meshes if "low-poly" in o.name)
+    eyes = next(o for o in body_meshes if "high-poly" in o.name)
     lashes = next(o for o in body_meshes if "eyelashes" in o.name)
     fits[proxy.name] = proxy_mhclo
-    for obj, library, folder in ((eyes, "eyes", "low-poly"), (lashes, "eyelashes", "eyelashes01")):
+    for obj, library, folder in ((eyes, "eyes", "high-poly"), (lashes, "eyelashes", "eyelashes01")):
         fits[obj.name] = Mhclo()
         fits[obj.name].load(asset_path(library, folder))
     base = morphs.base_deltas(basemesh, body)
@@ -389,6 +390,12 @@ def build_body(body):
     coverage.data = proxy.data.copy()
     bpy.context.scene.collection.objects.link(coverage)
     coverage.hide_set(True)
+
+    # Face paint (lips, eyeshadow, blush, eyeliner) and the tintable iris.
+    makeup.makeup_mask(proxy, *shapes[proxy.name], shapes[lashes.name][0], os.path.join(tex, "makeup_mask.png"))
+    makeup.iris_texture(os.path.join(DATA, "eyes", "materials", "brown_eye.png"), os.path.join(tex, "eyes_iris.png"))
+    manifest["makeup"] = "makeup_mask.png"
+    manifest["iris"] = "eyes_iris.png"
 
     # Body: proxy + eyes + eyelashes, three LODs of the proxy.
     proxy_source = shapes[proxy.name]
@@ -421,7 +428,7 @@ def build_body(body):
         manifest["skins"].append({"id": skin, "texture": file})
     for eye in EYES:
         diffuse, _ = mhmat_textures(os.path.join(DATA, "eyes", "materials", eye + ".mhmat"))
-        file, _ = save_texture(diffuse, os.path.join(tex, f"eyes_{eye}.png"), 128, False)
+        file, _ = save_texture(diffuse, os.path.join(tex, f"eyes_{eye}.png"), 512, False)
         manifest["eyes"].append({"id": eye, "texture": file})
     lash_diffuse, _ = mhmat_textures(asset_path("eyelashes", "eyelashes01", ".mhmat"))
     save_texture(lash_diffuse, os.path.join(tex, "lashes.png"), 256, True)

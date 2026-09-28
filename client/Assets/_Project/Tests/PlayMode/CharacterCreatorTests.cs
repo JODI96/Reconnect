@@ -87,6 +87,21 @@ namespace Reconnect.Client.PlayModeTests
             Assert.Greater(Wardrobe.ShapeOf(creator.Look, "head-square"), 0f, "… only that");
             Assert.IsEmpty(Wardrobe.Problems(creator.Look));
 
+            // Eyes: a colour to start from, then finer; make-up with colour and amount.
+            Tap(root.Q<Button>("creator-category-eyes"));
+            Tap(root.Q<Button>("swatch-2E8057"));
+            Assert.AreEqual("2E8057", creator.Look.EyeColour);
+            root.Q<Slider>("creator-eye-value").value = 0.9f;
+            Assert.AreNotEqual("2E8057", creator.Look.EyeColour, "brightness changes the colour");
+            Tap(root.Q<Button>("creator-category-makeup"));
+            Tap(root.Query<Button>(className: "swatch").ToList().First(b => b.name == "swatch-D1495B"));
+            Assert.AreEqual("D1495B", creator.Look.Makeup.Lips);
+            Assert.AreEqual(0.6f, creator.Look.Makeup.LipsAmount, 0.01f);
+            root.Q<Slider>("creator-makeup-liner").value = 0.8f;
+            Assert.AreEqual(0.8f, creator.Look.Makeup.Liner, 0.01f);
+            Assert.IsEmpty(Wardrobe.Problems(creator.Look));
+            yield return Shot("creator-makeup");
+
             Tap(root.Q<Button>("creator-category-hair"));
             Tap(root.Q<Button>("creator-card-cortu_short_messy_hair"));
             Tap(root.Q<Button>("swatch-espresso"));

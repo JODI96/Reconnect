@@ -18,6 +18,10 @@ namespace Reconnect.Client.Rooms
         public Entry[] eyes;
         public Part[] parts;
 
+        /// <summary>Make-up mask in the skin's UV space (R lips, G eyeshadow, B blush, A lash line) and the tintable iris.</summary>
+        public string makeup;
+        public string iris;
+
         [Serializable]
         public sealed class Entry
         {
@@ -51,6 +55,10 @@ namespace Reconnect.Client.Rooms
         public Material opaqueNormal;
         public Material cutout;
         public Material recolour;
+
+        /// <summary>Tints the iris (eye colour of one's own) and paints make-up onto the skin (blit materials).</summary>
+        public Material iris;
+        public Material makeup;
 
         /// <summary>Humanoid avatars of the two bodies (the wardrobe body shares the ready-made figures' rig).</summary>
         public Avatar femaleAvatar;
@@ -480,13 +488,79 @@ namespace Reconnect.Client.Rooms
         private static Material SkinMaterial(AvatarLookDto look, WardrobeManifest manifest, AvatarMaterials materials)
         {
             var skin = manifest.skins.FirstOrDefault(s => s.id == look.Skin) ?? manifest.skins.First();
-            return Textured($"{look.Body}/skin/{skin.id}", materials.opaque, Texture(look.Body, skin.texture), null, 0.35f);
+            var texture = (Texture)Texture(look.Body, skin.texture);
+            var makeup = MakeupKey(look.Makeup);
+            if (makeup != null && texture != null && materials.makeup != null && Texture(look.Body, manifest.makeup) is { } mask)
+            {
+                texture = Painted(texture, $"{look.Body}/{skin.id}/{makeup}", MakeupSize, material =>
+                {
+                    var paint = look.Makeup;
+                    material.SetTexture("_Mask", mask);
+                    material.SetColor("_Lips", Paint(paint.Lips, paint.LipsAmount));
+                    material.SetColor("_Shadow", Paint(paint.Eyeshadow, paint.EyeshadowAmount));
+                    material.SetColor("_Blush", Paint(paint.Blush, paint.BlushAmount));
+                    material.SetColor("_Liner", new Color(0.05f, 0.04f, 0.045f, Step(paint.Liner)));
+                }, materials.makeup);
+                return Textured($"{look.Body}/skin/{skin.id}/{makeup}", materials.opaque, texture, null, 0.35f);
+            }
+            return Textured($"{look.Body}/skin/{skin.id}", materials.opaque, texture, null, 0.35f);
         }
 
         private static Material EyesMaterial(AvatarLookDto look, WardrobeManifest manifest, AvatarMaterials materials)
         {
+            if (look.EyeColour != null && materials.iris != null && Texture(look.Body, manifest.iris) is { } iris)
+            {
+                var colour = look.EyeColour.ToUpperInvariant();
+                var tinted = Painted(iris, $"{look.Body}/iris/{colour}", IrisSize,
+                    material => material.SetColor("_Tint", ToColor(Wardrobe.HexColour(colour))), materials.iris);
+                return Textured($"{look.Body}/eyes/{colour}", materials.opaque, tinted, null, 0.85f);
+            }
             var eyes = manifest.eyes.FirstOrDefault(e => e.id == look.Eyes) ?? manifest.eyes.First();
             return Textured($"{look.Body}/eyes/{eyes.id}", materials.opaque, Texture(look.Body, eyes.texture), null, 0.85f);
+        }
+
+        /// <summary>Painted skins and irises are shared between looks with the same paint (amounts in tenths).</summary>
+        private const int MakeupSize = 512;
+        private const int IrisSize = 256;
+
+        private static float Step(float amount) => Mathf.Round(Mathf.Clamp01(amount) * 10f) / 10f;
+
+        private static Color Paint(string hex, float amount)
+        {
+            if (hex == null || Step(amount) <= 0f)
+            {
+                return Color.clear;
+            }
+            var (r, g, b) = Wardrobe.HexColour(hex);
+            return new Color(r, g, b, Step(amount));
+        }
+
+        private static string MakeupKey(AvatarMakeupDto makeup)
+        {
+            if (makeup == null)
+            {
+                return null;
+            }
+            string Part(string hex, float amount) => hex != null && Step(amount) > 0f ? hex.ToUpperInvariant() + Step(amount).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) : "-";
+            var key = $"{Part(makeup.Lips, makeup.LipsAmount)}|{Part(makeup.Eyeshadow, makeup.EyeshadowAmount)}|{Part(makeup.Blush, makeup.BlushAmount)}|{Part("000000", makeup.Liner)}";
+            return key == "-|-|-|-" ? null : key;
+        }
+
+        /// <summary>A texture run through a blit material (make-up, iris colour), made once per key.</summary>
+        private static Texture Painted(Texture source, string key, int size, Action<Material> setUp, Material material)
+        {
+            if (Tinted.TryGetValue(key, out var done) && done != null)
+            {
+                return done;
+            }
+            var target = new RenderTexture(Mathf.Min(size, source.width), Mathf.Min(size, source.height), 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB)
+            {
+                name = key, useMipMap = true, autoGenerateMips = true, wrapMode = TextureWrapMode.Clamp,
+            };
+            setUp(material);
+            Graphics.Blit(source, target, material);
+            Tinted[key] = target;
+            return target;
         }
 
         private static Material LashesMaterial(AvatarLookDto look, AvatarMaterials materials) =>

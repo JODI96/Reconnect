@@ -32,6 +32,8 @@ MonoBehaviour:
     opaqueNormal: {fileID: 2100000, guid: e44864211fdc03840bfe5aa6ededf63b, type: 2}
     cutout: {fileID: 2100000, guid: 49155228c9586ae47bc2801b13278b69, type: 2}
     recolour: {fileID: 2100000, guid: 1f899a699a3424d43873125904934e93, type: 2}
+    iris: {fileID: 2100000, guid: 689f0fc3cddc3d7449bfb5f6494dab7d, type: 2}
+    makeup: {fileID: 2100000, guid: 713c8bf7abffaea45a62c6798ac6cabd, type: 2}
     femaleAvatar: {fileID: 9000000, guid: ff2f5e8c71541fd4f8ff0c3529fe1e6f, type: 3}
     maleAvatar: {fileID: 9000000, guid: 4d60d9fc3a7a4444c8bf9f7838c81088, type: 3}
   walkStyles:

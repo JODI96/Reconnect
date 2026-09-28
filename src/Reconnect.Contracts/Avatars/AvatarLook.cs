@@ -9,13 +9,22 @@ namespace Reconnect.Contracts.Avatars
     public sealed record AvatarPartDto(string Id, string Variant = "default", string Tint = null);
 
     /// <summary>
+    /// Face paint: each colour (hex RRGGBB) with how much of it (0 … 1). Nothing set = none.
+    /// </summary>
+    public sealed record AvatarMakeupDto(
+        string Lips = null, float LipsAmount = 0f, string Eyeshadow = null, float EyeshadowAmount = 0f,
+        string Blush = null, float BlushAmount = 0f, float Liner = 0f);
+
+    /// <summary>
     /// What someone looks like (character creator): body, skin, eyes, brows, the worn parts, the way they walk, their
-    /// height (0.94 … 1.06 of the body's) and body and face shape (<see cref="Wardrobe.Morphs"/> id → −1 … 1, one-sided
-    /// shapes 0 … 1; missing = 0). Stored in the profile, sent with every player in a room.
+    /// height (0.94 … 1.06 of the body's), body and face shape (<see cref="Wardrobe.Morphs"/> id → −1 … 1, one-sided
+    /// shapes 0 … 1; missing = 0), an eye colour of one's own (hex RRGGBB, tints the iris; null = the colour of
+    /// <see cref="Eyes"/>) and make-up. Stored in the profile, sent with every player in a room.
     /// </summary>
     public sealed record AvatarLookDto(
         string Body, string Skin, string Eyes, string Brows, IReadOnlyList<AvatarPartDto> Parts,
-        string WalkStyle = "normal", float Height = 1f, IReadOnlyDictionary<string, float> Shape = null);
+        string WalkStyle = "normal", float Height = 1f, IReadOnlyDictionary<string, float> Shape = null,
+        string EyeColour = null, AvatarMakeupDto Makeup = null);
 
     /// <summary>
     /// The wardrobe of the character creator (ids generated from MakeHuman by tools/avatars/build_wardrobe.py, see
@@ -127,6 +136,24 @@ namespace Reconnect.Contracts.Avatars
             {
                 problems.Add("Zu viele Teile.");
             }
+            if (look.EyeColour != null && !IsHex(look.EyeColour))
+            {
+                problems.Add("Ungültige Augenfarbe.");
+            }
+            if (look.Makeup is { } makeup)
+            {
+                foreach (var (colour, amount, name) in new[]
+                         {
+                             (makeup.Lips, makeup.LipsAmount, "Lippen"), (makeup.Eyeshadow, makeup.EyeshadowAmount, "Lidschatten"),
+                             (makeup.Blush, makeup.BlushAmount, "Rouge"), ("000000", makeup.Liner, "Eyeliner"),
+                         })
+                {
+                    if ((colour != null && !IsHex(colour)) || float.IsNaN(amount) || amount < 0f || amount > 1f)
+                    {
+                        problems.Add($"Ungültiges Make-up ({name}).");
+                    }
+                }
+            }
             if (look.Shape != null)
             {
                 if (look.Shape.Count > Morphs.Length)
@@ -150,6 +177,21 @@ namespace Reconnect.Contracts.Avatars
         }
 
         public static bool IsValid(AvatarLookDto look) => Problems(look).Count == 0;
+
+        /// <summary>A colour as six hex digits (RRGGBB).</summary>
+        public static bool IsHex(string colour) =>
+            colour is { Length: 6 } && colour.All(c => (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f'));
+
+        /// <summary>Hex colour (RRGGBB) as channels 0 … 1.</summary>
+        public static (float R, float G, float B) HexColour(string hex)
+        {
+            if (!IsHex(hex))
+            {
+                return (1f, 1f, 1f);
+            }
+            float Channel(int start) => int.Parse(hex.Substring(start, 2), NumberStyles.HexNumber) / 255f;
+            return (Channel(0), Channel(2), Channel(4));
+        }
 
         /// <summary>A tint as colour channels 0 … 1.</summary>
         public static (float R, float G, float B) TintColour(string tint)

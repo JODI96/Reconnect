@@ -18,7 +18,7 @@ namespace Reconnect.Client.Editor
         public const string Wardrobe = "Assets/ThirdParty/MakeHuman/Resources/Wardrobe/";
 
         /// <summary>Bump when the rules change, so Unity reimports the avatars.</summary>
-        public override uint GetVersion() => 8;
+        public override uint GetVersion() => 9;
 
 
         private void OnPreprocessModel()
@@ -130,8 +130,11 @@ namespace Reconnect.Client.Editor
                 var normal = name.EndsWith("_n");
                 var alpha = assetPath.EndsWith(".png");
                 texture.textureType = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-                texture.sRGBTexture = !normal;
-                texture.maxTextureSize = name.StartsWith("skin_") ? 1024 : normal ? 256 : 512;
+                var mask = name == "makeup_mask";   // data, not colour
+                texture.sRGBTexture = !normal && !mask;
+                // Clothes sharp in close-ups (1024; the file decides, tools/avatars: tops, bottoms, dresses, outfits), hair
+                // cards and small parts 512, normal maps half.
+                texture.maxTextureSize = normal ? 512 : mask ? 512 : 1024;
                 texture.mipmapEnabled = true;
                 texture.alphaIsTransparency = alpha;
                 texture.alphaSource = alpha ? TextureImporterAlphaSource.FromInput : TextureImporterAlphaSource.None;

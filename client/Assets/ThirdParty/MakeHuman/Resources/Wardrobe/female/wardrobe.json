@@ -233696,5 +233696,7 @@
   "waist-",
   "weight+",
   "weight-"
- ]
+ ],
+ "makeup": "makeup_mask.png",
+ "iris": "eyes_iris.png"
 }

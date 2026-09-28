@@ -120,6 +120,23 @@ public sealed class WardrobeTests
     }
 
     [Fact]
+    public void Eye_colour_and_makeup_must_be_colours_and_amounts()
+    {
+        var woman = Wardrobe.Default(Wardrobe.Female) with
+        {
+            EyeColour = "3D6FB4",
+            Makeup = new AvatarMakeupDto(Lips: "D1495B", LipsAmount: 0.8f, Blush: "E8A598", BlushAmount: 0.3f, Liner: 0.5f),
+        };
+        Assert.Empty(Wardrobe.Problems(woman));
+        Assert.NotEmpty(Wardrobe.Problems(woman with { EyeColour = "blue" }));
+        Assert.NotEmpty(Wardrobe.Problems(woman with { Makeup = new AvatarMakeupDto(Lips: "D1495B", LipsAmount: 1.5f) }));
+        Assert.NotEmpty(Wardrobe.Problems(woman with { Makeup = new AvatarMakeupDto(Blush: "#E8A598", BlushAmount: 0.5f) }));
+        Assert.All(Wardrobe.EyeColours.Values.Concat(Wardrobe.MakeupColours.Values.SelectMany(c => c)), c => Assert.True(Wardrobe.IsHex(c)));
+        var (r, _, b) = Wardrobe.HexColour("3D6FB4");
+        Assert.True(b > r);
+    }
+
+    [Fact]
     public void Weight_in_kilograms_follows_height_and_the_weight_shape()
     {
         var man = Wardrobe.Default(Wardrobe.Male);

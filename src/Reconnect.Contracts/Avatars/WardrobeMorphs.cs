@@ -7,6 +7,22 @@ namespace Reconnect.Contracts.Avatars
     /// <summary>Body and face shapes of the character creator: German names, groups, weight in kilograms.</summary>
     public static partial class Wardrobe
     {
+        /// <summary>Eye colours to start from (the creator fine-tunes hue, saturation and brightness).</summary>
+        public static readonly IReadOnlyDictionary<string, string> EyeColours = new Dictionary<string, string>
+        {
+            ["Dunkelbraun"] = "3B2314", ["Braun"] = "6B4225", ["Haselnuss"] = "8A6A3A", ["Bernstein"] = "B07A2A", ["Grün"] = "4F7A3C",
+            ["Smaragd"] = "2E8057", ["Graugrün"] = "6E8272", ["Grau"] = "7F8A94", ["Blaugrau"] = "6283A0", ["Blau"] = "3D6FB4",
+            ["Hellblau"] = "7FB2E0", ["Eisblau"] = "A9D2E8", ["Violett"] = "6C5A9C",
+        };
+
+        /// <summary>Make-up colours (hex) per kind.</summary>
+        public static readonly IReadOnlyDictionary<string, string[]> MakeupColours = new Dictionary<string, string[]>
+        {
+            ["lips"] = new[] { "C98A7E", "B5625C", "D1495B", "A4161A", "7B1E3A", "8E3B5E", "E07A5F", "D98C9A", "6D3B2F", "4A1C2C" },
+            ["eyeshadow"] = new[] { "5B4636", "8C6A52", "C9A27E", "3A3A44", "6E5A7E", "2F4B5E", "7A8B5A", "B8866B", "D4B483", "1F1A1C" },
+            ["blush"] = new[] { "E8A598", "D97B7B", "E09A7A", "C77B8B", "B86A5E", "F0B5A5" },
+        };
+
         /// <summary>Groups of shapes in the creator's order, with their German titles.</summary>
         public static readonly IReadOnlyList<(string Id, string Title)> MorphGroups = new[]
         {

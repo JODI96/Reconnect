@@ -464,6 +464,13 @@ namespace Reconnect.Client.Editor
         }
 
         /// <summary>Realistic MakeHuman figures with one Humanoid animator (see <see cref="AvatarSetup"/>).</summary>
+        /// <summary>Only the figures, the wardrobe materials and the wardrobe pictures (after tools/avatars) – faster than Run.</summary>
+        public static void RunAvatars()
+        {
+            CreateAvatarCatalog();
+            AssetDatabase.SaveAssets();
+        }
+
         private static void CreateAvatarCatalog() => WardrobeIcons.Render(AvatarSetup.Build(AvatarCatalogPath, AvatarControllerPath));
 
         /// <summary>Warm, slightly punchy grading with soft bloom on lamps and emissive markers.</summary>

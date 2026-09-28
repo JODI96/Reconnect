@@ -47,6 +47,7 @@ namespace Reconnect.Client.UI.Screens
             new("Nase", "nose", CharacterPreview.Focus.Face),
             new("Mund", "mouth", CharacterPreview.Focus.Face),
             new("Ohren", "ears", CharacterPreview.Focus.Face),
+            new("Make-up", "makeup", CharacterPreview.Focus.Face),
             new("Haare", Wardrobe.Hair, CharacterPreview.Focus.Face),
             new("Bart", Wardrobe.Beard, CharacterPreview.Focus.Face, female: false),
             new("Oberteil", Wardrobe.Top, CharacterPreview.Focus.Upper),
@@ -336,6 +337,9 @@ namespace Reconnect.Client.UI.Screens
                 case "ears":
                     MorphSliders("ears");
                     break;
+                case "makeup":
+                    Makeup();
+                    break;
                 case "skin":
                     foreach (var skin in Wardrobe.Skins[_look.Body])
                     {
@@ -344,8 +348,7 @@ namespace Reconnect.Client.UI.Screens
                     }
                     break;
                 case "eyes":
-                    Swatches("Augenfarbe", Wardrobe.Eyes.Select(e => (e, (Color)EyeColours[e], Wardrobe.EyeName(e))), _look.Eyes,
-                        eyes => Apply(_look with { Eyes = eyes }), withOriginal: false);
+                    EyeColour();
                     MorphSliders("eyes");
                     MorphSliders("brows", "Brauen");
                     foreach (var brows in Wardrobe.PartsOf(_look.Body, Wardrobe.Brows))
@@ -479,6 +482,94 @@ namespace Reconnect.Client.UI.Screens
             {
                 Slider("Gesichtsform: " + Wardrobe.MorphName(chosen), chosen, 0f, 1f);
             }
+        }
+
+        // ---------- Eyes and make-up ----------
+
+        private Color CurrentEyeColour()
+        {
+            if (_look.EyeColour != null)
+            {
+                var (r, g, b) = Wardrobe.HexColour(_look.EyeColour);
+                return new Color(r, g, b);
+            }
+            return EyeColours.TryGetValue(_look.Eyes ?? "", out var preset) ? preset : new Color(0.42f, 0.26f, 0.15f);
+        }
+
+        /// <summary>Eye colour: a colour to start from, then hue, saturation and brightness as fine as one likes.</summary>
+        private void EyeColour()
+        {
+            var current = CurrentEyeColour();
+            var hex = _look.EyeColour ?? ColorUtility.ToHtmlStringRGB(current);
+            Swatches("Augenfarbe", Wardrobe.EyeColours.Select(e => (e.Value, Hex(e.Value), e.Key)), hex,
+                chosen => Apply(_look with { EyeColour = chosen }), withOriginal: false);
+            Color.RGBToHSV(current, out var hue, out var saturation, out var value);
+            void Set(float h, float sat, float val) =>
+                SliderChange(_look with { EyeColour = ColorUtility.ToHtmlStringRGB(Color.HSVToRGB(Quantise(h, 72), Quantise(sat, 40), Quantise(val, 40))) });
+            ColourSlider("Farbton", "creator-eye-hue", hue, v => { hue = v; Set(hue, saturation, value); });
+            ColourSlider("Sättigung", "creator-eye-saturation", saturation, v => { saturation = v; Set(hue, saturation, value); });
+            ColourSlider("Helligkeit", "creator-eye-value", value, v => { value = v; Set(hue, saturation, value); });
+        }
+
+        private static float Quantise(float value, int steps) => Mathf.Round(Mathf.Clamp01(value) * steps) / steps;
+
+        private static Color Hex(string hex)
+        {
+            var (r, g, b) = Wardrobe.HexColour(hex);
+            return new Color(r, g, b);
+        }
+
+        private void ColourSlider(string title, string name, float value, Action<float> changed)
+        {
+            var row = new VisualElement();
+            row.AddToClassList("creator__morph");
+            var label = new Label(title);
+            label.AddToClassList("creator__morph-label");
+            var slider = new Slider(0f, 1f) { value = value, name = name };
+            slider.AddToClassList("creator__morph-slider");
+            slider.RegisterValueChangedCallback(e => changed(e.newValue));
+            row.Add(label);
+            row.Add(slider);
+            _extras.Add(row);
+        }
+
+        /// <summary>Make-up: lips, eyeshadow and blush each with a colour and how much, eyeliner how much.</summary>
+        private void Makeup()
+        {
+            var paint = _look.Makeup ?? new AvatarMakeupDto();
+            void Change(AvatarMakeupDto changed, bool slider)
+            {
+                var none = changed.LipsAmount <= 0f && changed.EyeshadowAmount <= 0f && changed.BlushAmount <= 0f && changed.Liner <= 0f;
+                var look = _look with { Makeup = none ? null : changed };
+                if (slider)
+                {
+                    SliderChange(look);
+                }
+                else
+                {
+                    Apply(look);
+                }
+            }
+            MakeupPart("Lippen", "lips", paint.Lips, paint.LipsAmount,
+                (colour, amount, slider) => Change((_look.Makeup ?? new AvatarMakeupDto()) with { Lips = colour, LipsAmount = amount }, slider));
+            MakeupPart("Lidschatten", "eyeshadow", paint.Eyeshadow, paint.EyeshadowAmount,
+                (colour, amount, slider) => Change((_look.Makeup ?? new AvatarMakeupDto()) with { Eyeshadow = colour, EyeshadowAmount = amount }, slider));
+            MakeupPart("Rouge", "blush", paint.Blush, paint.BlushAmount,
+                (colour, amount, slider) => Change((_look.Makeup ?? new AvatarMakeupDto()) with { Blush = colour, BlushAmount = amount }, slider));
+            var heading = new Label("Eyeliner");
+            heading.AddToClassList("creator__label");
+            _extras.Add(heading);
+            ColourSlider("Stärke", "creator-makeup-liner", paint.Liner,
+                v => Change((_look.Makeup ?? new AvatarMakeupDto()) with { Liner = Mathf.Round(v * 10f) / 10f }, true));
+        }
+
+        private void MakeupPart(string title, string kind, string colour, float amount, Action<string, float, bool> changed)
+        {
+            // Tapping a colour with nothing applied yet puts on a medium amount.
+            Swatches(title, Wardrobe.MakeupColours[kind].Select(c => (c, Hex(c), title)), amount > 0f ? colour : null,
+                chosen => changed(chosen, chosen == null ? 0f : (amount > 0f ? amount : 0.6f), false), withOriginal: true);
+            ColourSlider("Stärke", "creator-makeup-" + kind, amount,
+                v => changed(colour ?? Wardrobe.MakeupColours[kind][0], Mathf.Round(v * 10f) / 10f, true));
         }
 
         private static AvatarLookDto ClearShapes(AvatarLookDto look, IEnumerable<string> ids) =>
@@ -690,7 +781,8 @@ namespace Reconnect.Client.UI.Screens
         private static bool Same(AvatarLookDto a, AvatarLookDto b) =>
             a.Body == b.Body && a.Skin == b.Skin && a.Eyes == b.Eyes && a.Brows == b.Brows && a.WalkStyle == b.WalkStyle
             && Mathf.Approximately(a.Height, b.Height) && a.Parts.SequenceEqual(b.Parts)
-            && (a.Shape ?? new Dictionary<string, float>()).OrderBy(p => p.Key).SequenceEqual((b.Shape ?? new Dictionary<string, float>()).OrderBy(p => p.Key));
+            && (a.Shape ?? new Dictionary<string, float>()).OrderBy(p => p.Key).SequenceEqual((b.Shape ?? new Dictionary<string, float>()).OrderBy(p => p.Key))
+            && a.EyeColour == b.EyeColour && Equals(a.Makeup, b.Makeup);
 
         private async Task SaveAsync()
         {
