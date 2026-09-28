@@ -7,8 +7,10 @@ namespace Reconnect.Modules.Rooms.Infrastructure;
 /// <summary>A user standing in a room, reachable via one SignalR connection.</summary>
 /// <param name="Width">Room size, kept with the entry so moves can be validated without a database call.</param>
 /// <param name="Seat">The seat the user sits on (cleared by walking).</param>
+/// <param name="Look">The avatar's look (character creator), sent with the player.</param>
 internal sealed record PresenceEntry(
-    Guid RoomId, Guid UserId, string ConnectionId, string DisplayName, int X, int Z, int Width, int Depth, SeatDto? Seat = null);
+    Guid RoomId, Guid UserId, string ConnectionId, string DisplayName, int X, int Z, int Width, int Depth, SeatDto? Seat = null,
+    Contracts.Avatars.AvatarLookDto? Look = null);
 
 /// <summary>
 /// Who is in which room right now. Lives in Redis so that several API instances (and restarts)
@@ -34,6 +36,9 @@ internal interface IRoomPresenceStore
 
     /// <summary>Sits the user down (or stands up with null).</summary>
     Task UpdateSeatAsync(PresenceEntry entry, SeatDto? seat);
+
+    /// <summary>The user changed their look while in the room.</summary>
+    Task UpdateLookAsync(PresenceEntry entry, Contracts.Avatars.AvatarLookDto? look);
 
     /// <summary>Removes the user from a room they left by taking the lift (the connection now belongs to the new room).</summary>
     Task RemoveFromRoomAsync(Guid roomId, Guid userId);
@@ -110,6 +115,9 @@ internal sealed class RedisRoomPresenceStore(IConnectionMultiplexer redis) : IRo
 
     public Task UpdateSeatAsync(PresenceEntry entry, SeatDto? seat) =>
         Db.HashSetAsync(RoomKey(entry.RoomId), entry.UserId.ToString(), JsonSerializer.Serialize(entry with { Seat = seat }));
+
+    public Task UpdateLookAsync(PresenceEntry entry, Contracts.Avatars.AvatarLookDto? look) =>
+        Db.HashSetAsync(RoomKey(entry.RoomId), entry.UserId.ToString(), JsonSerializer.Serialize(entry with { Look = look }));
 
     public Task RemoveFromRoomAsync(Guid roomId, Guid userId) => Db.HashDeleteAsync(RoomKey(roomId), userId.ToString());
 

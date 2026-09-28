@@ -19,7 +19,11 @@ namespace Reconnect.Contracts.Rooms
 
     /// <param name="Tile">Where the player stands (or stood before sitting down).</param>
     /// <param name="Seat">The seat the player sits on, if any (see <see cref="RoomSeats"/>).</param>
-    public sealed record RoomPlayerDto(Guid UserId, string DisplayName, TilePosition Tile, SeatDto? Seat = null);
+    /// <summary>Someone changed their look (character creator) – everyone in the room rebuilds the figure.</summary>
+    public sealed record PlayerLookDto(Guid UserId, Avatars.AvatarLookDto? Look);
+
+    /// <param name="Look">What the player looks like (character creator); null = a figure picked from the user id.</param>
+    public sealed record RoomPlayerDto(Guid UserId, string DisplayName, TilePosition Tile, SeatDto? Seat = null, Avatars.AvatarLookDto? Look = null);
 
     /// <summary>Everything a client needs when entering: the room, who is already there (including the caller) and running games.</summary>
     public sealed record RoomSnapshotDto(

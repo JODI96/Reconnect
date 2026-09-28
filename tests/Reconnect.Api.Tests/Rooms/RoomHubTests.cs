@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.SignalR;
 using Reconnect.Api.Tests.Infrastructure;
 using Reconnect.Contracts;
+using Reconnect.Contracts.Avatars;
 using Reconnect.Contracts.Rooms;
 using Reconnect.Modules.City.Public;
 
@@ -162,6 +163,41 @@ public sealed class RoomHubTests(ReconnectApiFactory factory)
         Assert.True(await carlHub.SitAsync(1, 0));
         await benHub.StandUpAsync();
         await RoomHubClient.Eventually(() => annaHub.Seats.Any(s => s.UserId == ben.Id && s.Seat == null), "Anna sees Ben stand up");
+    }
+
+    [Fact]
+    public async Task A_new_look_is_saved_checked_and_shown_to_everyone_in_the_room()
+    {
+        var (room, anna, ben) = await RoomWithTwoUsersAsync();
+        Assert.Equal(System.Net.HttpStatusCode.NoContent, (await ben.Client.GetAsync(ApiRoutes.Profiles.MyLook)).StatusCode);
+
+        var look = Wardrobe.Default(Wardrobe.Male) with { WalkStyle = "confident" };
+        var saved = await ben.Client.PutAsJsonAsync(ApiRoutes.Profiles.MyLook, look, TestUsers.Json);
+        Assert.Equal(System.Net.HttpStatusCode.OK, saved.StatusCode);
+        var read = await (await ben.Client.GetAsync(ApiRoutes.Profiles.MyLook)).ReadAsync<AvatarLookDto>();
+        Assert.Equal(look.Skin, read.Skin);
+        Assert.Equal(look.Parts.Select(p => p.Id), read.Parts.Select(p => p.Id));
+
+        // Not in the wardrobe, or a dress over trousers: refused.
+        var unknown = look with { Parts = [new AvatarPartDto("space_suit")] };
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, (await ben.Client.PutAsJsonAsync(ApiRoutes.Profiles.MyLook, unknown, TestUsers.Json)).StatusCode);
+        var clash = Wardrobe.Default(Wardrobe.Female) with { Parts = [new AvatarPartDto("toigo_shift_dress"), new AvatarPartDto("toigo_wool_pants")] };
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, (await ben.Client.PutAsJsonAsync(ApiRoutes.Profiles.MyLook, clash, TestUsers.Json)).StatusCode);
+
+        // In the room: others see the look when he enters, and a new one while he is there.
+        await using var annaHub = await RoomHubClient.ConnectAsync(factory, anna);
+        await using var benHub = await RoomHubClient.ConnectAsync(factory, ben);
+        await annaHub.JoinAsync(room.Id);
+        await benHub.JoinAsync(room.Id);
+        await RoomHubClient.Eventually(() => annaHub.Joined.Any(p => p.UserId == ben.Id && p.Look != null && p.Look.WalkStyle == "confident"),
+            "Anna sees Ben's look");
+
+        var suit = look with { Parts = [new AvatarPartDto("short04"), new AvatarPartDto("male_elegantsuit01"), new AvatarPartDto("shoes03")] };
+        await ben.Client.PutAsJsonAsync(ApiRoutes.Profiles.MyLook, suit, TestUsers.Json);
+        await benHub.RefreshLookAsync();
+        await RoomHubClient.Eventually(() => annaHub.Looks.Any(l => l.UserId == ben.Id && l.Look!.Parts.Any(p => p.Id == "male_elegantsuit01")),
+            "Anna sees Ben in his suit");
+        await RoomHubClient.Eventually(() => benHub.Looks.Any(l => l.UserId == ben.Id), "Ben sees himself changed");
     }
 
     private async Task<(RoomDto Room, TestUser Anna, TestUser Ben)> RoomWithTwoUsersAsync()

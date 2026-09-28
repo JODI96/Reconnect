@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using Reconnect.Contracts;
+using Reconnect.Contracts.Avatars;
 using Reconnect.Contracts.Profiles;
 using Reconnect.Modules.Identity.Public;
 using Reconnect.Modules.Profiles.Domain;
@@ -24,6 +26,39 @@ internal static class ProfileEndpoints
         group.MapGet("/me", GetMine);
         group.MapPut("/me", UpdateMine);
         group.MapGet("/{id:guid}", GetById);
+        group.MapGet("/me/look", GetMyLook);
+        group.MapPut("/me/look", UpdateMyLook);
+    }
+
+    internal static readonly JsonSerializerOptions LookJson = new(JsonSerializerDefaults.Web);
+
+    private static async Task<Results<Ok<AvatarLookDto>, NoContent, NotFound>> GetMyLook(ClaimsPrincipal principal, ProfilesDbContext db, CancellationToken ct)
+    {
+        var profile = await db.Profiles.SingleOrDefaultAsync(p => p.UserId == principal.GetUserId(), ct);
+        if (profile is null)
+        {
+            return TypedResults.NotFound();
+        }
+        return profile.Look is null ? TypedResults.NoContent() : TypedResults.Ok(JsonSerializer.Deserialize<AvatarLookDto>(profile.Look, LookJson)!);
+    }
+
+    /// <summary>Saves the look after checking it against the wardrobe (same rules as the creator).</summary>
+    private static async Task<Results<Ok<AvatarLookDto>, NotFound, ValidationProblem>> UpdateMyLook(
+        AvatarLookDto look, ClaimsPrincipal principal, ProfilesDbContext db, CancellationToken ct)
+    {
+        var problems = Wardrobe.Problems(look);
+        if (problems.Count > 0)
+        {
+            return TypedResults.ValidationProblem(new Dictionary<string, string[]> { ["look"] = problems.ToArray() });
+        }
+        var profile = await db.Profiles.SingleOrDefaultAsync(p => p.UserId == principal.GetUserId(), ct);
+        if (profile is null)
+        {
+            return TypedResults.NotFound();
+        }
+        profile.ChangeLook(JsonSerializer.Serialize(look, LookJson));
+        await db.SaveChangesAsync(ct);
+        return TypedResults.Ok(look);
     }
 
     private static async Task<Results<Ok<MyProfileDto>, NotFound>> GetMine(ClaimsPrincipal principal, ProfilesDbContext db, CancellationToken ct)
@@ -77,6 +112,12 @@ internal sealed class ProfileDirectory(ProfilesDbContext db) : IProfileDirectory
     {
         var ids = userIds.Distinct().ToList();
         return await db.Profiles.Where(p => ids.Contains(p.UserId)).ToDictionaryAsync(p => p.UserId, p => p.DisplayName, ct);
+    }
+
+    public async Task<AvatarLookDto?> GetLookAsync(Guid userId, CancellationToken ct)
+    {
+        var json = await db.Profiles.Where(p => p.UserId == userId).Select(p => p.Look).SingleOrDefaultAsync(ct);
+        return json is null ? null : JsonSerializer.Deserialize<AvatarLookDto>(json, ProfileEndpoints.LookJson);
     }
 }
 

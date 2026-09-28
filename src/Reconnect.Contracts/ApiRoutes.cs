@@ -23,6 +23,9 @@ namespace Reconnect.Contracts
             public const string Path = "/profiles";
             public const string Group = Version + Path;
             public const string Me = Group + "/me";
+
+            /// <summary>My avatar's look (character creator): GET, PUT.</summary>
+            public const string MyLook = Me + "/look";
             public static string ById(System.Guid id) => Group + "/" + id;
         }
 

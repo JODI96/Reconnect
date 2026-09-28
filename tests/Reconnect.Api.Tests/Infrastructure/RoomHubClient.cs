@@ -29,6 +29,7 @@ public sealed class RoomHubClient : IAsyncDisposable
         connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdates.Enqueue(q));
         connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => Arrivals.Enqueue(s));
         connection.On<RoomLayoutChangedDto>(RoomHubContract.Client.RoomLayoutChanged, l => LayoutChanges.Enqueue(l));
+        connection.On<PlayerLookDto>(RoomHubContract.Client.PlayerLookChanged, l => Looks.Enqueue(l));
     }
 
     public TestUser User { get; }
@@ -39,6 +40,8 @@ public sealed class RoomHubClient : IAsyncDisposable
     public ConcurrentBag<EmoteDto> EmotesSeen { get; } = [];
     public ConcurrentQueue<PlayerSeatDto> Seats { get; } = new();
     public ConcurrentQueue<RoomLayoutChangedDto> LayoutChanges { get; } = new();
+
+    public ConcurrentQueue<PlayerLookDto> Looks { get; } = new();
     public ConcurrentQueue<TicTacToeStateDto> TicTacToe { get; } = new();
     public ConcurrentQueue<BoardGameStateDto> BoardGames { get; } = new();
     public ConcurrentQueue<QuizStateDto> Quiz { get; } = new();
@@ -95,6 +98,8 @@ public sealed class RoomHubClient : IAsyncDisposable
         _connection.InvokeAsync<ElevatorResultDto>(RoomHubContract.Server.RideElevator, targetRoomId);
 
     public Task LeaveQueueAsync() => _connection.InvokeAsync(RoomHubContract.Server.LeaveQueue);
+
+    public Task RefreshLookAsync() => _connection.InvokeAsync(RoomHubContract.Server.RefreshLook);
 
     public ValueTask DisposeAsync() => _connection.DisposeAsync();
 

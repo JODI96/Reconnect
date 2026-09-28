@@ -28,6 +28,7 @@ public interface IRoomClient
     Task QueueUpdated(QueueStatusDto status);
     Task ElevatorArrived(RoomSnapshotDto snapshot);
     Task RoomLayoutChanged(RoomLayoutChangedDto change);
+    Task PlayerLookChanged(PlayerLookDto look);
 }
 
 /// <summary>
@@ -125,6 +126,18 @@ internal sealed class RoomHub(
     /// Sits down on place <paramref name="place"/> of layout item <paramref name="item"/> – if that item is a seat
     /// (<see cref="RoomSeats"/>) and nobody else sits there. Returns false when the place is taken.
     /// </summary>
+    /// <summary>
+    /// The caller saved a new look (profile): the room takes it from the profile and shows it to everyone there, the caller
+    /// included.
+    /// </summary>
+    public async Task RefreshLook()
+    {
+        var me = await CurrentEntryAsync();
+        var look = await profiles.GetLookAsync(me.UserId, Context.ConnectionAborted);
+        await presence.UpdateLookAsync(me, look);
+        await Clients.Clients(await VisibleConnectionsAsync(me, includeSelf: true)).PlayerLookChanged(new PlayerLookDto(me.UserId, look));
+    }
+
     public async Task<bool> Sit(int item, int place)
     {
         var me = await CurrentEntryAsync();
@@ -236,7 +249,8 @@ internal sealed class RoomHub(
         var blocked = RoomLayout.BlockedTiles(room.Layout);
         blocked.UnionWith(RoomLayout.OutsideTiles(RoomZones.ContextFor(room.Theme, room.Width, room.Depth, room.Layout, room.Outline)));
         var (x, z) = FindFreeTile(others, blocked, room.Width, room.Depth, byElevator || room.Floor != null ? ElevatorLanding(room) : null);
-        var me = new PresenceEntry(room.Id, userId, connectionId, displayName, x, z, room.Width, room.Depth);
+        var look = await profiles.GetLookAsync(userId, ct);
+        var me = new PresenceEntry(room.Id, userId, connectionId, displayName, x, z, room.Width, room.Depth, Look: look);
 
         var (added, replaced) = await presence.TryAddAsync(me, room.Capacity);
         if (!added)
@@ -475,5 +489,5 @@ internal sealed class RoomHub(
     }
 
     private static RoomPlayerDto ToDto(PresenceEntry entry) =>
-        new(entry.UserId, entry.DisplayName, new TilePosition(entry.X, entry.Z), entry.Seat);
+        new(entry.UserId, entry.DisplayName, new TilePosition(entry.X, entry.Z), entry.Seat, entry.Look);
 }

@@ -18,6 +18,7 @@ internal sealed class ProfilesDbContext(DbContextOptions<ProfilesDbContext> opti
             profile.HasKey(p => p.UserId);
             profile.Property(p => p.DisplayName).HasMaxLength(Profile.DisplayNameMaxLength);
             profile.Property(p => p.Bio).HasMaxLength(Profile.BioMaxLength);
+            profile.Property(p => p.Look).HasMaxLength(Profile.LookMaxLength);
         });
     }
 }

@@ -71,6 +71,9 @@ namespace Reconnect.Contracts.Hubs
 
             /// <summary>() → nothing. Leaves the lift queue.</summary>
             public const string LeaveQueue = "LeaveQueue";
+
+            /// <summary>No payload – I saved a new look (profile); the room shows it to everyone (PlayerLookChanged).</summary>
+            public const string RefreshLook = "RefreshLook";
         }
 
         /// <summary>Events the server pushes to clients in the same room (never between blocked users).</summary>
@@ -111,6 +114,9 @@ namespace Reconnect.Contracts.Hubs
 
             /// <summary>Payload: RoomLayoutChangedDto – the owner or an admin saved a new layout (build editor).</summary>
             public const string RoomLayoutChanged = "RoomLayoutChanged";
+
+            /// <summary>Payload: PlayerLookDto – someone in the room changed their look (character creator).</summary>
+            public const string PlayerLookChanged = "PlayerLookChanged";
         }
     }
 }
