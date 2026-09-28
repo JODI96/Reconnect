@@ -78,17 +78,22 @@ namespace Reconnect.Client.Rooms
             var color = ColorFor(player.UserId);
 
             var avatar = root.AddComponent<AvatarView>();
-            var model = catalog != null ? catalog.CharacterFor(player.UserId) : null;
-            if (model != null)
+            // Made in the character creator, or (no look yet) one of the ready-made figures.
+            var built = player.Look != null && catalog != null ? AvatarAssembler.Build(player.Look, root.transform, catalog.wardrobe) : null;
+            var model = built == null && catalog != null ? catalog.CharacterFor(player.UserId) : null;
+            if (built != null || model != null)
             {
-                var figure = Instantiate(model, root.transform, false);
-                figure.transform.localScale = Vector3.one * catalog.scale;
+                var figure = built != null ? built : Instantiate(model, root.transform, false);
+                if (built == null)
+                {
+                    figure.transform.localScale = Vector3.one * catalog.scale;
+                }
                 avatar._animator = figure.GetComponentInChildren<Animator>();
                 if (avatar._animator == null)
                 {
                     avatar._animator = figure.AddComponent<Animator>();
                 }
-                avatar._animator.runtimeAnimatorController = catalog.animator;
+                avatar._animator.runtimeAnimatorController = built != null ? catalog.ControllerFor(player.Look.WalkStyle) : catalog.animator;
                 avatar._hips = avatar._animator.isHuman ? avatar._animator.GetBoneTransform(HumanBodyBones.Hips) : null;
                 avatar._head = avatar._animator.isHuman ? avatar._animator.GetBoneTransform(HumanBodyBones.Head) : null;
                 avatar._animator.applyRootMotion = false;

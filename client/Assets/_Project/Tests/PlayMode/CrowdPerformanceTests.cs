@@ -69,7 +69,8 @@ namespace Reconnect.Client.PlayModeTests
                 .ToArray();
             Assert.AreEqual(People, free.Length, "free tiles");
             var players = free
-                .Select((t, i) => new RoomPlayerDto(Guid.NewGuid(), "Gast " + i, new TilePosition(t.X, t.Z)))
+                .Select((t, i) => new RoomPlayerDto(Guid.NewGuid(), "Gast " + i, new TilePosition(t.X, t.Z), null,
+                    Reconnect.Contracts.Avatars.Wardrobe.Random(i % 2 == 0 ? "female" : "male", random)))   // looks from the character creator
                 .ToArray();
             var view = UnityEngine.Object.FindFirstObjectByType<RoomView>();
             var graphics = UnityEngine.Object.FindFirstObjectByType<AppBootstrap>().Graphics;

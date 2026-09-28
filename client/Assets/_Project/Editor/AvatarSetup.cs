@@ -42,8 +42,154 @@ namespace Reconnect.Client.Editor
             catalog.characters = figures;
             catalog.animator = BuildController(controllerPath);
             catalog.scale = 1f;   // real metres
+            catalog.wardrobe = WardrobeMaterials();
+            catalog.walkStyles = BuildWalkStyles((AnimatorController)catalog.animator);
             EditorUtility.SetDirty(catalog);
             return catalog;
+        }
+
+        private const string WalkStyleDir = "Assets/_Project/Animation/WalkStyles";
+
+        /// <summary>Templates the character creator clones per texture (URP Lit: opaque, opaque with normal map, cut-out).</summary>
+        private static AvatarMaterials WardrobeMaterials()
+        {
+            Material Template(string name, bool cutout, bool normalMap)
+            {
+                var material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(material, $"{MaterialDir}/{name}.mat");
+                material.SetColor("_BaseColor", Color.white);
+                material.SetFloat("_AlphaClip", cutout ? 1f : 0f);
+                material.SetFloat("_Cutoff", 0.4f);
+                SetKeyword(material, "_ALPHATEST_ON", cutout);
+                SetKeyword(material, "_NORMALMAP", normalMap);
+                material.SetFloat("_Cull", cutout ? 0f : 2f);   // hair cards are seen from both sides
+                material.renderQueue = cutout ? (int)UnityEngine.Rendering.RenderQueue.AlphaTest : -1;
+                material.SetFloat("_Smoothness", 0.3f);
+                material.SetFloat("_EnvironmentReflections", 0f);
+                SetKeyword(material, "_ENVIRONMENTREFLECTIONS_OFF", true);
+                material.enableInstancing = true;
+                EditorUtility.SetDirty(material);
+                return material;
+            }
+
+            var recolour = new Material(Shader.Find("Hidden/Reconnect/Recolour"));
+            AssetDatabase.CreateAsset(recolour, $"{MaterialDir}/wardrobe_recolour.mat");
+            return new AvatarMaterials
+            {
+                opaque = Template("wardrobe_opaque", false, false),
+                opaqueNormal = Template("wardrobe_opaque_normal", false, true),
+                cutout = Template("wardrobe_cutout", true, false),
+                recolour = recolour,
+                femaleAvatar = FigureAvatar("lena"),
+                maleAvatar = FigureAvatar("luca"),
+            };
+        }
+
+        private static Avatar FigureAvatar(string figure) =>
+            AssetDatabase.LoadAllAssetsAtPath($"{AvatarImportSettings.Figures}{figure}/{figure}.fbx").OfType<Avatar>().FirstOrDefault();
+
+        /// <summary>
+        /// Walk styles (character creator): the library's two walks, and three more made from them by changing muscle
+        /// curves – confident (upright, shoulders back, bigger arm swing), relaxed (a little bent, calm arms) and model
+        /// (formal walk with swaying hips). One override controller per style swaps the walk clip.
+        /// </summary>
+        private static AnimatorOverrideController[] BuildWalkStyles(AnimatorController controller)
+        {
+            AssetDatabase.DeleteAsset(WalkStyleDir);
+            Directory.CreateDirectory(WalkStyleDir);
+            AssetDatabase.Refresh();
+            var clips = AssetDatabase.LoadAllAssetsAtPath(ClipSource).OfType<AnimationClip>().ToDictionary(c => c.name);
+            var walk = clips["Walk_Loop"];
+            var formal = clips["Walk_Formal_Loop"];
+            var styles = new Dictionary<string, AnimationClip>
+            {
+                ["elegant"] = formal,
+                ["confident"] = Restyle(walk, "Walk_Confident", new Dictionary<string, (float Offset, float Swing)>
+                {
+                    ["Spine Front-Back"] = (-0.12f, 1f), ["Chest Front-Back"] = (-0.18f, 1f), ["Head Nod Down-Up"] = (0.08f, 1f),
+                    ["Left Shoulder Front-Back"] = (-0.35f, 1f), ["Right Shoulder Front-Back"] = (-0.35f, 1f),
+                    ["Left Arm Front-Back"] = (0f, 1.4f), ["Right Arm Front-Back"] = (0f, 1.4f),
+                }),
+                ["relaxed"] = Restyle(walk, "Walk_Relaxed", new Dictionary<string, (float Offset, float Swing)>
+                {
+                    ["Spine Front-Back"] = (0.1f, 1f), ["Chest Front-Back"] = (0.12f, 1f), ["Head Nod Down-Up"] = (-0.12f, 1f),
+                    ["Left Arm Front-Back"] = (0f, 0.6f), ["Right Arm Front-Back"] = (0f, 0.6f),
+                    ["Left Arm Down-Up"] = (-0.08f, 1f), ["Right Arm Down-Up"] = (-0.08f, 1f),
+                }),
+                ["model"] = Restyle(formal, "Walk_Model", new Dictionary<string, (float Offset, float Swing)>
+                {
+                    ["Spine Left-Right"] = (0f, 2.5f), ["Chest Left-Right"] = (0f, 2.5f), ["Head Nod Down-Up"] = (0.06f, 1f),
+                    ["Left Arm Front-Back"] = (0f, 0.8f), ["Right Arm Front-Back"] = (0f, 0.8f),
+                }, sway: true),
+            };
+            var result = new List<AnimatorOverrideController>();
+            foreach (var (style, clip) in styles)
+            {
+                var overrides = new AnimatorOverrideController(controller) { name = "Walk " + style };
+                overrides[walk] = clip;
+                AssetDatabase.CreateAsset(overrides, $"{WalkStyleDir}/Walk {style}.overrideController");
+                result.Add(overrides);
+            }
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// A copy of a humanoid clip with muscle curves changed: an offset added and the swing around the average scaled.
+        /// With <paramref name="sway"/> a side-to-side hip sway follows the legs.
+        /// </summary>
+        private static AnimationClip Restyle(AnimationClip source, string name, Dictionary<string, (float Offset, float Swing)> changes, bool sway = false)
+        {
+            var clip = new AnimationClip { name = name, frameRate = source.frameRate };
+            AnimationCurve leg = null;
+            foreach (var binding in AnimationUtility.GetCurveBindings(source))
+            {
+                if (binding.propertyName == "Left Upper Leg Front-Back")
+                {
+                    leg = AnimationUtility.GetEditorCurve(source, binding);
+                }
+            }
+            foreach (var binding in AnimationUtility.GetCurveBindings(source))
+            {
+                var curve = AnimationUtility.GetEditorCurve(source, binding);
+                if (changes.TryGetValue(binding.propertyName, out var change))
+                {
+                    var mean = curve.keys.Length == 0 ? 0f : curve.keys.Average(k => k.value);
+                    var keys = curve.keys;
+                    for (var i = 0; i < keys.Length; i++)
+                    {
+                        keys[i].value = mean + (keys[i].value - mean) * change.Swing + change.Offset;
+                        keys[i].inTangent *= change.Swing;
+                        keys[i].outTangent *= change.Swing;
+                    }
+                    curve.keys = keys;
+                    if (sway && leg != null && binding.propertyName.EndsWith("Left-Right") && curve.keys.Length < 3)
+                    {
+                        curve = Follow(leg, 0.12f);
+                    }
+                }
+                AnimationUtility.SetEditorCurve(clip, binding, curve);
+            }
+            if (sway && leg != null)
+            {
+                foreach (var muscle in new[] { "Spine Left-Right", "Chest Left-Right" })
+                {
+                    if (!AnimationUtility.GetCurveBindings(source).Any(b => b.propertyName == muscle))
+                    {
+                        AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve("", typeof(Animator), muscle), Follow(leg, 0.12f));
+                    }
+                }
+            }
+            var settings = AnimationUtility.GetAnimationClipSettings(source);
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            AssetDatabase.CreateAsset(clip, $"{WalkStyleDir}/{name}.anim");
+            return clip;
+        }
+
+        /// <summary>A curve following another one around its average, scaled (hips swaying with the legs).</summary>
+        private static AnimationCurve Follow(AnimationCurve source, float scale)
+        {
+            var mean = source.keys.Average(k => k.value);
+            return new AnimationCurve(source.keys.Select(k => new Keyframe(k.time, (k.value - mean) * scale, k.inTangent * scale, k.outTangent * scale)).ToArray());
         }
 
         /// <summary>Screen height (fraction) below which the next LOD is used; below the last the figure is culled.</summary>

@@ -27,3 +27,15 @@ MonoBehaviour:
   - {fileID: 2679866025697354945, guid: 2445a30b9bb0db84eb3f7d1d84cf0f9a, type: 3}
   animator: {fileID: 9100000, guid: d88f772190c82d14aa321320c2522137, type: 2}
   scale: 1
+  wardrobe:
+    opaque: {fileID: 2100000, guid: 9343019ba7232f5458190e6939925d9b, type: 2}
+    opaqueNormal: {fileID: 2100000, guid: e44864211fdc03840bfe5aa6ededf63b, type: 2}
+    cutout: {fileID: 2100000, guid: 49155228c9586ae47bc2801b13278b69, type: 2}
+    recolour: {fileID: 2100000, guid: 1f899a699a3424d43873125904934e93, type: 2}
+    femaleAvatar: {fileID: 9000000, guid: ff2f5e8c71541fd4f8ff0c3529fe1e6f, type: 3}
+    maleAvatar: {fileID: 9000000, guid: 4d60d9fc3a7a4444c8bf9f7838c81088, type: 3}
+  walkStyles:
+  - {fileID: 22100000, guid: 85f66bdd3e98b4348bb2fbd670555a89, type: 2}
+  - {fileID: 22100000, guid: be41fc0542cc7674485d7f5e3ec766fc, type: 2}
+  - {fileID: 22100000, guid: 037629a8431e66c46a9dd1aaafa1ae36, type: 2}
+  - {fileID: 22100000, guid: 136d3d188f6f3ad4ea2d90cfb35610f1, type: 2}

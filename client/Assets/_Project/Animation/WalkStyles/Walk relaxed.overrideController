@@ -1,0 +1,13 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Walk relaxed
+  m_Controller: {fileID: 9100000, guid: d88f772190c82d14aa321320c2522137, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: -8349492526526354690, guid: 74dcbb4c6187e8b45af3cc2112b282f9, type: 3}
+    m_OverrideClip: {fileID: 7400000, guid: 087463d02a298724e87b13ff6e63727e, type: 2}
