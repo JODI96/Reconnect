@@ -81,6 +81,28 @@ namespace Reconnect.Contracts.Avatars
             "burgundy", "red", "coral", "blush", "pink", "lilac", "mustard",
         };
 
+        /// <summary>Height of each body at <see cref="AvatarLookDto.Height"/> 1 (measured on the model, soles to crown).</summary>
+        public static readonly IReadOnlyDictionary<string, int> BodyHeightCm = new Dictionary<string, int> { [Female] = 171, [Male] = 189 };
+
+        /// <summary>The look's height in centimetres.</summary>
+        public static int HeightCm(AvatarLookDto look) =>
+            (int)Math.Round((BodyHeightCm.TryGetValue(look.Body ?? "", out var cm) ? cm : 175) * look.Height);
+
+        /// <summary>Smallest and largest height of a body in centimetres (the creator's slider).</summary>
+        public static (int Min, int Max) HeightRangeCm(string body)
+        {
+            var cm = BodyHeightCm.TryGetValue(body ?? "", out var value) ? value : 175;
+            return ((int)Math.Ceiling(cm * MinHeight), (int)Math.Floor(cm * MaxHeight));
+        }
+
+        /// <summary>The look with a height in centimetres (clamped to the body's range).</summary>
+        public static AvatarLookDto WithHeightCm(AvatarLookDto look, int centimetres)
+        {
+            var (min, max) = HeightRangeCm(look.Body);
+            var cm = BodyHeightCm.TryGetValue(look.Body ?? "", out var value) ? value : 175;
+            return look with { Height = (float)Math.Round(Math.Max(min, Math.Min(max, centimetres)) / (double)cm, 4) };
+        }
+
         /// <summary>The name of a part (German), or a tidy version of its id.</summary>
         public static string PartName(string id) =>
             id != null && PartNames.TryGetValue(id, out var name) ? name : (id ?? "").Replace('_', ' ');
@@ -161,9 +183,10 @@ namespace Reconnect.Contracts.Avatars
                 Eyes = Pick(Eyes),
                 Brows = Of(Brows),
                 WalkStyle = Pick(WalkStyles.Keys.ToList()),
-                Height = (float)Math.Round(MinHeight + random.NextDouble() * (MaxHeight - MinHeight), 2),
                 Parts = new List<AvatarPartDto>(),
             };
+            var (lowest, tallest) = HeightRangeCm(body);
+            look = WithHeightCm(look, random.Next(lowest, tallest + 1));
             var hairTint = random.Next(3) == 0 ? null : Pick(HairTints);
             look = Wear(look, Of(Hair), tint: hairTint);
             var clothes = body == Female ? random.Next(3) : random.Next(2) + 1;   // women: dress, outfit or separates

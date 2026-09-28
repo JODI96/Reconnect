@@ -377,15 +377,15 @@ namespace Reconnect.Client.UI.Screens
         {
             var row = new VisualElement();
             row.AddToClassList("creator__height");
-            var label = new Label($"Grösse {Mathf.RoundToInt(_look.Height * 100)} %");
+            var label = new Label($"Grösse {Wardrobe.HeightCm(_look)} cm");
             label.AddToClassList("creator__label");
-            var slider = new Slider(Wardrobe.MinHeight, Wardrobe.MaxHeight) { value = _look.Height, name = "creator-height" };
+            var (min, max) = Wardrobe.HeightRangeCm(_look.Body);
+            var slider = new SliderInt(min, max) { value = Wardrobe.HeightCm(_look), name = "creator-height" };
             slider.AddToClassList("creator__slider");
             slider.RegisterValueChangedCallback(e =>
             {
-                var height = Mathf.Round(e.newValue * 100f) / 100f;
-                label.text = $"Grösse {Mathf.RoundToInt(height * 100)} %";
-                _look = _look with { Height = height };
+                _look = Wardrobe.WithHeightCm(_look, e.newValue);
+                label.text = $"Grösse {Wardrobe.HeightCm(_look)} cm";
                 _lookPerBody[_look.Body] = _look;
                 _dirtyPreview = true;
                 RefreshState();
@@ -470,7 +470,7 @@ namespace Reconnect.Client.UI.Screens
             }
             Apply(_lookPerBody.TryGetValue(body, out var look) ? look : Wardrobe.Default(body) with
             {
-                WalkStyle = _look.WalkStyle, Height = _look.Height, Eyes = _look.Eyes,
+                WalkStyle = _look.WalkStyle, Eyes = _look.Eyes,
             });
         }
 

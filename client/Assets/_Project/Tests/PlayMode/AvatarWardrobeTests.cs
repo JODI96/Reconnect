@@ -141,6 +141,64 @@ namespace Reconnect.Client.PlayModeTests
             Object.Destroy(light.gameObject);
         }
 
+        [UnityTest]
+        public IEnumerator Every_walk_style_stays_upright_while_walking()
+        {
+            var room = Object.FindFirstObjectByType<RoomView>();
+            var catalog = room.AvatarCatalog;
+            var root = new GameObject("Walk styles").transform;
+            root.position = new Vector3(0f, -700f, 0f);
+            var figures = new List<(string Style, string Body, Animator Animator)>();
+            var column = 0;
+            foreach (var body in new[] { Wardrobe.Female, Wardrobe.Male })
+            {
+                foreach (var style in Wardrobe.WalkStyles.Keys)
+                {
+                    var holder = new GameObject(style).transform;
+                    holder.SetParent(root, false);
+                    holder.localPosition = new Vector3(column++ * 0.9f, 0f, 0f);
+                    holder.localRotation = Quaternion.Euler(0f, 150f, 0f);
+                    var figure = AvatarAssembler.Build(Wardrobe.Default(body) with { WalkStyle = style }, holder, catalog.wardrobe);
+                    var animator = figure.GetComponent<Animator>();
+                    animator.runtimeAnimatorController = catalog.ControllerFor(style);
+                    if (style != "normal")
+                    {
+                        Assert.AreNotSame(catalog.animator, animator.runtimeAnimatorController, $"{style}: its own walk");
+                    }
+                    animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                    animator.SetBool("Walking", true);
+                    figures.Add((style, body, animator));
+                }
+            }
+            var light = new GameObject("Walk Light").AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.transform.rotation = Quaternion.Euler(30f, -25f, 0f);
+            var problems = new List<string>();
+            var width = (column - 1) * 0.9f;
+            for (var frame = 0; frame < 4; frame++)
+            {
+                var end = Time.realtimeSinceStartup + 0.8f;
+                while (Time.realtimeSinceStartup < end)
+                {
+                    yield return null;
+                    foreach (var (style, body, animator) in figures)
+                    {
+                        var head = animator.GetBoneTransform(HumanBodyBones.Head).position.y - root.position.y;
+                        var hips = animator.GetBoneTransform(HumanBodyBones.Hips).position.y - root.position.y;
+                        var drift = Vector3.Distance(animator.transform.position, animator.transform.parent.position);
+                        if (head < 1.3f || hips < 0.7f || drift > 0.05f)
+                        {
+                            problems.Add($"{body} {style}: head {head:0.00} m, hips {hips:0.00} m, drift {drift:0.00} m");
+                        }
+                    }
+                }
+                Render(root.position + new Vector3(width / 2f, 0.95f, 0f), 8.6f, 1800, 700, $"walkstyles-{frame}.png");
+            }
+            Object.Destroy(root.gameObject);
+            Object.Destroy(light.gameObject);
+            Assert.IsEmpty(problems.Distinct().Take(20), string.Join("\n", problems.Distinct().Take(20)));
+        }
+
         private static int BodyTriangles(AvatarLookDto look, AvatarCatalog catalog)
         {
             var holder = new GameObject("Count").transform;

@@ -89,6 +89,21 @@ public sealed class WardrobeTests
     }
 
     [Fact]
+    public void Height_in_centimetres_round_trips_and_stays_in_range()
+    {
+        var man = Wardrobe.Default(Wardrobe.Male);
+        Assert.Equal(189, Wardrobe.HeightCm(man));
+        var (min, max) = Wardrobe.HeightRangeCm(Wardrobe.Male);
+        for (var cm = min; cm <= max; cm++)
+        {
+            var look = Wardrobe.WithHeightCm(man, cm);
+            Assert.Equal(cm, Wardrobe.HeightCm(look));
+            Assert.Empty(Wardrobe.Problems(look));
+        }
+        Assert.Equal(max, Wardrobe.HeightCm(Wardrobe.WithHeightCm(man, 250)));
+    }
+
+    [Fact]
     public void Every_part_has_a_german_name()
     {
         foreach (var (id, _) in Wardrobe.Parts.Values.SelectMany(p => p))
