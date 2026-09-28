@@ -33,6 +33,7 @@ namespace Reconnect.Client.Rooms
         public event Action<QueueStatusDto> QueueUpdated;
         public event Action<RoomSnapshotDto> ElevatorArrived;
         public event Action<RoomLayoutChangedDto> LayoutChanged;
+        public event Action<PlayerLookDto> LookChanged;
         public event Action<string> Disconnected;
 
         public async Task<RoomSnapshotDto> JoinAsync(Guid roomId, CancellationToken ct)
@@ -40,6 +41,8 @@ namespace Reconnect.Client.Rooms
             await EnsureConnectedAsync(ct);
             return await _connection.InvokeAsync<RoomSnapshotDto>(RoomHubContract.Server.JoinRoom, roomId);
         }
+
+        public Task RefreshLookAsync() => _connection.InvokeAsync(RoomHubContract.Server.RefreshLook);
 
         public Task<TilePosition> MoveToAsync(TilePosition tile) =>
             _connection.InvokeAsync<TilePosition>(RoomHubContract.Server.MoveTo, tile.X, tile.Z);
@@ -125,6 +128,7 @@ namespace Reconnect.Client.Rooms
             connection.On<QueueStatusDto>(RoomHubContract.Client.QueueUpdated, q => QueueUpdated?.Invoke(q));
             connection.On<RoomSnapshotDto>(RoomHubContract.Client.ElevatorArrived, s => ElevatorArrived?.Invoke(s));
             connection.On<RoomLayoutChangedDto>(RoomHubContract.Client.RoomLayoutChanged, l => LayoutChanged?.Invoke(l));
+            connection.On<PlayerLookDto>(RoomHubContract.Client.PlayerLookChanged, l => LookChanged?.Invoke(l));
             connection.Closed += reason =>
             {
                 if (_connection == connection)

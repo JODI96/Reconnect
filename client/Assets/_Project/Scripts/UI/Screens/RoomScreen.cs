@@ -29,6 +29,9 @@ namespace Reconnect.Client.UI.Screens
         private readonly IRoomSession _session;
         private readonly TowerService _tower;
         private readonly RoomService _rooms;
+        private readonly AvatarLookService _looks;
+        private CharacterCreatorPanel _creator;
+        private static bool _askedForLook;
         private readonly bool _isAdmin;
         private BuildPanel _build;
         private Guid _roomId;
@@ -51,9 +54,10 @@ namespace Reconnect.Client.UI.Screens
         private bool _towerCredit;
 
         public RoomScreen(VisualTreeAsset template, RoomView room, CityView city, IRoomSession session, TowerService tower,
-            RoomService rooms, Guid roomId, Guid localUserId, bool isAdmin, Action leave)
+            RoomService rooms, AvatarLookService looks, Guid roomId, Guid localUserId, bool isAdmin, Action leave)
         {
             _rooms = rooms;
+            _looks = looks;
             _isAdmin = isAdmin;
             _template = template;
             _room = room;
@@ -89,6 +93,7 @@ namespace Reconnect.Client.UI.Screens
             _queueBanner = Q<VisualElement>("queue-banner");
             Q<Button>("lift").clicked += OpenLift;
             _build = new BuildPanel(Root, _room, _room.TransparentMaterial, _isAdmin, SaveLayoutAsync, OnBuildClosed);
+            _creator = new CharacterCreatorPanel(Root, _room.AvatarCatalog, SaveLookAsync, OnCreatorClosed);
             Q<Button>("build").clicked += OpenBuild;
             var music = Q<Button>("music");
             ShowMusicState(music);
@@ -138,6 +143,7 @@ namespace Reconnect.Client.UI.Screens
             _session.QueueUpdated += OnQueueUpdated;
             _session.ElevatorArrived += OnElevatorArrived;
             _session.LayoutChanged += OnLayoutChanged;
+            _session.LookChanged += OnLookChanged;
             _room.TileTapped += OnTileTapped;
             _room.StationTapped += OnStationTapped;
             _room.IsPointerOverUi = IsPointerOverUi;
@@ -150,11 +156,13 @@ namespace Reconnect.Client.UI.Screens
 
         protected override void OnHide()
         {
+            _creator.Close();
             if (_build.IsOpen)
             {
                 _build.Close(_current?.Layout);
             }
             _session.LayoutChanged -= OnLayoutChanged;
+            _session.LookChanged -= OnLookChanged;
             _session.PlayerJoined -= OnPlayerJoined;
             _session.PlayerLeft -= OnPlayerLeft;
             _session.PlayerMoved -= OnPlayerMoved;
@@ -192,6 +200,7 @@ namespace Reconnect.Client.UI.Screens
                 var snapshot = await _session.JoinAsync(_roomId, Lifetime);
                 await ShowSnapshotAsync(snapshot);
                 SetStatus(_status, null);
+                await AskForLookAsync();
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -277,6 +286,67 @@ namespace Reconnect.Client.UI.Screens
             button.EnableInClassList("button--off", muted);
         }
 
+        // ---------- Character creator ----------
+
+        internal CharacterCreatorPanel Creator => _creator;
+
+        /// <summary>No look yet (new account): the creator opens once when entering the first room.</summary>
+        private async Task AskForLookAsync()
+        {
+            if (_askedForLook || _looks == null)
+            {
+                return;
+            }
+            _askedForLook = true;
+            var mine = await _looks.GetMineAsync(Lifetime);
+            if (mine.IsSuccess && mine.Value == null)
+            {
+                OpenCreator(null, firstTime: true);
+            }
+        }
+
+        internal async Task OpenCreatorAsync()
+        {
+            if (_creator.IsOpen || _build.IsOpen || _looks == null)
+            {
+                return;
+            }
+            var mine = await _looks.GetMineAsync(Lifetime);
+            if (!mine.IsSuccess)
+            {
+                SetStatus(_status, mine.Error.ToDisplayString());
+                return;
+            }
+            OpenCreator(mine.Value, firstTime: mine.Value == null);
+        }
+
+        private void OpenCreator(Reconnect.Contracts.Avatars.AvatarLookDto look, bool firstTime)
+        {
+            OpenGame(null);
+            CloseLift();
+            Q<VisualElement>("chat-bar").style.display = DisplayStyle.None;
+            Q<VisualElement>("emote-bar").style.display = DisplayStyle.None;
+            _creator.Open(look, firstTime);
+        }
+
+        private void OnCreatorClosed()
+        {
+            Q<VisualElement>("chat-bar").style.display = DisplayStyle.Flex;
+            UpdateEmoteBar();
+        }
+
+        /// <summary>Saves the look in the profile, then everyone in the room sees it. Returns the error or null.</summary>
+        private async Task<string> SaveLookAsync(Reconnect.Contracts.Avatars.AvatarLookDto look)
+        {
+            var saved = await _looks.SaveAsync(look, Lifetime);
+            if (!saved.IsSuccess)
+            {
+                return saved.Error.ToDisplayString();
+            }
+            await _session.RefreshLookAsync();
+            return null;
+        }
+
         // ---------- Build editor ----------
 
         /// <summary>Owners build in their own rooms, admins everywhere.</summary>
@@ -317,6 +387,8 @@ namespace Reconnect.Client.UI.Screens
             var problems = result.Error.FieldErrors.Values.SelectMany(v => v).Distinct().ToList();
             return (false, problems.Count > 0 ? string.Join(" ", problems.Take(2)) : result.Error.Message);
         }
+
+        private void OnLookChanged(PlayerLookDto change) => _room.ChangeLook(change.UserId, change.Look);
 
         /// <summary>Someone (the owner, an admin) saved a new layout: rebuild, unless I'm building right now.</summary>
         private void OnLayoutChanged(RoomLayoutChangedDto change)
@@ -538,6 +610,15 @@ namespace Reconnect.Client.UI.Screens
         /// <summary>Walks next to the table/TV/lift and opens its game or the lift panel.</summary>
         private void OnStationTapped(GameStation station)
         {
+            if (station.GameId == RoomView.MirrorStation)
+            {
+                // Mirrors are furniture everywhere, the creator opens at your own (or as admin).
+                if (CanBuild)
+                {
+                    RunAsync(OpenCreatorAsync);
+                }
+                return;
+            }
             OnTileTapped(station.Tile);
             if (station.GameId == RoomView.ElevatorStation)
             {

@@ -37,6 +37,7 @@ namespace Reconnect.Client.Core
         private ScreenNavigator _navigator;
         private AuthService _auth;
         private RoomService _rooms;
+        private AvatarLookService _looks;
         private BuildingService _buildings;
         private MapService _maps;
         private TowerService _tower;
@@ -54,6 +55,7 @@ namespace Reconnect.Client.Core
             _auth = new AuthService(api, new PlayerPrefsTokenStore());
             api.Tokens = _auth;
             _rooms = new RoomService(api);
+            _looks = new AvatarLookService(api);
             _buildings = new BuildingService(api);
             _maps = new MapService(api);
             _tower = new TowerService(api);
@@ -129,6 +131,6 @@ namespace Reconnect.Client.Core
             _navigator.Show(new RoomDetailScreen(ui.roomDetail, _rooms, roomId, back, enter: EnterRoom));
 
         private void EnterRoom(Guid roomId) =>
-            _navigator.Show(new RoomScreen(ui.room, room, city, _roomSession, _tower, _rooms, roomId, _auth.UserId!.Value, _auth.IsAdmin, leave: ShowCity));
+            _navigator.Show(new RoomScreen(ui.room, room, city, _roomSession, _tower, _rooms, _looks, roomId, _auth.UserId!.Value, _auth.IsAdmin, leave: ShowCity));
     }
 }

@@ -151,6 +151,21 @@ Der Unity-Client kennt nur Contracts (DLL), nie Module.
   `CrowdPerformanceTests`: volle Lobby (150 Personen, ganz herausgezoomt über der Etagenmitte) auf „Normal“ ≤ 400 Draw
   Calls, ≤ 80 Set-Pass-Calls, ≤ 400k Dreiecke; „Hoch“ (SSAO zeichnet alles ein zweites Mal in einen Tiefen-Vorabdurchgang)
   das Doppelte bei Draw Calls/Dreiecken. Das Log listet die teuersten Items („Draws by item“).
+- **Charakter-Editor (Aussehen, `AvatarLookDto`):** Garderobe aus MakeHuman-Assets (CC0) per `tools/avatars/build_wardrobe.py`
+  (Blender 5.2 + MPFB): Körper Frau/Mann, ~180 Teile (Haare, Bärte, Brauen, Oberteile, Hosen/Röcke, Kleider, Outfits, Schuhe, Hüte),
+  Hauttöne, Augen → `ThirdParty/MakeHuman/Resources/Wardrobe/<body>/` (Manifest `wardrobe.json`, FBX pro Teil mit LOD0/LOD1,
+  Texturen JPEG bzw. PNG mit Alpha) und `Contracts/Avatars/WardrobeData.cs` (generiert). Das Skript ermittelt pro Teil, welche
+  Körper-Vertices es verdeckt (`hides`, geometrisch per Strahl entlang der Normale) bzw. knapp darunter liegen (`under`, werden 2 cm
+  eingezogen) – so scheint keine Haut durch. `AvatarAssembler` baut zur Laufzeit eine Figur = ein SkinnedMesh pro LOD, Tönung
+  (`Wardrobe.Tints`) per Recolour-Shader. Regeln (ein Teil pro Art, Kleid/Outfit ersetzt Ober-/Unterteil, `Wear`/`TakeOff`/`Random`,
+  deutsche Namen in `WardrobeNames.cs`) in Contracts – Server und Client gleich. Gespeichert im Profil (`GET/PUT /v1/profiles/me/look`,
+  JSON, 204 = noch keins), im Raum mit jedem Spieler gesendet; nach dem Speichern `RefreshLook` → `PlayerLookChanged` an alle.
+  Laufstile (`Wardrobe.WalkStyles`): Muskel-Kurven-Varianten des Walk-Clips als AnimatorOverrideController (`AvatarSetup.BuildWalkStyles`).
+  UI: `CharacterCreatorPanel` (Vollbild, 3D-Bühne `CharacterPreview` mit Studiolicht in einer RenderTexture, drehen, Gesicht/Körper,
+  Gehen-Vorschau, Kategorien mit Bildkarten, Farbfelder, Zufall). Öffnet sich über Spiegel/Waschtisch/Schminktisch im eigenen Raum
+  (`RoomView.MirrorStation`) und einmal automatisch, wenn man noch keinen Look hat. Kartenbilder rendert `WardrobeIcons` beim Setup
+  Project nach `_Project/Resources/WardrobeIcons` (nur fehlende; `RECONNECT_RENDER_ICONS=1` alle). Tests: `WardrobeTests` (Unit),
+  `AvatarWardrobeTests` + `CharacterCreatorTests` (PlayMode, Bilder in client/Logs).
 - **Grafik Hoch/Normal** (`GraphicsQuality`, pro Gerät gemerkt, Stadt-Menü): Hoch = volle Render-Auflösung + 4× MSAA
   (schaltet auf `Mobile_High_RPAsset`/`PC_High_RPAsset`, Kopien die Setup Project anlegt – Pipeline-Assets werden zur
   Laufzeit nie verändert), SSAO (Tiefenquelle, halbe Auflösung), Reflexionen, doppelt so viele Lampenlichter, schärfere

@@ -24,6 +24,11 @@ namespace Reconnect.Client.Rooms
         /// <summary>GameStation id of the lift bank.</summary>
         public const string ElevatorStation = "elevator";
 
+        /// <summary>GameStation id of mirrors and washstands (character creator).</summary>
+        public const string MirrorStation = "mirror";
+
+        private static readonly string[] MirrorItems = { "custom-mirror", "custom-washstand", "custom-vanity", "custom-gymmirror" };
+
         private const float WallHeight = 2.57f;          // Kenney wall piece at scale 0.2
         private const float WallPieceWidth = 2f;
         private const float TapMaxMovePixels = 12f;
@@ -128,6 +133,9 @@ namespace Reconnect.Client.Rooms
 
         /// <summary>Pictures of the buildable items for the build catalog.</summary>
         public BuildIconCatalog BuildIcons => buildIcons;
+
+        /// <summary>Figures and wardrobe materials (character creator preview).</summary>
+        public AvatarCatalog AvatarCatalog => avatarCatalog;
 
         /// <summary>See-through material (glass) for build helpers.</summary>
         public Material TransparentMaterial => glassMaterial;
@@ -417,6 +425,24 @@ namespace Reconnect.Client.Rooms
             var avatar = AvatarView.Create(_content, player, avatarCatalog, avatarMaterial, isLocal);
             avatar.WaterAt = IsWater;
             _avatars[player.UserId] = avatar;
+        }
+
+        /// <summary>Someone changed their look: the figure is rebuilt where it stands (or sits).</summary>
+        public void ChangeLook(Guid userId, Reconnect.Contracts.Avatars.AvatarLookDto look)
+        {
+            if (!_avatars.TryGetValue(userId, out var old))
+            {
+                return;
+            }
+            var seat = _occupied.FirstOrDefault(o => o.Value == userId).Key;
+            var tile = old.NextTile;
+            var local = userId == _localUserId;
+            RemovePlayer(userId);
+            AddPlayer(new RoomPlayerDto(userId, old.DisplayName, new TilePosition(tile.x, tile.y), null, look), local);
+            if (seat != null)
+            {
+                SeatPlayer(userId, seat, instant: true);
+            }
         }
 
         public void RemovePlayer(Guid userId)
@@ -1283,6 +1309,10 @@ namespace Reconnect.Client.Rooms
                     {
                         RememberItemWall(pivot);
                     }
+                    if (Array.IndexOf(MirrorItems, item.ItemId) >= 0)
+                    {
+                        RegisterMirror(pivot);
+                    }
                     continue;
                 }
 
@@ -1499,6 +1529,19 @@ namespace Reconnect.Client.Rooms
             ring.transform.SetParent(pivot, true);
             ring.transform.position = new Vector3(bounds.center.x, transform.position.y + 0.005f, bounds.center.z);
             ring.transform.localScale = new Vector3(2.4f, 0.003f, 2.4f);
+        }
+
+        /// <summary>Mirrors and washstands: tapping one (in your own room) opens the character creator.</summary>
+        private void RegisterMirror(Transform pivot)
+        {
+            var bounds = Bounds(pivot);
+            var station = pivot.gameObject.AddComponent<GameStation>();
+            station.Initialize(MirrorStation, WorldToTile(transform.InverseTransformPoint(bounds.center)));
+            var collider = pivot.gameObject.AddComponent<BoxCollider>();
+            collider.center = pivot.InverseTransformPoint(bounds.center);
+            var size = pivot.InverseTransformVector(bounds.size);
+            collider.size = new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z));
+            _stations.Add(station);
         }
 
         /// <summary>The lift bank: tapping it opens the lift panel; you walk to the doors (same landing as the server).</summary>

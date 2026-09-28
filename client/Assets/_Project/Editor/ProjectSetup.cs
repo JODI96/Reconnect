@@ -464,7 +464,7 @@ namespace Reconnect.Client.Editor
         }
 
         /// <summary>Realistic MakeHuman figures with one Humanoid animator (see <see cref="AvatarSetup"/>).</summary>
-        private static void CreateAvatarCatalog() => AvatarSetup.Build(AvatarCatalogPath, AvatarControllerPath);
+        private static void CreateAvatarCatalog() => WardrobeIcons.Render(AvatarSetup.Build(AvatarCatalogPath, AvatarControllerPath));
 
         /// <summary>Warm, slightly punchy grading with soft bloom on lamps and emissive markers.</summary>
         private static void CreatePostProcessing()

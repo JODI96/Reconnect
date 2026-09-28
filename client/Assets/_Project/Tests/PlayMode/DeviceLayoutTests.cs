@@ -161,7 +161,7 @@ namespace Reconnect.Client.PlayModeTests
                 navigator.Show(new OfficesScreen(ui.offices, realEstate, wallet, PrimeTowerId, () => { }));
                 yield return Capture("offices", 2f);
 
-                var roomScreen = new RoomScreen(ui.room, roomView, city, session, tower, rooms, skyLounge, auth.UserId!.Value,
+                var roomScreen = new RoomScreen(ui.room, roomView, city, session, tower, rooms, null, skyLounge, auth.UserId!.Value,
                     isAdmin: true, () => { });
                 navigator.Show(roomScreen);
                 yield return Capture("room", 4f);

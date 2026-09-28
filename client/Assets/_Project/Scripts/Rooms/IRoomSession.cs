@@ -37,6 +37,9 @@ namespace Reconnect.Client.Rooms
         /// <summary>The owner or an admin saved a new layout (everyone stands up).</summary>
         event Action<RoomLayoutChangedDto> LayoutChanged;
 
+        /// <summary>Someone in the room (me included) changed their look.</summary>
+        event Action<PlayerLookDto> LookChanged;
+
         event Action<string> Disconnected;
 
         /// <summary>Enters the room (leaving the previous one). Returns everyone present, including me.</summary>
@@ -71,6 +74,9 @@ namespace Reconnect.Client.Rooms
         Task<ElevatorResultDto> RideElevatorAsync(Guid targetRoomId);
 
         Task LeaveQueueAsync();
+
+        /// <summary>I saved a new look in my profile: show it to everyone in the room.</summary>
+        Task RefreshLookAsync();
 
         Task LeaveAsync();
     }
